@@ -30,7 +30,7 @@ class location_base;
 			name,                                  \
 			std::remove_reference_t<decltype(d1)>, \
 			std::remove_reference_t<decltype(d2)>  \
-		>{d1, d2};                                     \
+		>{};                                           \
 	}
 
 ND_DEFINE_OPERATOR(+, plus)

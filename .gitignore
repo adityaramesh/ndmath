@@ -8,6 +8,7 @@
 *.swo
 
 # Compilation-related files.
+*.s
 *.gch
 *.out
 *.run

@@ -11,7 +11,7 @@ archflags  = "-march=native"
 incflags   = "-I include -isystem #{boost} -isystem #{ccbase}"
 ldflags    = ""
 
-debug_optflags = "-O2 -ggdb"
+debug_optflags = "-O2"
 if cxx.include? "clang"
 	release_optflags = "-Ofast -fno-fast-math -flto"
 elsif cxx.include? "g++"
@@ -26,6 +26,16 @@ tests = FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")
 
 multitask :default, [:mode] => dirs + tests
 multitask :tests, [:mode] => dirs + tests
+
+task :asmdump, [:test] do |t, args|
+	src = "source/test/#{args[:test]}.cpp"
+	sh "#{cxx} -S #{release_cxxflags} #{src} #{ldflags}"
+end
+
+task :ppdump, [:test] do |t, args|
+	src = "source/test/#{args[:test]}.cpp"
+	sh "#{cxx} -E #{release_cxxflags} #{src} #{ldflags}"
+end
 
 dirs.each do |d|
 	directory d

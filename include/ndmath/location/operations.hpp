@@ -13,13 +13,14 @@
 
 namespace nd {
 
-#define ND_DEFINE_OPERATION(symbol, name)                         \
-	struct name final                                         \
-	{                                                         \
-		CC_ALWAYS_INLINE CC_CONST constexpr               \
-		auto operator()(const size_t& a, const size_t& b) \
-		const noexcept { return a symbol b; }             \
-	};                                                        \
+#define ND_DEFINE_OPERATION(symbol, name)               \
+	struct name final                               \
+	{                                               \
+		CC_ALWAYS_INLINE CC_CONST               \
+		static constexpr auto                   \
+		apply(const size_t& a, const size_t& b) \
+		noexcept { return a symbol b; }         \
+	};                                              \
 
 ND_DEFINE_OPERATION(+, plus)
 ND_DEFINE_OPERATION(-, minus)

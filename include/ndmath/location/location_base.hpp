@@ -17,16 +17,12 @@ class location_base
 {
 public:
 	CC_ALWAYS_INLINE CC_CONST
+	static constexpr auto eval(const size_t& dims)
+	noexcept { return Derived::eval(dims); }
+
+	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto operator()(const size_t& dims)
-	const noexcept { return (*this)()(dims); }
-
-	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto& operator()() noexcept
-	{ return static_cast<Derived&>(*this); }
-
-	CC_ALWAYS_INLINE CC_CONST
-	constexpr const auto& operator()() const noexcept
-	{ return static_cast<const Derived&>(*this); }
+	const noexcept { return eval(dims); }
 };
 
 }

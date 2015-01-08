@@ -11,13 +11,6 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-## Location Module
-
-- Things to implement:
-  - `location_base`
-  - Identify and implement related subclasses and arithmetic operations.
-  - `c<N>` syntax; `end` syntax.
-
 ## Index Module
 
 - Things to implement:
