@@ -25,6 +25,7 @@ High-performance, multidimensional arrays in modern C++.
   - subindex expressions
   - composite index expressions
   - iterators
+  - elementwise index arithmetic (do this in `index_base.hpp`)
 
 ## Array Module
 
