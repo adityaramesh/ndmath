@@ -1,0 +1,13 @@
+# General files.
+*.DS_Store
+*.log
+
+# Vim-related files.
+*.vim
+*.swp
+*.swo
+
+# Compilation-related files.
+*.gch
+*.out
+*.run
