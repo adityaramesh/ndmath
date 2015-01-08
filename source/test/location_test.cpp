@@ -15,9 +15,11 @@
 
 module("test construction")
 {
-	auto l1 = nd::c<123>;
-	auto l2 = (nd::c<2> * (nd::c<100> + nd::c<123>)) / nd::c<2>;
-	auto l3 = nd::c<2> * (nd::end - nd::c<1>) / nd::c<2>;
+	using namespace nd::tokens;
+
+	auto l1 = c<123>;
+	auto l2 = (c<2> * (c<100> + c<123>)) / c<2>;
+	auto l3 = c<2> * (end - c<1>) / c<2>;
 
 	static_assert(l1(0) == 123, "");
 	static_assert(l2(0) == 223, "");

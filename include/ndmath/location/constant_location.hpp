@@ -24,8 +24,12 @@ public:
 	noexcept { return N; }
 };
 
+namespace tokens {
+
 template <size_t N>
 static constexpr auto c = constant_location<N>{};
+
+}
 
 }
 

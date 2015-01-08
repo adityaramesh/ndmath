@@ -23,7 +23,11 @@ public:
 	noexcept { return n; }
 };
 
+namespace tokens {
+
 static constexpr auto end = end_location{};
+
+}
 
 }
 
