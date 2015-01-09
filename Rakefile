@@ -18,8 +18,9 @@ elsif cxx.include? "g++"
 	release_optflags = "-Ofast -fno-fast-math -flto"
 end
 
-debug_cxxflags = "#{langflags} #{wflags} #{archflags} #{incflags} #{debug_optflags}"
-release_cxxflags = "#{langflags} #{wflags} #{archflags} #{incflags} #{release_optflags}"
+base_cxxflags = "#{langflags} #{wflags} #{archflags} #{incflags}"
+debug_cxxflags = "#{base_cxxflags} #{debug_optflags}"
+release_cxxflags = "#{base_cxxflags} #{release_optflags}"
 
 dirs  = ["out"]
 tests = FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")}
@@ -27,14 +28,19 @@ tests = FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")
 multitask :default, [:mode] => dirs + tests
 multitask :tests, [:mode] => dirs + tests
 
-task :asmdump, [:test] do |t, args|
-	src = "source/test/#{args[:test]}.cpp"
-	sh "#{cxx} -S #{release_cxxflags} #{src} #{ldflags}"
+task :syntax, [:header] do |t, args|
+	src = "include/ndmath/#{args[:header]}.hpp"
+	sh "#{cxx} #{base_cxxflags} #{src}"
 end
 
 task :ppdump, [:test] do |t, args|
 	src = "source/test/#{args[:test]}.cpp"
-	sh "#{cxx} -E #{release_cxxflags} #{src} #{ldflags}"
+	sh "#{cxx} -E #{base_cxxflags} #{src}"
+end
+
+task :asmdump, [:test] do |t, args|
+	src = "source/test/#{args[:test]}.cpp"
+	sh "#{cxx} -S #{release_cxxflags} #{src} #{ldflags}"
 end
 
 dirs.each do |d|

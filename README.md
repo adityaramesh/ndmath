@@ -13,12 +13,20 @@ High-performance, multidimensional arrays in modern C++.
 
 ## Index Module
 
+Syntax to keep in mind:
+
+	index<extents...>; // constant_index`
+	make_index(extents...);
+
 - Things to implement:
   - concrete indices
   - subindex expressions
   - composite index expressions
-  - iterators
   - elementwise index arithmetic (do this in `index_base.hpp`)
+
+## Iterator Module
+
+- Syntax for creating a range from an index/indices?
 
 ## Array Module
 
@@ -38,3 +46,18 @@ High-performance, multidimensional arrays in modern C++.
 ### Long-Term TODO
 
 - Support ranges in `operator()`, e.g. `a[i, end][c<3>, end - 1][c<2>, end, 2]`
+- Use constexpr for arrays to implement compile-time arrays with the following
+syntax:
+
+  	using arr = "
+		1 2 3
+		4 5 6
+		7 8 9
+	"_array;
+
+- To implement the constexpr versions of the functions for multidimensional
+arrays, we can use essentially the same functions we use for non-constexpr
+arrays: the bodies of the functions will all use non-constexpr statements
+anyway.
+- This makes the effort to implement compile-time multidimensional arrays
+minimal.
