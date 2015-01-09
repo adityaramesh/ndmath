@@ -28,6 +28,7 @@ template <size_t Dims, class Derived>
 class index_base<Dims, false, Derived>
 {
 	using self = index_base<Dims, false, Derived>;
+	using index_list = std::initializer_list<size_t>;
 public:
 	static constexpr auto is_constexpr = false;
 	using iterator = index_iterator<self>;
@@ -47,6 +48,19 @@ public:
 	/*
 	** Element accessors.
 	*/
+
+	CC_ALWAYS_INLINE index_base&
+	operator=(const index_base& rhs) noexcept
+	{ boost::copy(rhs, begin()); return *this; }
+
+	template <size_t Dims_, bool IsConstexpr_, class Derived_>
+	CC_ALWAYS_INLINE index_base&
+	operator=(const index_base<Dims_, IsConstexpr_, Derived_>& rhs)
+	noexcept { boost::copy(rhs, begin()); return *this; }
+
+	CC_ALWAYS_INLINE index_base&
+	operator=(const index_list& rhs) noexcept
+	{ boost::copy(rhs, begin()); return *this; }
 
 	CC_ALWAYS_INLINE
 	auto& operator()(const size_t& i)

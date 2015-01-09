@@ -20,6 +20,8 @@ public index_base<Dims, false, index<Dims>>
 	using index_list = std::initializer_list<size_t>;
 	std::array<size_t, Dims> m_indices;
 public:
+	using index_base<Dims, false, index<Dims>>::operator=;
+
 	template <size_t... Indices>
 	CC_ALWAYS_INLINE constexpr
 	explicit index(const std::integer_sequence<size_t, Indices...>&)
@@ -31,21 +33,6 @@ public:
 
 	CC_ALWAYS_INLINE index(const index& rhs) noexcept
 	{ boost::copy(rhs.m_indices, std::begin(m_indices)); }
-
-	CC_ALWAYS_INLINE index&
-	operator=(const index& rhs) noexcept
-	{
-		boost::copy(rhs.m_indices, std::begin(m_indices));
-		return *this;
-	}
-
-	template <class T>
-	CC_ALWAYS_INLINE index&
-	operator=(const index_list& rhs) noexcept
-	{
-		boost::copy(rhs, std::begin(m_indices));
-		return *this;
-	}
 
 	CC_ALWAYS_INLINE auto&
 	operator()(const size_t& n) noexcept
