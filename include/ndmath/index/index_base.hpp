@@ -14,6 +14,7 @@
 #include <boost/range/numeric.hpp>
 #include <ndmath/location.hpp>
 #include <ndmath/index/expression_forward.hpp>
+#include <ndmath/index/index_iterator.hpp>
 
 namespace nd {
 
@@ -26,7 +27,12 @@ class index_base;
 template <size_t Dims, class Derived>
 class index_base<Dims, false, Derived>
 {
+	using self = index_base<Dims, false, Derived>;
 public:
+	static constexpr auto is_constexpr = false;
+	using iterator = index_iterator<self>;
+	using const_iterator = index_iterator<const self>;
+
 	static CC_ALWAYS_INLINE CC_CONST
 	constexpr auto dims() noexcept { return Dims; }
 
@@ -43,37 +49,37 @@ public:
 	*/
 
 	CC_ALWAYS_INLINE
-	auto operator()(const size_t& i)
+	auto& operator()(const size_t& i)
 	noexcept { return (*this)()(i); }
 
 	CC_ALWAYS_INLINE
-	auto operator()(const size_t& i)
+	const auto& operator()(const size_t& i)
 	const noexcept { return (*this)()(i); }
 
 	template <class Loc>
-	CC_ALWAYS_INLINE auto
+	CC_ALWAYS_INLINE auto&
 	operator()(const Loc& l)
 	noexcept { return (*this)(l(dims() - 1)); }
 
 	template <class Loc>
-	CC_ALWAYS_INLINE auto
+	CC_ALWAYS_INLINE const auto&
 	operator()(const Loc& l)
 	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE
-	auto first() noexcept
+	auto& first() noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
-	auto first() const noexcept
+	const auto& first() const noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
-	auto last() noexcept
+	auto& last() noexcept
 	{ return (*this)(dims() - 1); }
 
 	CC_ALWAYS_INLINE
-	auto last() const noexcept
+	const auto& last() const noexcept
 	{ return (*this)(dims() - 1); }
 
 	/*
@@ -140,25 +146,30 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto begin() noexcept
-	{ return (*this).begin(); }
+	{ return iterator{*this}; }
 
 	CC_ALWAYS_INLINE
 	auto begin() const noexcept
-	{ return (*this).begin(); }
+	{ return const_iterator{*this}; }
 
 	CC_ALWAYS_INLINE
 	auto end() noexcept
-	{ return (*this).end(); }
+	{ return iterator{*this}; }
 
 	CC_ALWAYS_INLINE
 	auto end() const noexcept
-	{ return (*this).end(); }
+	{ return const_iterator{*this}; }
 };
 
 template <size_t Dims, class Derived>
 class index_base<Dims, true, Derived>
 {
+	using self = index_base<Dims, true, Derived>;
 public:
+	static constexpr auto is_constexpr = true;
+	using iterator = index_iterator<self>;
+	using const_iterator = iterator;
+
 	static CC_ALWAYS_INLINE CC_CONST
 	constexpr auto dims() noexcept { return Dims; }
 
@@ -224,11 +235,11 @@ public:
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto begin() const noexcept
-	{ return (*this).begin(); }
+	{ return iterator{*this}; }
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto end() const noexcept
-	{ return (*this).end(); }
+	{ return iterator{*this}; }
 };
 
 template <

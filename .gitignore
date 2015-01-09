@@ -9,6 +9,7 @@
 
 # Compilation-related files.
 *.s
+*.ll
 *.gch
 *.out
 *.run

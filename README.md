@@ -13,13 +13,7 @@ High-performance, multidimensional arrays in modern C++.
 
 ## Index Module
 
-Syntax to keep in mind:
-
-	index<extents...>; // constant_index`
-	make_index(extents...);
-
 - Things to implement:
-  - concrete indices
   - subindex expressions
   - composite index expressions
   - elementwise index arithmetic (do this in `index_base.hpp`)

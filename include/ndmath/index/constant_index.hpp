@@ -26,7 +26,7 @@ public:
 };
 
 template <size_t... Ts>
-static constexpr auto index = constant_index<Ts...>{};
+static constexpr auto cindex = constant_index<Ts...>{};
 
 }
 
