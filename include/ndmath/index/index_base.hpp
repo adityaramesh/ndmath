@@ -53,12 +53,12 @@ public:
 	template <class Loc>
 	CC_ALWAYS_INLINE auto
 	operator()(const Loc& l)
-	noexcept { return (*this)(l(dims())); }
+	noexcept { return (*this)(l(dims() - 1)); }
 
 	template <class Loc>
 	CC_ALWAYS_INLINE auto
 	operator()(const Loc& l)
-	const noexcept { return (*this)(l(dims())); }
+	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE
 	auto first() noexcept
@@ -177,7 +177,7 @@ public:
 	template <class Loc>
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto operator()(const Loc& l)
-	const noexcept { return (*this)(l(dims())); }
+	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto first() const noexcept
@@ -340,7 +340,7 @@ auto off(const index_base<Dims, true, Derived>& b)
 noexcept
 {
 	auto n = size_t{1};
-	for (auto i = 0; i != b.dims(); ++i) {
+	for (auto i = size_t{0}; i != b.dims(); ++i) {
 		n *= b(i);
 	}
 	return n;

@@ -20,6 +20,7 @@ module("test constant index")
 	static_assert(i1.last() == 3, "");
 	static_assert(i1 == i1, "");
 	static_assert(!(i1 != i1), "");
+	static_assert(off(i1) == 6, "");
 }
 
 suite("index test")
