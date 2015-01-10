@@ -22,6 +22,9 @@ class index_iterator final
 	static constexpr auto dims         = index_type::dims();
 	static constexpr auto is_const     = std::is_const<Index>::value;
 	static constexpr auto is_constexpr = index_type::is_constexpr;
+
+	using result       = typename index_type::value;
+	using const_result = typename index_type::const_value;
 public:
 	using difference_type   = size_t;
 	using value_type        = size_t;
@@ -29,15 +32,12 @@ public:
 	using reference         = std::conditional_t<is_const, const size_t&, size_t&>;
 	using iterator_category = std::random_access_iterator_tag;
 public:
-	Index& m_index;
 	size_t m_pos;
+	Index& m_index;
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	explicit index_iterator() noexcept {}
-
 	CC_ALWAYS_INLINE constexpr
 	explicit index_iterator(Index& index, const size_t& pos = 0)
-	noexcept : m_index{index}, m_pos{pos} {}
+	noexcept : m_pos{pos}, m_index{index} {}
 
 	CC_ALWAYS_INLINE constexpr
 	index_iterator(const index_iterator&) = default;
@@ -58,33 +58,33 @@ public:
 	*/
 
 	template <nd_enable_if(!is_constexpr && !is_const)>
-	CC_ALWAYS_INLINE auto&
+	CC_ALWAYS_INLINE result
 	operator*() noexcept
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE
-	auto operator*() const noexcept
+	CC_ALWAYS_INLINE const_result
+	operator*() const noexcept
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(is_constexpr)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator*() const noexcept
+	const_result operator*() const noexcept
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(!is_constexpr && !is_const)>
-	CC_ALWAYS_INLINE auto&
+	CC_ALWAYS_INLINE result
 	operator[](const size_t& n)
 	noexcept { return m_index(n); }
 
 	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE
-	auto operator[](const size_t& n)
+	CC_ALWAYS_INLINE const_result
+	operator[](const size_t& n)
 	const noexcept { return m_index(n); }
 
 	template <nd_enable_if(is_constexpr)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator[](const size_t& n)
+	const_result operator[](const size_t& n)
 	const noexcept { return m_index(n); }
 
 	/*

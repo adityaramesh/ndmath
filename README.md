@@ -11,13 +11,18 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-## Iterator Module
+## Range Module
 
 - Instead of incrementing the total step count, increment only the innermost
 dimension. Recursively check whether the next dimension has reached its maximum
 extent, and increment it.
 - Consider implement `unchecked_` variants of the increment/decrement functions;
 these can be used in a library function that can unroll loops.
+
+- Consider creating a separate type for the end iterator: this avoids an
+unnecessary comparison with an integer whose value is only known at runtime.
+- Consider making the iterator for arrays derive from the iterator for ranges.
+
 - By giving this function a constant index of unroll factors, we can rapidly
 check several unroll factors for a given loop, and choose the fastest one.
 

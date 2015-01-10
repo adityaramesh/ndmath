@@ -15,11 +15,11 @@ namespace nd {
 
 template <size_t... Ts>
 class constant_index final :
-public index_base<sizeof...(Ts), true, constant_index<Ts...>>
+public index_base<sizeof...(Ts), true, size_t, size_t, constant_index<Ts...>>
 {
 	using self = constant_index<Ts...>;
-	using base = index_base<sizeof...(Ts), true, self>;
-
+	using base = index_base<sizeof...(Ts), true, size_t, size_t, self>;
+private:
 	static constexpr auto m_indices =
 	std::array<size_t, sizeof...(Ts)>{{Ts...}};
 public:
