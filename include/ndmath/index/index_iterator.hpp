@@ -28,7 +28,7 @@ public:
 	using pointer           = std::conditional_t<is_const, const size_t*, size_t*>;
 	using reference         = std::conditional_t<is_const, const size_t&, size_t&>;
 	using iterator_category = std::random_access_iterator_tag;
-private:
+public:
 	Index& m_index;
 	size_t m_pos;
 public:
@@ -36,8 +36,8 @@ public:
 	explicit index_iterator() noexcept {}
 
 	CC_ALWAYS_INLINE constexpr
-	explicit index_iterator(Index& index)
-	noexcept : m_index{index}, m_pos{0} {}
+	explicit index_iterator(Index& index, const size_t& pos = 0)
+	noexcept : m_index{index}, m_pos{pos} {}
 
 	CC_ALWAYS_INLINE constexpr
 	index_iterator(const index_iterator&) = default;
@@ -63,13 +63,13 @@ public:
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE const auto&
-	operator*() const noexcept
+	CC_ALWAYS_INLINE
+	auto operator*() const noexcept
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(is_constexpr)>
-	CC_ALWAYS_INLINE CC_CONST auto
-	operator*() const noexcept
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	auto operator*() const noexcept
 	{ return m_index(m_pos); }
 
 	template <nd_enable_if(!is_constexpr && !is_const)>
@@ -78,8 +78,8 @@ public:
 	noexcept { return m_index(n); }
 
 	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE const auto&
-	operator[](const size_t& n)
+	CC_ALWAYS_INLINE
+	auto operator[](const size_t& n)
 	const noexcept { return m_index(n); }
 
 	template <nd_enable_if(is_constexpr)>
@@ -119,18 +119,39 @@ public:
 	operator-=(const size_t& n) noexcept
 	{ m_pos -= n; return *this; }
 
-	#define nd_define_relational_op(symbol)             \
-		CC_ALWAYS_INLINE auto                       \
-		operator symbol (const index_iterator& rhs) \
-		{ return m_pos symbol rhs.m_pos; }
+	#define nd_make_friend(symb)                   \
+		template <class Index1, class Index2>  \
+		friend bool operator symb (            \
+			const index_iterator<Index1>&, \
+			const index_iterator<Index2>&  \
+		) noexcept;
 
-	nd_define_relational_op(==)
-	nd_define_relational_op(!=)
-	nd_define_relational_op(>)
-	nd_define_relational_op(>=)
-	nd_define_relational_op(<)
-	nd_define_relational_op(<=)
+	nd_make_friend(==)
+	nd_make_friend(!=)
+	nd_make_friend(>)
+	nd_make_friend(>=)
+	nd_make_friend(<)
+	nd_make_friend(<=)
+
+	#undef nd_make_friend
 };
+
+#define nd_define_relational_op(symbol)                   \
+	template <class Index1, class Index2>             \
+	CC_ALWAYS_INLINE bool                             \
+	operator symbol (                                 \
+		const index_iterator<Index1>& lhs,        \
+		const index_iterator<Index2>& rhs         \
+	) noexcept { return lhs.m_pos symbol rhs.m_pos; } \
+
+nd_define_relational_op(==)
+nd_define_relational_op(!=)
+nd_define_relational_op(>)
+nd_define_relational_op(>=)
+nd_define_relational_op(<)
+nd_define_relational_op(<=)
+
+#undef nd_define_relational_op
 
 template <class Index>
 CC_ALWAYS_INLINE auto

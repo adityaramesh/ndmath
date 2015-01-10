@@ -17,10 +17,14 @@ template <size_t Dims>
 class index final :
 public index_base<Dims, false, index<Dims>>
 {
+	using self = index<Dims>;
+	using base = index_base<Dims, false, self>;
+
 	using index_list = std::initializer_list<size_t>;
 	std::array<size_t, Dims> m_indices;
 public:
-	using index_base<Dims, false, index<Dims>>::operator=;
+	using base::operator=;
+	using base::operator();
 
 	template <size_t... Indices>
 	CC_ALWAYS_INLINE constexpr
@@ -42,6 +46,11 @@ public:
 	operator()(const size_t& n) const noexcept
 	{ return m_indices[n]; }
 };
+
+template <class... Ts>
+CC_ALWAYS_INLINE auto
+make_index(const Ts&... ts) noexcept
+{ return index<sizeof...(Ts)>{((size_t)ts)...}; }
 
 }
 

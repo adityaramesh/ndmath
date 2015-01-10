@@ -17,9 +17,14 @@ template <size_t... Ts>
 class constant_index final :
 public index_base<sizeof...(Ts), true, constant_index<Ts...>>
 {
+	using self = constant_index<Ts...>;
+	using base = index_base<sizeof...(Ts), true, self>;
+
 	static constexpr auto m_indices =
 	std::array<size_t, sizeof...(Ts)>{{Ts...}};
 public:
+	using base::operator();
+
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto operator()(const size_t& i)
 	const noexcept { return m_indices[i]; }

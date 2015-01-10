@@ -11,13 +11,6 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-## Index Module
-
-- Things to implement:
-  - subindex expressions
-  - composite index expressions
-  - elementwise index arithmetic (do this in `index_base.hpp`)
-
 ## Iterator Module
 
 - Syntax for creating a range from an index/indices?

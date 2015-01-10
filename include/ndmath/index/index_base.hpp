@@ -67,17 +67,17 @@ public:
 	noexcept { return (*this)()(i); }
 
 	CC_ALWAYS_INLINE
-	const auto& operator()(const size_t& i)
+	auto operator()(const size_t& i)
 	const noexcept { return (*this)()(i); }
 
-	template <class Loc>
-	CC_ALWAYS_INLINE auto&
-	operator()(const Loc& l)
+	template <class D>
+	CC_ALWAYS_INLINE
+	auto& operator()(const location_base<D>& l)
 	noexcept { return (*this)(l(dims() - 1)); }
 
-	template <class Loc>
-	CC_ALWAYS_INLINE const auto&
-	operator()(const Loc& l)
+	template <class D>
+	CC_ALWAYS_INLINE
+	auto operator()(const location_base<D>& l)
 	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE
@@ -85,7 +85,7 @@ public:
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
-	const auto& first() const noexcept
+	auto first() const noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
@@ -93,66 +93,55 @@ public:
 	{ return (*this)(dims() - 1); }
 
 	CC_ALWAYS_INLINE
-	const auto& last() const noexcept
+	auto last() const noexcept
 	{ return (*this)(dims() - 1); }
 
 	/*
 	** Subindex creation.
 	*/
 
-	CC_ALWAYS_INLINE
-	auto operator()(const size_t& a, const size_t& b)
-	noexcept { return make_subindex(a, b, *this); }
+	/*
+	** Note: we should be able to use a(dims() - 1) instead of the static
+	** member function, but there's a bug in the version of clang that I'm
+	** using right now that causes the code to be erroneously rejected.
+	*/
+	template <class D1, class D2>
+	CC_ALWAYS_INLINE constexpr auto
+	operator()(const location_base<D1>&, const location_base<D2>&)
+	noexcept
+	{
+		return make_subindex<
+			location_base<D1>::eval(dims() - 1),
+			location_base<D2>::eval(dims() - 1)
+		>(*this);
+	}
 
-	CC_ALWAYS_INLINE
-	auto operator()(const size_t& a, const size_t& b)
-	const noexcept { return make_subindex(a, b, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE
-	auto operator()(const Loc& a, const size_t& b)
-	noexcept { return make_cl_subindex<a(dims())>(b, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE
-	auto operator()(const Loc& a, const size_t& b)
-	const noexcept { return make_cl_subindex<a(dims())>(b, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE auto
-	operator()(const size_t& a, const Loc& b)
-	noexcept { return make_cr_subindex<b(dims())>(a, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE auto
-	operator()(const size_t& a, const Loc& b)
-	const noexcept { return make_cr_subindex<b(dims())>(a, *this); }
-
-	template <class Loc1, class Loc2>
-	CC_ALWAYS_INLINE auto
-	operator()(const Loc1& a, const Loc2& b)
-	noexcept { return make_c_subindex<a(dims()), b(dims())>(*this); }
-
-	template <class Loc1, class Loc2>
-	CC_ALWAYS_INLINE auto
-	operator()(const Loc1& a, const Loc2& b)
-	const noexcept { return make_c_subindex<a(dims()), b(dims())>(*this); }
+	template <class D1, class D2>
+	CC_ALWAYS_INLINE constexpr auto
+	operator()(const location_base<D1>&, const location_base<D2>&)
+	const noexcept
+	{
+		return make_subindex<
+			location_base<D1>::eval(dims() - 1),
+			location_base<D2>::eval(dims() - 1)
+		>(*this);
+	}
 
 	CC_ALWAYS_INLINE
 	auto head() noexcept
-	{ return (*this)(tokens::c<1>, tokens::end); }
+	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
 
 	CC_ALWAYS_INLINE
 	auto head() const noexcept
-	{ return (*this)(tokens::c<1>, tokens::end); }
+	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
 
 	CC_ALWAYS_INLINE
 	auto tail() noexcept
-	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
+	{ return (*this)(tokens::c<1>, tokens::end); }
 
 	CC_ALWAYS_INLINE
 	auto tail() const noexcept
-	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
+	{ return (*this)(tokens::c<1>, tokens::end); }
 
 	/*
 	** Iteration.
@@ -168,11 +157,11 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto end() noexcept
-	{ return iterator{*this}; }
+	{ return iterator{*this, dims()}; }
 
 	CC_ALWAYS_INLINE
 	auto end() const noexcept
-	{ return const_iterator{*this}; }
+	{ return const_iterator{*this, dims()}; }
 };
 
 template <size_t Dims, class Derived>
@@ -199,9 +188,9 @@ public:
 	constexpr auto operator()(const size_t& i)
 	const noexcept { return (*this)()(i); }
 
-	template <class Loc>
+	template <class D>
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto operator()(const Loc& l)
+	constexpr auto operator()(const location_base<D>& l)
 	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE CC_CONST
@@ -216,32 +205,24 @@ public:
 	** Subindex creation.
 	*/
 
+	template <class D1, class D2>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator()(const size_t& a, const size_t& b)
-	const noexcept { return make_subindex(a, b, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator()(const Loc& a, const size_t& b)
-	const noexcept { return make_cl_subindex<a(dims())>(b, *this); }
-
-	template <class Loc>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator()(const size_t& a, const Loc& b)
-	const noexcept { return make_cr_subindex<b(dims())>(a, *this); }
-
-	template <class Loc1, class Loc2>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator()(const Loc1& a, const Loc2& b)
-	const noexcept { return make_c_subindex<a(dims()), b(dims())>(*this); }
+	auto operator()(const location_base<D1>&, const location_base<D2>&)
+	const noexcept
+	{
+		return make_subindex<
+			location_base<D1>::eval(dims() - 1),
+			location_base<D2>::eval(dims() - 1)
+		>(*this);
+	}
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto head() const noexcept
-	{ return (*this)(tokens::c<1>, tokens::end); }
+	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto tail() const noexcept
-	{ return (*this)(tokens::c<0>, tokens::end - tokens::c<1>); }
+	{ return (*this)(tokens::c<1>, tokens::end); }
 
 	/*
 	** Iteration.
@@ -253,7 +234,7 @@ public:
 
 	CC_ALWAYS_INLINE CC_CONST
 	constexpr auto end() const noexcept
-	{ return iterator{*this}; }
+	{ return iterator{*this, dims()}; }
 };
 
 template <
