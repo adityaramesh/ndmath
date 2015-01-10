@@ -8,7 +8,7 @@
 #ifndef Z65B25ADD_6DD9_4438_9276_49809AB6369B
 #define Z65B25ADD_6DD9_4438_9276_49809AB6369B
 
-#include <ndmath/location/operations.hpp>
+#include <ndmath/operation.hpp>
 
 namespace nd {
 

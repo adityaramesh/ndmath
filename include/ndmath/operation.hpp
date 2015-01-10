@@ -1,5 +1,5 @@
 /*
-** File Name: operations.hpp
+** File Name: operation.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/08/2015
 ** Contact:   _@adityaramesh.com

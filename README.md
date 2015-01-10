@@ -13,7 +13,18 @@ High-performance, multidimensional arrays in modern C++.
 
 ## Iterator Module
 
+- Instead of incrementing the total step count, increment only the innermost
+dimension. Recursively check whether the next dimension has reached its maximum
+extent, and increment it.
+- Consider implement `unchecked_` variants of the increment/decrement functions;
+these can be used in a library function that can unroll loops.
+- By giving this function a constant index of unroll factors, we can rapidly
+check several unroll factors for a given loop, and choose the fastest one.
+
 - Syntax for creating a range from an index/indices?
+  - `nd::range(const index_base&, const index_base&)`
+  - `nd::range(const index_base&)` is equivalent to the above function with a
+  constant zero index as the first argument.
 
 ## Array Module
 
@@ -31,6 +42,11 @@ High-performance, multidimensional arrays in modern C++.
   - Decide on a syntax for array slices. Possibly use underscores: `a(0, _, 0, _) = ...`.
 
 ### Long-Term TODO
+
+- Come up with the syntax to write loops using generic packets instead of the
+same scalar type of the array. This would allow the loop operation to be
+expressed using SIMD operations. Combined with the syntax for unrolling loops,
+this can become very powerful.
 
 - Support ranges in `operator()`, e.g. `a[i, end][c<3>, end - 1][c<2>, end, 2]`
 - Use constexpr for arrays to implement compile-time arrays with the following
