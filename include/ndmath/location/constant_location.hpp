@@ -12,21 +12,22 @@
 
 namespace nd {
 
-template <size_t N>
+template <uintmax_t N>
 class constant_location final :
 public location_base<constant_location<N>>
 {
 public:
 	using location_base<constant_location<N>>::operator();
 
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	static constexpr auto eval(const size_t&)
-	noexcept { return N; }
+	static constexpr auto eval(const Integer&)
+	noexcept { return Integer{N}; }
 };
 
 namespace tokens {
 
-template <size_t N>
+template <uintmax_t N>
 static constexpr auto c = constant_location<N>{};
 
 }

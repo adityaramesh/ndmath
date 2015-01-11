@@ -11,11 +11,13 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
+## Miscellaneous
+
+- Rename `ccbase/utility/index_sequence.hpp` to `sequence_operations.hpp`, and
+generalize to `std::integer_sequence`.
+
 ## Range Module
 
-- Instead of incrementing the total step count, increment only the innermost
-dimension. Recursively check whether the next dimension has reached its maximum
-extent, and increment it.
 - Consider implement `unchecked_` variants of the increment/decrement functions;
 these can be used in a library function that can unroll loops.
 

@@ -19,8 +19,9 @@ public location_base<binary_location_expr<Op, Loc1, Loc2>>
 public:
 	using location_base<binary_location_expr<Op, Loc1, Loc2>>::operator();
 
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	static constexpr auto eval(const size_t& n)
+	static constexpr auto eval(const Integer& n)
 	noexcept { return Op::apply(Loc1::eval(n), Loc2::eval(n)); }
 };
 

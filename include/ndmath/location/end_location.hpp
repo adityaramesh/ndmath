@@ -18,8 +18,9 @@ public location_base<end_location>
 public:
 	using location_base<end_location>::operator();
 
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	static constexpr auto eval(const size_t& n)
+	static constexpr auto eval(const Integer& n)
 	noexcept { return n; }
 };
 

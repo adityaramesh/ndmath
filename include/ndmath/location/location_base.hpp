@@ -16,12 +16,14 @@ template <class Derived>
 class location_base
 {
 public:
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	static constexpr auto eval(const size_t& dims)
+	static constexpr auto eval(const Integer& dims)
 	noexcept { return Derived::eval(dims); }
 
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto operator()(const size_t& dims)
+	constexpr auto operator()(const Integer& dims)
 	const noexcept { return eval(dims); }
 };
 
