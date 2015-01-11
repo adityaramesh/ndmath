@@ -25,18 +25,24 @@ class composite_index final :
 public index_base<
 	Index1::dims() + Index2::dims(),
 	false,
-	size_t&,
-	size_t,
+	typename Index1::result,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
 	composite_index<Index1, Index2
 >>
 {
 	static constexpr auto dims1 = Index1::dims();
 	static constexpr auto dims2 = Index2::dims();
 
-	using value       = size_t&;
-	using const_value = size_t;
-	using self        = composite_index<Index1, Index2>;
-	using base        = index_base<dims1 + dims2, false, value, const_value, self>;
+	using t1 = typename Index1::index_type;
+	using t2 = typename Index2::index_type;
+
+	using result       = typename Index1::result;
+	using const_result = std::common_type_t<t1, t2>;
+	using self         = composite_index<Index1, Index2>;
+	using base         = index_base<dims1 + dims2, false, result, const_result, self>;
 
 	Index1& m_i1;
 	Index2& m_i2;
@@ -48,12 +54,14 @@ public:
 	explicit composite_index(Index1& i1, Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	CC_ALWAYS_INLINE value
-	operator()(const size_t& n) noexcept
+	template <class T>
+	CC_ALWAYS_INLINE result
+	operator()(const T& n) noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 
-	CC_ALWAYS_INLINE const_value
-	operator()(const size_t& n) const noexcept
+	template <class T>
+	CC_ALWAYS_INLINE const_result
+	operator()(const T& n) const noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 };
 
@@ -62,17 +70,26 @@ class const_composite_index final :
 public index_base<
 	Index1::dims() + Index2::dims(),
 	false,
-	size_t,
-	size_t,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
 	const_composite_index<Index1, Index2>
 >
 {
 	static constexpr auto dims1 = Index1::dims();
 	static constexpr auto dims2 = Index2::dims();
 
-	using value = size_t;
-	using self  = const_composite_index<Index1, Index2>;
-	using base  = index_base<dims1 + dims2, false, value, value, self>;
+	using t1 = typename Index1::index_type;
+	using t2 = typename Index2::index_type;
+
+	using result = std::common_type_t<t1, t2>;
+	using self   = const_composite_index<Index1, Index2>;
+	using base   = index_base<dims1 + dims2, false, result, result, self>;
 
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -83,12 +100,14 @@ public:
 	explicit const_composite_index(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	CC_ALWAYS_INLINE value
-	operator()(const size_t& n) noexcept
+	template <class T>
+	CC_ALWAYS_INLINE result
+	operator()(const T& n) noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 
-	CC_ALWAYS_INLINE value
-	operator()(const size_t& n) const noexcept
+	template <class T>
+	CC_ALWAYS_INLINE result
+	operator()(const T& n) const noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 };
 
@@ -97,17 +116,26 @@ class constexpr_composite_index final :
 public index_base<
 	Index1::dims() + Index2::dims(),
 	true,
-	size_t,
-	size_t,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
 	constexpr_composite_index<Index1, Index2>
 >
 {
 	static constexpr auto dims1 = Index1::dims();
 	static constexpr auto dims2 = Index2::dims();
 
-	using value = size_t;
-	using self = constexpr_composite_index<Index1, Index2>;
-	using base = index_base<dims1 + dims2, true, value, value, self>;
+	using t1 = typename Index1::index_type;
+	using t2 = typename Index2::index_type;
+
+	using result = std::common_type_t<t1, t2>;
+	using self   = constexpr_composite_index<Index1, Index2>;
+	using base   = index_base<dims1 + dims2, true, result, result, self>;
 
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -118,12 +146,18 @@ public:
 	explicit constexpr_composite_index(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	value operator()(const size_t& n) noexcept
-	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
+	/*
+	** Do we really need this?
+	**
+	** template <class T>
+	** CC_ALWAYS_INLINE CC_CONST constexpr
+	** value operator()(const T& n) noexcept
+	** { return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
+	*/
 
+	template <class T>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	value operator()(const size_t& n) const noexcept
+	result operator()(const T& n) const noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 };
 

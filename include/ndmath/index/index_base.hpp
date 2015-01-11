@@ -21,32 +21,41 @@ namespace nd {
 /*
 ** Derived classes need only implement `operator()(const size_t&)`.
 **
-** It is not obvious why we need the `Value` template parameter. Consider the
+** It is not obvious why we need the `Result` template parameter. Consider the
 ** case where we have a subindex over an arithmetic expression involving
 ** non-constexpr indices. Then the subindex will not be constexpr, but its
 ** values cannot be references, since they are computed lazily.
 **
 ** For constexpr index classes (i.e. `IsConstexpr = true`), there is only one
 ** version of `operator()` (marked `const`), since the result is always
-** available during compile-time. Hence the `Value` template parameter is never
+** available during compile-time. Hence the `Result` template parameter is never
 ** used.
 */
 template <
 	size_t Dims, bool IsConstexpr,
-	class Value, class ConstValue,
+	class Result, class ConstResult,
 	class Derived
 >
 class index_base;
 
-template <size_t Dims, class Value, class ConstValue, class Derived>
-class index_base<Dims, false, Value, ConstValue, Derived>
+template <size_t Dims, class Result, class ConstResult, class Derived>
+class index_base<Dims, false, Result, ConstResult, Derived>
 {
-	using self = index_base<Dims, false, Value, ConstValue, Derived>;
-	using index_list = std::initializer_list<size_t>;
+public:
+	using index_type = std::decay_t<Result>;
+private:
+	using self       = index_base<Dims, false, Result, ConstResult, Derived>;
+	using index_list = std::initializer_list<index_type>;
 public:
 	static constexpr auto is_constexpr = false;
-	using value          = Value;
-	using const_value    = ConstValue;
+
+	/*
+	** We call these typedefs `result` and `const_result` instead of `value`
+	** and `const_value`, because the latter names would imply that the
+	** types must be values, and not references.
+	*/
+	using result         = Result;
+	using const_result   = ConstResult;
 	using iterator       = index_iterator<self>;
 	using const_iterator = index_iterator<const self>;
 
@@ -68,12 +77,12 @@ public:
 	template <
 		size_t Dims_,
 		bool IsConstexpr_,
-		class Value_,
-		class ConstValue_,
+		class Result_,
+		class ConstResult_,
 		class Derived_
 	>
 	CC_ALWAYS_INLINE index_base&
-	operator=(const index_base<Dims_, IsConstexpr_, Value_, ConstValue_, Derived_>& rhs)
+	operator=(const index_base<Dims_, IsConstexpr_, Result_, ConstResult_, Derived_>& rhs)
 	noexcept { boost::copy(rhs, begin()); return *this; }
 
 	CC_ALWAYS_INLINE index_base&
@@ -84,38 +93,40 @@ public:
 	** Element accessors.
 	*/
 
+	template <class T>
 	CC_ALWAYS_INLINE
-	Value operator()(const size_t& i)
-	noexcept { return (*this)()(i); }
+	Result operator()(const T& n)
+	noexcept { return (*this)()(n); }
 
+	template <class T>
 	CC_ALWAYS_INLINE
-	ConstValue operator()(const size_t& i)
-	const noexcept { return (*this)()(i); }
+	ConstResult operator()(const T& n)
+	const noexcept { return (*this)()(n); }
 
 	template <class D>
 	CC_ALWAYS_INLINE
-	Value operator()(const location_base<D>& l)
+	Result operator()(const location_base<D>& l)
 	noexcept { return (*this)(l(dims() - 1)); }
 
 	template <class D>
 	CC_ALWAYS_INLINE
-	ConstValue operator()(const location_base<D>& l)
+	ConstResult operator()(const location_base<D>& l)
 	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE
-	Value first() noexcept
+	Result first() noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
-	ConstValue first() const noexcept
+	ConstResult first() const noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE
-	Value last() noexcept
+	Result last() noexcept
 	{ return (*this)(dims() - 1); }
 
 	CC_ALWAYS_INLINE
-	ConstValue last() const noexcept
+	ConstResult last() const noexcept
 	{ return (*this)(dims() - 1); }
 
 	/*
@@ -186,15 +197,19 @@ public:
 	{ return const_iterator{*this, dims()}; }
 };
 
-template <size_t Dims, class Value, class ConstValue, class Derived>
-class index_base<Dims, true, Value, ConstValue, Derived>
+template <size_t Dims, class Result, class ConstResult, class Derived>
+class index_base<Dims, true, Result, ConstResult, Derived>
 {
-	using self = index_base<Dims, true, Value, ConstValue, Derived>;
+public:
+	using index_type = std::decay_t<Result>;
+private:
+	using self = index_base<Dims, true, Result, ConstResult, Derived>;
 public:
 	static constexpr auto is_constexpr = true;
-	using value          = Value;
-	using const_value    = ConstValue;
-	using iterator       = index_iterator<self>;
+
+	using result         = Result;
+	using const_result   = ConstResult;
+	using iterator       = index_iterator<const self>;
 	using const_iterator = iterator;
 
 	static CC_ALWAYS_INLINE CC_CONST
@@ -208,21 +223,22 @@ public:
 	** Element accessors.
 	*/
 
+	template <class T>
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr ConstValue operator()(const size_t& i)
-	const noexcept { return (*this)()(i); }
+	constexpr ConstResult operator()(const T& n)
+	const noexcept { return (*this)()(n); }
 
 	template <class D>
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr ConstValue operator()(const location_base<D>& l)
+	constexpr ConstResult operator()(const location_base<D>& l)
 	const noexcept { return (*this)(l(dims() - 1)); }
 
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr ConstValue first() const noexcept
+	constexpr ConstResult first() const noexcept
 	{ return (*this)(size_t{0}); }
 
 	CC_ALWAYS_INLINE CC_CONST
-	constexpr ConstValue last() const noexcept
+	constexpr ConstResult last() const noexcept
 	{ return (*this)(dims() - 1); }
 
 	/*
@@ -266,33 +282,33 @@ template <
 	size_t Dims2,
 	bool IsConstexpr1,
 	bool IsConstexpr2,
-	class Value1,
-	class Value2,
-	class ConstValue1,
-	class ConstValue2,
+	class Result1,
+	class Result2,
+	class ConstResult1,
+	class ConstResult2,
 	class Derived1,
 	class Derived2
 >
 CC_ALWAYS_INLINE auto
 operator==(
-	const index_base<Dims1, IsConstexpr1, Value1, ConstValue1, Derived1>& lhs,
-	const index_base<Dims2, IsConstexpr2, Value2, ConstValue2, Derived2>& rhs
+	const index_base<Dims1, IsConstexpr1, Result1, ConstResult1, Derived1>& lhs,
+	const index_base<Dims2, IsConstexpr2, Result2, ConstResult2, Derived2>& rhs
 ) noexcept { return boost::equal(lhs, rhs); }
 
 template <
 	size_t Dims1,
 	size_t Dims2,
-	class Value1,
-	class Value2,
-	class ConstValue1,
-	class ConstValue2,
+	class Result1,
+	class Result2,
+	class ConstResult1,
+	class ConstResult2,
 	class Derived1,
 	class Derived2
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
 auto operator==(
-	const index_base<Dims1, true, Value1, ConstValue1, Derived1>& lhs,
-	const index_base<Dims2, true, Value2, ConstValue2, Derived2>& rhs
+	const index_base<Dims1, true, Result1, ConstResult1, Derived1>& lhs,
+	const index_base<Dims2, true, Result2, ConstResult2, Derived2>& rhs
 ) noexcept
 {
 	if (lhs.dims() != rhs.dims()) {
@@ -311,107 +327,112 @@ template <
 	size_t Dims2,
 	bool IsConstexpr1,
 	bool IsConstexpr2,
-	class Value1,
-	class Value2,
-	class ConstValue1,
-	class ConstValue2,
+	class Result1,
+	class Result2,
+	class ConstResult1,
+	class ConstResult2,
 	class Derived1,
 	class Derived2
 >
 CC_ALWAYS_INLINE auto
 operator!=(
-	const index_base<Dims1, IsConstexpr1, Value1, ConstValue1, Derived1>& lhs,
-	const index_base<Dims2, IsConstexpr2, Value2, ConstValue2, Derived2>& rhs
+	const index_base<Dims1, IsConstexpr1, Result1, ConstResult1, Derived1>& lhs,
+	const index_base<Dims2, IsConstexpr2, Result2, ConstResult2, Derived2>& rhs
 ) noexcept { return !(lhs == rhs); }
 
 template <
 	size_t Dims1,
 	size_t Dims2,
-	class Value1,
-	class Value2,
-	class ConstValue1,
-	class ConstValue2,
+	class Result1,
+	class Result2,
+	class ConstResult1,
+	class ConstResult2,
 	class Derived1,
 	class Derived2
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
 auto operator!=(
-	const index_base<Dims1, true, Value1, ConstValue1, Derived1>& lhs,
-	const index_base<Dims2, true, Value2, ConstValue2, Derived2>& rhs
+	const index_base<Dims1, true, Result1, ConstResult1, Derived1>& lhs,
+	const index_base<Dims2, true, Result2, ConstResult2, Derived2>& rhs
 ) noexcept { return !(lhs == rhs); }
 
 template <
-	size_t Dims, bool IsConstexpr,
-	class Value, class ConstValue,
+	size_t Dims,
+	bool IsConstexpr,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE auto
-begin(index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b)
-noexcept { return b.begin(); }
-
-template <
-	size_t Dims, bool IsConstexpr,
-	class Value, class ConstValue,
-	class Derived
->
-CC_ALWAYS_INLINE auto
-begin(const index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b)
+begin(index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
 noexcept { return b.begin(); }
 
 template <
 	size_t Dims,
-	class Value,
-	class ConstValue,
+	bool IsConstexpr,
+	class Result,
+	class ConstResult,
+	class Derived
+>
+CC_ALWAYS_INLINE auto
+begin(const index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
+noexcept { return b.begin(); }
+
+template <
+	size_t Dims,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
-auto begin(const index_base<Dims, true, Value, ConstValue, Derived>& b)
+auto begin(const index_base<Dims, true, Result, ConstResult, Derived>& b)
 noexcept { return b.begin(); }
 
 template <
 	size_t Dims,
 	bool IsConstexpr,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE auto
-end(index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b)
+end(index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
 noexcept { return b.end(); }
 
 template <
 	size_t Dims,
 	bool IsConstexpr,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE auto
-end(const index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b)
+end(const index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
 noexcept { return b.end(); }
 
 template <
 	size_t Dims,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
-auto end(const index_base<Dims, true, Value, ConstValue, Derived>& b)
+auto end(const index_base<Dims, true, Result, ConstResult, Derived>& b)
 noexcept { return b.end(); }
 
 template <
 	size_t Dims,
 	bool IsConstexpr,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE auto
-off(const index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b)
+off(const index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
 noexcept
 {
-	return boost::accumulate(b, size_t{1},
+	using index_type = typename std::decay_t<decltype(b)>::index_type;
+	return boost::accumulate(b, index_type{1},
 		[] (const auto& x, const auto& y)
 		CC_ALWAYS_INLINE CC_CONST noexcept
 		{ return x * y; });
@@ -419,15 +440,16 @@ noexcept
 
 template <
 	size_t Dims,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
-auto off(const index_base<Dims, true, Value, ConstValue, Derived>& b)
+auto off(const index_base<Dims, true, Result, ConstResult, Derived>& b)
 noexcept
 {
-	auto n = size_t{1};
+	using index_type = typename std::decay_t<decltype(b)>::index_type;
+	auto n = index_type{1};
 	for (auto i = size_t{0}; i != b.dims(); ++i) {
 		n *= b(i);
 	}
@@ -439,13 +461,13 @@ template <
 	class Traits,
 	size_t Dims,
 	bool IsConstexpr,
-	class Value,
-	class ConstValue,
+	class Result,
+	class ConstResult,
 	class Derived
 >
 auto& operator<<(
 	std::basic_ostream<Char, Traits>& os,
-	const index_base<Dims, IsConstexpr, Value, ConstValue, Derived>& b
+	const index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b
 ) noexcept
 {
 	os << "[";

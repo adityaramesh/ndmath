@@ -100,6 +100,7 @@ template <
 	size_t Dims2,
 	bool IsConstexpr1,
 	bool IsConstexpr2,
+	class Value,
 	class ConstValue1,
 	class ConstValue2,
 	class Derived1,
@@ -107,13 +108,13 @@ template <
 >
 CC_ALWAYS_INLINE CC_CONST constexpr
 auto operator,(
-	index_base<Dims1, IsConstexpr1, size_t&, ConstValue1, Derived1>& lhs,
-	index_base<Dims2, IsConstexpr2, size_t&, ConstValue2, Derived2>& rhs
+	index_base<Dims1, IsConstexpr1, Value, ConstValue1, Derived1>& lhs,
+	index_base<Dims2, IsConstexpr2, Value, ConstValue2, Derived2>& rhs
 ) noexcept
 {
 	return composite_index<
-		index_base<Dims1, IsConstexpr1, size_t&, ConstValue1, Derived1>,
-		index_base<Dims2, IsConstexpr2, size_t&, ConstValue2, Derived2>
+		index_base<Dims1, IsConstexpr1, Value, ConstValue1, Derived1>,
+		index_base<Dims2, IsConstexpr2, Value, ConstValue2, Derived2>
 	>{lhs, rhs};
 }
 

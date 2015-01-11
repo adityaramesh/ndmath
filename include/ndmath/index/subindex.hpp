@@ -17,14 +17,14 @@ class subindex final :
 public index_base<
 	B - A + 1,
 	false,
-	typename Index::value,
-	typename Index::const_value,
+	typename Index::result,
+	typename Index::const_result,
 	subindex<A, B, Index>
 >
 {
 	using self         = subindex<A, B, Index>;
-	using result       = typename Index::value;
-	using const_result = typename Index::const_value;
+	using result       = typename Index::result;
+	using const_result = typename Index::const_result;
 	using base         = index_base<B - A + 1, false, result, const_result, self>;
 
 	Index& m_index;
@@ -36,12 +36,14 @@ public:
 	explicit subindex(Index& index)
 	noexcept : m_index{index} {}
 
+	template <class T>
 	CC_ALWAYS_INLINE result
-	operator()(const size_t& n) noexcept
+	operator()(const T& n) noexcept
 	{ return m_index(n + A); }
 
+	template <class T>
 	CC_ALWAYS_INLINE const_result
-	operator()(const size_t& n) const noexcept
+	operator()(const T& n) const noexcept
 	{ return m_index(n + A); }
 };
 
@@ -50,13 +52,13 @@ class const_subindex final :
 public index_base<
 	B - A + 1,
 	false,
-	typename Index::const_value,
-	typename Index::const_value,
+	typename Index::const_result,
+	typename Index::const_result,
 	const_subindex<A, B, Index>
 >
 {
 	using self         = const_subindex<A, B, Index>;
-	using const_result = typename Index::const_value;
+	using const_result = typename Index::const_result;
 	using base         = index_base<B - A + 1, false, const_result, const_result, self>;
 
 	const Index& m_index;
@@ -67,12 +69,14 @@ public:
 	explicit const_subindex(const Index& index)
 	noexcept : m_index{index} {}
 
+	template <class T>
 	CC_ALWAYS_INLINE const_result
-	operator()(const size_t& n) noexcept
+	operator()(const T& n) noexcept
 	{ return m_index(n + A); }
 
+	template <class T>
 	CC_ALWAYS_INLINE const_result
-	operator()(const size_t& n) const noexcept
+	operator()(const T& n) const noexcept
 	{ return m_index(n + A); }
 };
 
@@ -81,13 +85,13 @@ class constexpr_subindex final :
 public index_base<
 	B - A + 1,
 	true,
-	typename Index::const_value,
-	typename Index::const_value,
+	typename Index::const_result,
+	typename Index::const_result,
 	constexpr_subindex<A, B, Index>
 >
 {
 	using self         = constexpr_subindex<A, B, Index>;
-	using const_result = typename Index::const_value;
+	using const_result = typename Index::const_result;
 	using base         = index_base<B - A + 1, true, const_result, const_result, self>;
 
 	const Index& m_index;
@@ -99,13 +103,16 @@ public:
 	noexcept : m_index{index} {}
 
 	/*
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const size_t& n)
-	noexcept { return m_index(n + A); }
+	** Do we really need this?
+	**
+	** CC_ALWAYS_INLINE constexpr
+	** auto operator()(const size_t& n)
+	** noexcept { return m_index(n + A); }
 	*/
 
+	template <class T>
 	CC_ALWAYS_INLINE constexpr
-	const_result operator()(const size_t& n)
+	const_result operator()(const T& n)
 	const noexcept { return m_index(n + A); }
 };
 

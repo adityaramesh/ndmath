@@ -17,16 +17,25 @@ class binary_index_expr final :
 public index_base<
 	Index1::dims(),
 	Index1::is_constexpr && Index2::is_constexpr,
-	size_t,
-	size_t,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
+	std::common_type_t<
+		typename Index1::index_type,
+		typename Index2::index_type
+	>,
 	binary_index_expr<Op, Index1, Index2>
 >
 {
 	static constexpr auto is_constexpr =
 	Index1::is_constexpr && Index2::is_constexpr;
 
-	using self = binary_index_expr<Op, Index1, Index2>;
-	using base = index_base<Index1::dims(), is_constexpr, size_t, size_t, self>;
+	using t1     = typename Index1::index_type;
+	using t2     = typename Index2::index_type;
+	using result = std::common_type_t<t1, t2>;
+	using self   = binary_index_expr<Op, Index1, Index2>;
+	using base   = index_base<Index1::dims(), is_constexpr, result, result, self>;
 
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -37,12 +46,14 @@ public:
 	explicit binary_index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	CC_ALWAYS_INLINE size_t
-	operator()(const size_t& n) noexcept
+	template <class T>
+	CC_ALWAYS_INLINE result
+	operator()(const T& n) noexcept
 	{ return Op::apply(m_i1(n), m_i2(n)); }
 
-	CC_ALWAYS_INLINE size_t
-	operator()(const size_t& n) const noexcept
+	template <class T>
+	CC_ALWAYS_INLINE result
+	operator()(const T& n) const noexcept
 	{ return Op::apply(m_i1(n), m_i2(n)); }
 };
 
@@ -68,8 +79,14 @@ class binary_index_expr<
 > final : public index_base<
 	Dims,
 	true,
-	size_t,
-	size_t,
+	std::common_type_t<
+		typename index_base<Dims, true, Value1, ConstValue1, Derived1>::index_type,
+		typename index_base<Dims, true, Value2, ConstValue2, Derived1>::index_type
+	>,
+	std::common_type_t<
+		typename index_base<Dims, true, Value1, ConstValue1, Derived1>::index_type,
+		typename index_base<Dims, true, Value2, ConstValue2, Derived1>::index_type
+	>,
 	binary_index_expr<
 		Op,
 		index_base<Dims, true, Value1, ConstValue1, Derived1>,
@@ -79,8 +96,11 @@ class binary_index_expr<
 {
 	using index1 = index_base<Dims, true, Value1, ConstValue1, Derived1>;
 	using index2 = index_base<Dims, true, Value2, ConstValue2, Derived2>;
-	using self = binary_index_expr<Op, index1, index2>;
-	using base = index_base<index1::dims(), true, size_t, size_t, self>;
+	using t1     = typename index1::index_type;
+	using t2     = typename index2::index_type;
+	using result = std::common_type_t<t1, t2>;
+	using self   = binary_index_expr<Op, index1, index2>;
+	using base   = index_base<index1::dims(), true, result, result, self>;
 
 	const index1& m_i1;
 	const index2& m_i2;
@@ -91,8 +111,9 @@ public:
 	explicit binary_index_expr(const index1& i1, const index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
+	template <class T>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	size_t operator()(const size_t& n) const noexcept
+	result operator()(const T& n) const noexcept
 	{ return Op::apply(m_i1(n), m_i2(n)); }
 };
 

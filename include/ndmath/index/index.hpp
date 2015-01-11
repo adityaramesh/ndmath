@@ -14,28 +14,28 @@
 
 namespace nd {
 
-template <size_t Dims>
+template <class Integer, size_t Dims>
 class index final :
-public index_base<Dims, false, size_t&, const size_t&, index<Dims>>
+public index_base<Dims, false, Integer&, const Integer&, index<Integer, Dims>>
 {
-	using self = index<Dims>;
-	using base = index_base<Dims, false, size_t&, const size_t&, self>;
+	using self = index<Integer, Dims>;
+	using base = index_base<Dims, false, Integer&, const Integer&, self>;
 
-	using index_list = std::initializer_list<size_t>;
-	std::array<size_t, Dims> m_indices;
+	using index_list = std::initializer_list<Integer>;
+	std::array<Integer, Dims> m_indices;
 public:
 	using base::operator=;
 	using base::operator();
 
-	template <size_t... Indices>
+	template <Integer... Indices>
 	CC_ALWAYS_INLINE constexpr
-	explicit index(const std::index_sequence<Indices...>&)
+	explicit index(const std::integer_sequence<Integer, Indices...>&)
 	noexcept : m_indices{{Indices...}} {}
 
-	template <size_t... Indices>
+	template <Integer... Indices>
 	CC_ALWAYS_INLINE constexpr
-	explicit index(const constant_index<Indices...>&)
-	noexcept : index{std::index_sequence<Indices...>{}} {}
+	explicit index(const constant_index<Integer, Indices...>&)
+	noexcept : index{std::integer_sequence<Integer, Indices...>{}} {}
 
 	CC_ALWAYS_INLINE
 	explicit index(const index_list& indices)
@@ -55,19 +55,35 @@ public:
 	index(const index_base<Dims_, IsConstexpr_, Value_, ConstValue_, Derived_>& rhs)
 	noexcept { boost::copy(rhs, m_indices.begin()); }
 
+	template <class T>
 	CC_ALWAYS_INLINE auto&
-	operator()(const size_t& n) noexcept
+	operator()(const T& n) noexcept
 	{ return m_indices[n]; }
 
+	template <class T>
 	CC_ALWAYS_INLINE const auto&
-	operator()(const size_t& n) const noexcept
+	operator()(const T& n) const noexcept
 	{ return m_indices[n]; }
 };
 
-template <class... Ts>
+template <class... Ts, class Integer = uint_fast32_t>
 CC_ALWAYS_INLINE auto
 make_index(const Ts&... ts) noexcept
-{ return index<sizeof...(Ts)>{((size_t)ts)...}; }
+{ return index<Integer, sizeof...(Ts)>{((Integer)ts)...}; }
+
+template <class Sequence>
+static constexpr index<
+	typename Sequence::value_type,
+	Sequence::size()
+> index_c{Sequence{}};
+
+template <class Integer, size_t Length, size_t Value>
+static constexpr index<Integer, Length>
+basic_index_cn{cc::constant_sequence<Integer, Length, Value>{}};
+
+template <size_t Length, size_t Value>
+static constexpr index<uint_fast32_t, Length>
+index_cn{cc::constant_sequence<uint_fast32_t, Length, Value>{}};
 
 }
 

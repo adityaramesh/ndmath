@@ -14,23 +14,41 @@
 
 namespace nd {
 
+/*
+** TODO: At some point, we may have to parameterize out the integer type of
+** `Dims`. If the restriction that `m_pos` is `size_t` (instead of `unsigned`)
+** poses performance problems (which seems unlikely), this would need to be
+** done.
+*/
 template <class Index>
 class index_iterator final
 {
-	using index_type = std::remove_const_t<Index>;
+	using index_value = std::remove_const_t<Index>;
 
-	static constexpr auto dims         = index_type::dims();
+	static constexpr auto dims         = index_value::dims();
 	static constexpr auto is_const     = std::is_const<Index>::value;
-	static constexpr auto is_constexpr = index_type::is_constexpr;
+	static constexpr auto is_constexpr = index_value::is_constexpr;
 
-	using result       = typename index_type::value;
-	using const_result = typename index_type::const_value;
+	using result = typename index_value::result;
+	/*
+	** We cannot assign this to `index_value::const_result`: if
+	** `const_result` is of type `const T&`, then `std::equal_to` will fail
+	** due to an ambiguous overload. Any standard (or Boost) algorithms that
+	** use `std::equal_to` will fail to comile. Perhaps there's a
+	** cosmetically better fix, but I don't know what that would be.
+	*/
+	using const_result = typename index_value::index_type;
 public:
 	using difference_type   = size_t;
-	using value_type        = size_t;
-	using pointer           = std::conditional_t<is_const, const size_t*, size_t*>;
-	using reference         = std::conditional_t<is_const, const size_t&, size_t&>;
+	using value_type        = std::conditional_t<is_const, const_result, result>;
+	using reference         = value_type;
 	using iterator_category = std::random_access_iterator_tag;
+
+	using pointer = std::conditional_t<
+		std::is_reference<value_type>::value,
+		std::add_pointer_t<std::remove_reference_t<value_type>>,
+		value_type
+	>;
 public:
 	size_t m_pos;
 	Index& m_index;
