@@ -10,7 +10,12 @@
 
 namespace nd {
 
-template <class...> struct sequence {};
+template <class... Ts>
+struct sequence
+{
+	static constexpr auto size()
+	noexcept { return sizeof...(Ts); }
+};
 
 template <class Seq1, class Seq2>
 struct cat_impl;

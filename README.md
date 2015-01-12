@@ -11,29 +11,22 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-## Miscellaneous
-
-- Rename `ccbase/utility/index_sequence.hpp` to `sequence_operations.hpp`, and
-generalize to `std::integer_sequence`.
-
 ## Range Module
 
-- Consider implement `unchecked_` variants of the increment/decrement functions;
-these can be used in a library function that can unroll loops.
+### Long-Term TODO
 
-- Consider creating a separate type for the end iterator: this avoids an
-unnecessary comparison with an integer whose value is only known at runtime.
-- Consider making the iterator for arrays derive from the iterator for ranges.
-
-- By giving this function a constant index of unroll factors, we can rapidly
-check several unroll factors for a given loop, and choose the fastest one.
-
-- Syntax for creating a range from an index/indices?
-  - `nd::range(const index_base&, const index_base&)`
-  - `nd::range(const index_base&)` is equivalent to the above function with a
-  constant zero index as the first argument.
+- Use expression templates to define an algebra of loop optimizations for
+ranges (e.g. unrolling, tiling, parallelization, etc).
+  - The `range_base` class should be responsible for evaluating the for loop
+  corresponding to each dimension by calling the appropriate method of its
+  derived class.
+  - When `for_each` is called on a `range_base` class, a reference to an index
+  is passed to the `range_base`, and the for loops are evaluated recursively.
+  - How about range fusion (i.e. nested loop fusion)?
 
 ## Array Module
+
+- Consider making the iterator for arrays derive from the iterator for ranges.
 
 ### Immediate TODO
 

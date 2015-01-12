@@ -13,7 +13,7 @@ ldflags    = ""
 
 debug_optflags = "-O2"
 if cxx.include? "clang"
-	release_optflags = "-Ofast -fno-fast-math -flto"
+	release_optflags = "-Ofast -fno-fast-math -flto -fno-unroll-loops"
 elsif cxx.include? "g++"
 	release_optflags = "-Ofast -fno-fast-math -flto"
 end
@@ -33,8 +33,8 @@ task :syntax, [:header] do |t, args|
 	sh "#{cxx} #{base_cxxflags} #{src}"
 end
 
-task :ppdump, [:test] do |t, args|
-	src = "source/test/#{args[:test]}.cpp"
+task :ppdump, [:header] do |t, args|
+	src = "include/ndmath/#{args[:header]}.hpp"
 	sh "#{cxx} -E #{base_cxxflags} #{src}"
 end
 
