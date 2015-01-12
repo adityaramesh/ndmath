@@ -33,7 +33,7 @@ module("test range construction")
 	static_assert(r3.strides() == s, "");
 }
 
-module("test range iterator")
+module("test range for_each")
 {
 	using nd::cindex;
 	using nd::make_range;
@@ -44,7 +44,7 @@ module("test range iterator")
 	require(j == 50 * 50 * 50);
 }
 
-module("test range range for")
+module("test range iterator")
 {
 	using nd::cindex;
 	using nd::make_range;
