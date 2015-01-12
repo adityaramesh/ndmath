@@ -223,6 +223,22 @@ auto make_range(const Extents& e) noexcept
 	return make_range(basic_cindex_n<index_type, dims, 0>, e);
 }
 
+template <class Integer, Integer... Ts>
+static constexpr auto basic_crange =
+make_range(nd::basic_cindex<Integer, Ts...>);
+
+template <uint_fast32_t... Ts>
+static constexpr auto crange =
+basic_crange<uint_fast32_t, Ts...>;
+
+template <class Integer, size_t N, size_t Value>
+static constexpr auto basic_crange_n =
+make_range(nd::basic_cindex_n<Integer, N, Value>);
+
+template <size_t N, size_t Value>
+static constexpr auto crange_n =
+basic_crange_n<uint_fast32_t, N, Value>;
+
 }
 
 #endif
