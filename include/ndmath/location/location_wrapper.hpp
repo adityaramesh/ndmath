@@ -15,12 +15,16 @@ namespace nd {
 template <class T>
 class location_wrapper
 {
-	const T m_val;
+	T m_val;
 public:
 	template <class... Args>
 	CC_ALWAYS_INLINE CC_CONST constexpr 
 	explicit location_wrapper(Args&&... args)
-	noexcept : m_val{std::forward<Args>(args)...} {}
+	noexcept : m_val(std::forward<Args>(args)...) {}
+
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	auto value() const noexcept
+	{ return m_val; }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr

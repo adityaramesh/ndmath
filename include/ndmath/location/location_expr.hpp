@@ -18,7 +18,7 @@ class location_expr final
 public:
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	explicit location_expr(const Loc1 l1, const Loc2 l2)
-	noexcept : m_l1{l1}, m_l2{l2} {}
+	noexcept : m_l1(l1), m_l2(l2) {}
 
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
