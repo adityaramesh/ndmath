@@ -8,25 +8,22 @@
 #ifndef Z2B161C0A_2370_45EE_A9D9_37D5AF216993
 #define Z2B161C0A_2370_45EE_A9D9_37D5AF216993
 
-#include <ndmath/location/location_base.hpp>
+#include <ndmath/location/location_wrapper.hpp>
 
 namespace nd {
 
-class end_location final :
-public location_base<end_location>
+class end_location final
 {
 public:
-	using location_base<end_location>::operator();
-
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST
-	static constexpr auto eval(const Integer& n)
-	noexcept { return n; }
+	constexpr auto operator()(const Integer n)
+	const noexcept { return n; }
 };
 
 namespace tokens {
 
-static constexpr auto end = end_location{};
+static constexpr auto end = location_wrapper<end_location>{};
 
 }
 

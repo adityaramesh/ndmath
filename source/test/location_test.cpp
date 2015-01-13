@@ -9,20 +9,19 @@
 #define Z4C7D5762_9A12_4928_BDBC_2F58097EF579
 
 #include <ccbase/unit_test.hpp>
-#include <ndmath/location/constant_location.hpp>
-#include <ndmath/location/binary_location_expr.hpp>
+#include <ndmath/location/arithmetic.hpp>
 #include <ndmath/location/end_location.hpp>
 
-module("test construction")
+module("test constexpr arithmetic")
 {
 	using namespace nd::tokens;
 
-	auto l1 = c<123>;
-	auto l2 = (c<2> * (c<100> + c<123>)) / c<2>;
-	auto l3 = c<2> * (end - c<1>) / c<2>;
-
-	static_assert(l1(0) == 123, "");
-	static_assert(l2(0) == 223, "");
+	constexpr auto l1 = c<10>;
+	constexpr auto l2 = end - 1;
+	constexpr auto l3 = 2 * (end - 1) / 2;
+	
+	static_assert(l1(10) == 10, "");
+	static_assert(l2(10) == 9, "");
 	static_assert(l3(10) == 9, "");
 }
 
