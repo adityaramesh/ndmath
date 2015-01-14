@@ -421,42 +421,6 @@ auto end(const index_base<Dims, true, Result, ConstResult, Derived>& b)
 noexcept { return b.end(); }
 
 template <
-	size_t Dims,
-	bool IsConstexpr,
-	class Result,
-	class ConstResult,
-	class Derived
->
-CC_ALWAYS_INLINE auto
-off(const index_base<Dims, IsConstexpr, Result, ConstResult, Derived>& b)
-noexcept
-{
-	using index_type = typename std::decay_t<decltype(b)>::index_type;
-	return boost::accumulate(b, index_type{1},
-		[] (const auto& x, const auto& y)
-		CC_ALWAYS_INLINE CC_CONST noexcept
-		{ return x * y; });
-}
-
-template <
-	size_t Dims,
-	class Result,
-	class ConstResult,
-	class Derived
->
-CC_ALWAYS_INLINE CC_CONST constexpr
-auto off(const index_base<Dims, true, Result, ConstResult, Derived>& b)
-noexcept
-{
-	using index_type = typename std::decay_t<decltype(b)>::index_type;
-	auto n = index_type{1};
-	for (auto i = size_t{0}; i != b.dims(); ++i) {
-		n *= b(i);
-	}
-	return n;
-}
-
-template <
 	class Char,
 	class Traits,
 	size_t Dims,

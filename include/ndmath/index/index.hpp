@@ -9,81 +9,93 @@
 #define ZC3DF0134_42DB_48EA_B8DC_8B2AFB58D2CD
 
 #include <array>
-#include <utility>
-#include <ndmath/index/constant_index.hpp>
+#include <ccbase/mpl.hpp>
+#include <ndmath/index/index_wrapper.hpp>
 
 namespace nd {
+namespace detail {
+
+template <class Integer, class Seq>
+struct array_init_helper;
+
+template <class Integer, size_t... Ts>
+struct array_init_helper<Integer, std::index_sequence<Ts...>> final
+{
+	template <class Index>
+	CC_ALWAYS_INLINE CC_CONST
+	static constexpr auto
+	apply(const index_wrapper<Index> w) noexcept
+	{ return std::array<Integer, sizeof...(Ts)>{{w(Ts)...}}; }
+};
+
+}
 
 template <class Integer, size_t Dims>
-class index final :
-public index_base<Dims, false, Integer&, const Integer&, index<Integer, Dims>>
+class index final
 {
-	using self = index<Integer, Dims>;
-	using base = index_base<Dims, false, Integer&, const Integer&, self>;
-
+public:
+	using result = Integer&;
+	using const_result = Integer;
+	static constexpr auto dims = Dims;
+private:
+	using seq = std::make_index_sequence<Dims>;
+	using helper = detail::array_init_helper<Integer, seq>;
 	using index_list = std::initializer_list<Integer>;
+
 	std::array<Integer, Dims> m_indices;
 public:
-	using base::operator=;
-	using base::operator();
-
 	template <Integer... Indices>
 	CC_ALWAYS_INLINE constexpr
-	explicit index(const std::integer_sequence<Integer, Indices...>&)
+	explicit index(std::integer_sequence<Integer, Indices...>)
 	noexcept : m_indices{{Indices...}} {}
 
-	template <Integer... Indices>
+	CC_ALWAYS_INLINE
+	explicit index(const index_list indices)
+	noexcept { boost::copy(indices, m_indices.begin()); }
+
+	template <class Index>
 	CC_ALWAYS_INLINE constexpr
-	explicit index(const constant_index<Integer, Indices...>&)
-	noexcept : index{std::integer_sequence<Integer, Indices...>{}} {}
+	explicit index(const index_wrapper<Index> w)
+	noexcept : m_indices(helper::apply(w)) {}
 
+	template <class Integer_>
 	CC_ALWAYS_INLINE
-	explicit index(const index_list& indices)
-	noexcept { boost::copy(indices, std::begin(m_indices)); }
-
-	CC_ALWAYS_INLINE index(const index& rhs) noexcept
-	{ boost::copy(rhs, m_indices.begin()); }
-
-	template <
-		size_t Dims_,
-		bool IsConstexpr_,
-		class Value_,
-		class ConstValue_,
-		class Derived_
-	>
-	CC_ALWAYS_INLINE
-	index(const index_base<Dims_, IsConstexpr_, Value_, ConstValue_, Derived_>& rhs)
-	noexcept { boost::copy(rhs, m_indices.begin()); }
-
-	template <class T>
-	CC_ALWAYS_INLINE auto&
-	operator()(const T& n) noexcept
+	result operator()(const Integer_ n) noexcept
 	{ return m_indices[n]; }
 
-	template <class T>
-	CC_ALWAYS_INLINE const auto&
-	operator()(const T& n) const noexcept
+	template <class Integer_>
+	CC_ALWAYS_INLINE constexpr
+	const_result operator()(const Integer_ n) const noexcept
 	{ return m_indices[n]; }
 };
 
-template <class... Ts, class Integer = uint_fast32_t>
-CC_ALWAYS_INLINE auto
-make_index(const Ts&... ts) noexcept
-{ return index<Integer, sizeof...(Ts)>{((Integer)ts)...}; }
+template <class Integer = uint_fast32_t, class... Ts>
+CC_ALWAYS_INLINE
+auto make_index(const Ts... ts) noexcept
+{
+	using index_type = index<Integer, sizeof...(Ts)>;
+	using index_list = std::initializer_list<Integer>;
+	using wrapper = index_wrapper<index_type>;
+	return wrapper{index_list{((Integer)ts)...}};
+}
 
-template <class Sequence>
-static constexpr index<
-	typename Sequence::value_type,
-	Sequence::size()
-> index_c{Sequence{}};
+template <class Integer, Integer... Ts>
+static constexpr auto basic_cindex =
+index_wrapper<index<Integer, sizeof...(Ts)>>
+{std::integer_sequence<Integer, Ts...>{}};
+
+template <uint_fast32_t... Ts>
+static constexpr auto cindex =
+basic_cindex<uint_fast32_t, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
-static constexpr index<Integer, Length>
-basic_index_cn{cc::constant_sequence<Integer, Length, Value>{}};
+static constexpr auto basic_cindex_n =
+index_wrapper<index<Integer, Length>>
+{cc::value_seq<cc::cseq<Length, cc::c<Integer, Value>>>{}};
 
-template <size_t Length, size_t Value>
-static constexpr index<uint_fast32_t, Length>
-index_cn{cc::constant_sequence<uint_fast32_t, Length, Value>{}};
+template <size_t Length, uint_fast32_t Value>
+static constexpr auto cindex_n =
+basic_cindex_n<uint_fast32_t, Length, Value>;
 
 }
 

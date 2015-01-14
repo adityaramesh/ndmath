@@ -14,30 +14,21 @@
 
 namespace nd {
 
-/*
-** TODO: At some point, we may have to parameterize out the integer type of
-** `Dims`. If the restriction that `m_pos` is `size_t` (instead of `unsigned`)
-** poses performance problems (which seems unlikely), this would need to be
-** done.
-*/
 template <class Index>
 class index_iterator final
 {
 	using index_value = std::remove_const_t<Index>;
-
-	static constexpr auto dims         = index_value::dims();
-	static constexpr auto is_const     = std::is_const<Index>::value;
-	static constexpr auto is_constexpr = index_value::is_constexpr;
-
 	using result = typename index_value::result;
 	/*
-	** We cannot assign this to `index_value::const_result`: if
-	** `const_result` is of type `const T&`, then `std::equal_to` will fail
-	** due to an ambiguous overload. Any standard (or Boost) algorithms that
-	** use `std::equal_to` will fail to comile. Perhaps there's a
-	** cosmetically better fix, but I don't know what that would be.
+	** We cannot assign `const_result` to `index_value::const_result`: if
+	** `const_result` is of type `const T&`, then `std::equal_to` will have
+	** an ambiguous function overload. Any standard (or Boost) algorithms
+	** that use `std::equal_to` will fail to comile.
 	*/
-	using const_result = typename index_value::index_type;
+	using const_result = std::decay_t<result>;
+
+	static constexpr auto dims     = index_value::dims();
+	static constexpr auto is_const = std::is_const<Index>::value;
 public:
 	using difference_type   = size_t;
 	using value_type        = std::conditional_t<is_const, const_result, result>;
@@ -54,7 +45,7 @@ public:
 	Index& m_index;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit index_iterator(Index& index, const size_t& pos = 0)
+	explicit index_iterator(Index& index, const size_t pos = 0)
 	noexcept : m_pos{pos}, m_index{index} {}
 
 	CC_ALWAYS_INLINE constexpr
@@ -75,34 +66,23 @@ public:
 	** Accessors.
 	*/
 
-	template <nd_enable_if(!is_constexpr && !is_const)>
+	template <nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE result
 	operator*() noexcept
 	{ return m_index(m_pos); }
 
-	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE const_result
-	operator*() const noexcept
-	{ return m_index(m_pos); }
-
-	template <nd_enable_if(is_constexpr)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	const_result operator*() const noexcept
 	{ return m_index(m_pos); }
 
-	template <nd_enable_if(!is_constexpr && !is_const)>
+	template <class Integer, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE result
-	operator[](const size_t& n)
+	operator[](const Integer n)
 	noexcept { return m_index(n); }
 
-	template <nd_enable_if(!is_constexpr)>
-	CC_ALWAYS_INLINE const_result
-	operator[](const size_t& n)
-	const noexcept { return m_index(n); }
-
-	template <nd_enable_if(is_constexpr)>
+	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	const_result operator[](const size_t& n)
+	const_result operator[](const Integer n)
 	const noexcept { return m_index(n); }
 
 	/*
@@ -173,17 +153,17 @@ nd_define_relational_op(<=)
 
 template <class Index>
 CC_ALWAYS_INLINE auto
-operator+(const index_iterator<Index>& it, const size_t& n) 
+operator+(const index_iterator<Index>& it, const size_t n) 
 noexcept { auto t = it; t += n; return t; }
 
 template <class Index>
 CC_ALWAYS_INLINE auto
-operator-(const index_iterator<Index>& it, const size_t& n) 
+operator-(const index_iterator<Index>& it, const size_t n) 
 noexcept { auto t = it; t -= n; return t; }
 
 template <class Index>
 CC_ALWAYS_INLINE auto
-operator+(const size_t& n, const index_iterator<Index>& it) 
+operator+(const size_t n, const index_iterator<Index>& it) 
 noexcept { auto t = it; t += n; return t; }
 
 }

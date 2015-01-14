@@ -23,7 +23,7 @@ debug_cxxflags = "#{base_cxxflags} #{debug_optflags}"
 release_cxxflags = "#{base_cxxflags} #{release_optflags}"
 
 dirs  = ["out"]
-tests = FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")}
+tests = ["out/index_test.run"] #FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")}
 
 multitask :default, [:mode] => dirs + tests
 multitask :tests, [:mode] => dirs + tests
