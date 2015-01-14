@@ -13,9 +13,9 @@
 ** by the range-for's requirement that `begin` and `end` return the same type.
 ** Since the comparison operation is performed at each iteration, it must be
 ** very efficient if we are to compete with the performance of real for loops.
-** Instead of doing a real comparison, I use this cheat to improve performance.
-** For this reason, `range_iterator`s are *not* safe to use in general
-** algorithms.
+** Instead of doing an honest comparison, I use this cheat to improve
+** performance. For this reason, `range_iterator`s are *not* safe to use in
+** general algorithms.
 **
 ** Note 2: Using the `range_iterator` tends to generate slightly worse code than
 ** nested for loops. Clang-3.5 creates a label for each for loop in a nest and
@@ -27,16 +27,14 @@
 ** slightly slower code (on average, about 2--3% slower when comparing
 ** equivalent loops that have empty `asm` statements in their bodies to prevent
 ** optimizations). If you want the best code possible or wish to perform
-** specific loop optimizations, then do not use `range_iterator`.
+** specific loop optimizations, do not use `range_iterator`.
 */
 
 #ifndef ZFD9FC7F1_55E8_4F94_B4E3_AF47F504AABB
 #define ZFD9FC7F1_55E8_4F94_B4E3_AF47F504AABB
 
 #include <boost/range/algorithm.hpp>
-#include <ccbase/platform.hpp>
-#include <ccbase/utility/sequence_operations.hpp>
-#include <ndmath/index.hpp>
+#include <ccbase/mpl.hpp>
 
 namespace nd {
 
@@ -104,8 +102,8 @@ template <class Range>
 class range_iterator
 {
 	static constexpr auto dims = Range::dims();
-	using index_type           = typename Range::index_type;
-	using position_type        = index<index_type, dims>;
+	using integer              = typename Range::integer;
+	using position_type        = index_wrapper<index<integer, dims>>;
 	using increment_helper     = detail::increment_helper<dims - 1>;
 	using decrement_helper     = detail::decrement_helper<dims - 1>;
 
@@ -176,7 +174,6 @@ public:
 	noexcept
 	{
 		return m_pos.first() == rhs.m_range.extents().first();
-		// return boost::equal(m_pos, rhs.m_pos);
 	}
 
 	template <class Range_>
@@ -184,6 +181,11 @@ public:
 	operator!=(const range_iterator<Range_>& rhs)
 	noexcept { return !(*this == rhs); }
 };
+
+template <class Range>
+CC_ALWAYS_INLINE constexpr
+auto make_range_iterator(const Range& r)
+noexcept { return range_iterator<Range>{r}; }
 
 /*
 ** XXX: The approach below does not work, because the range for loop requires
@@ -243,11 +245,6 @@ operator!=(
 	const range_iterator<Range>& rhs
 ) noexcept { return !(lhs == rhs); }
 */
-
-template <class Range>
-CC_ALWAYS_INLINE constexpr
-auto make_range_iterator(const Range& r)
-noexcept { return range_iterator<Range>{r}; }
 
 }
 

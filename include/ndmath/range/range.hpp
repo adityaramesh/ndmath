@@ -23,13 +23,8 @@ public:
 	static CC_ALWAYS_INLINE CC_CONST
 	constexpr auto dims() noexcept { return Bases::dims(); }
 
-	static constexpr auto is_constexpr =
-	Bases::is_constexpr   &&
-	Extents::is_constexpr &&
-	Strides::is_constexpr;
-
 	using self           = range<Bases, Extents, Strides>;
-	using index_type     = typename Bases::index_type;
+	using integer        = typename Bases::integer;
 	using iterator       = range_iterator<self>;
 	using const_iterator = iterator;
 private:
@@ -77,7 +72,7 @@ public:
 	template <class Func>
 	CC_ALWAYS_INLINE void
 	operator()(const Func& f)
-	const noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+	const noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 	{ for_each(*this, f); }
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
@@ -89,54 +84,8 @@ public:
 	{ return iterator{*this}; }
 };
 
-template <
-	class Bases,
-	class Extents,
-	class Strides,
-	nd_enable_if(!(
-		Bases::is_constexpr   &&
-		Extents::is_constexpr &&
-		Strides::is_constexpr
-	))
->
-CC_ALWAYS_INLINE auto
-operator==(
-	const range<Bases, Extents, Strides>& lhs,
-	const range<Bases, Extents, Strides>& rhs
-) noexcept
-{
-	return lhs.bases()   == rhs.bases()   &&
-	       lhs.extents() == rhs.extents() &&
-	       lhs.strides() == rhs.strides();
-}
-
-template <
-	class Bases,
-	class Extents,
-	class Strides,
-	nd_enable_if(!(
-		Bases::is_constexpr   &&
-		Extents::is_constexpr &&
-		Strides::is_constexpr
-	))
->
-CC_ALWAYS_INLINE auto
-operator!=(
-	const range<Bases, Extents, Strides>& lhs,
-	const range<Bases, Extents, Strides>& rhs
-) noexcept { return !(lhs == rhs); }
-
-template <
-	class Bases,
-	class Extents,
-	class Strides,
-	nd_enable_if((
-		Bases::is_constexpr   &&
-		Extents::is_constexpr &&
-		Strides::is_constexpr
-	))
->
-CC_ALWAYS_INLINE CC_CONST constexpr
+template <class Bases, class Extents, class Strides>
+CC_ALWAYS_INLINE constexpr
 auto operator==(
 	const range<Bases, Extents, Strides>& lhs,
 	const range<Bases, Extents, Strides>& rhs
@@ -147,17 +96,8 @@ auto operator==(
 	       lhs.strides() == rhs.strides();
 }
 
-template <
-	class Bases,
-	class Extents,
-	class Strides,
-	nd_enable_if((
-		Bases::is_constexpr   &&
-		Extents::is_constexpr &&
-		Strides::is_constexpr
-	))
->
-CC_ALWAYS_INLINE CC_CONST constexpr
+template <class Bases, class Extents, class Strides>
+CC_ALWAYS_INLINE constexpr
 auto operator!=(
 	const range<Bases, Extents, Strides>& lhs,
 	const range<Bases, Extents, Strides>& rhs
@@ -181,12 +121,12 @@ template <
 		Bases::dims() == Extents::dims() && 
 		Extents::dims() == Strides::dims() &&
 		std::is_same<
-			typename Bases::index_type,
-			typename Extents::index_type
+			typename Bases::integer,
+			typename Extents::integer
 		>::value &&
 		std::is_same<
-			typename Extents::index_type,
-			typename Strides::index_type
+			typename Extents::integer,
+			typename Strides::integer
 		>::value
 	))
 >
@@ -200,8 +140,8 @@ template <
 	nd_enable_if((
 		Bases::dims() == Extents::dims() &&
 		std::is_same<
-			typename Bases::index_type,
-			typename Extents::index_type
+			typename Bases::integer,
+			typename Extents::integer
 		>::value
 	))
 >
@@ -210,8 +150,8 @@ auto make_range(const Bases& b, const Extents& e)
 noexcept
 {
 	constexpr auto dims = Bases::dims();
-	using index_type = typename Bases::index_type;
-	return make_range(b, e, basic_cindex_n<index_type, dims, 1>);
+	using integer = typename Bases::integer;
+	return make_range(b, e, basic_cindex_n<integer, dims, 1>);
 }
 
 template <class Extents>
@@ -219,8 +159,8 @@ CC_ALWAYS_INLINE CC_CONST constexpr
 auto make_range(const Extents& e) noexcept
 {
 	constexpr auto dims = Extents::dims();
-	using index_type = typename Extents::index_type;
-	return make_range(basic_cindex_n<index_type, dims, 0>, e);
+	using integer = typename Extents::integer;
+	return make_range(basic_cindex_n<integer, dims, 0>, e);
 }
 
 template <class Integer, Integer... Ts>

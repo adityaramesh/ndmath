@@ -8,8 +8,7 @@
 #ifndef Z907E6A89_90C3_485B_92BB_E694162D5D39
 #define Z907E6A89_90C3_485B_92BB_E694162D5D39
 
-#include <ndmath/metaparse/parse_natural.hpp>
-#include <ndmath/metaparse/parse_wsv.hpp>
+#include <ccbase/mpl.hpp>
 #include <ndmath/range/range.hpp>
 
 namespace nd {
@@ -31,7 +30,7 @@ template <class Seq>
 struct range_literal_helper;
 
 template <uintmax_t... Ts>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t, Ts...>
 >>
 {
@@ -42,7 +41,7 @@ struct range_literal_helper<nd::sequence<
 };
 
 template <uintmax_t... Ts, uintmax_t... Us>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t, Ts...>,
 	std::integer_sequence<uintmax_t, Us...>
 >>
@@ -56,7 +55,7 @@ struct range_literal_helper<nd::sequence<
 };
 
 template <uintmax_t... Ts, uintmax_t... Us, uintmax_t... Vs>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t, Ts...>,
 	std::integer_sequence<uintmax_t, Us...>,
 	std::integer_sequence<uintmax_t, Vs...>
@@ -72,7 +71,7 @@ struct range_literal_helper<nd::sequence<
 };
 
 template <uintmax_t... Us>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t>,
 	std::integer_sequence<uintmax_t, Us...>,
 	std::integer_sequence<uintmax_t>
@@ -85,7 +84,7 @@ struct range_literal_helper<nd::sequence<
 };
 
 template <uintmax_t... Ts, uintmax_t... Us>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t, Ts...>,
 	std::integer_sequence<uintmax_t, Us...>,
 	std::integer_sequence<uintmax_t>
@@ -100,7 +99,7 @@ struct range_literal_helper<nd::sequence<
 };
 
 template <uintmax_t... Us, uintmax_t... Vs>
-struct range_literal_helper<nd::sequence<
+struct range_literal_helper<cc::seq<
 	std::integer_sequence<uintmax_t>,
 	std::integer_sequence<uintmax_t, Us...>,
 	std::integer_sequence<uintmax_t, Vs...>
@@ -114,16 +113,15 @@ struct range_literal_helper<nd::sequence<
 	static constexpr auto strides = cindex<Vs...>;
 };
 
-}
-
-}
+}}
 
 template <class Char, Char... Ts>
 CC_ALWAYS_INLINE CC_CONST constexpr
 auto operator"" _range() noexcept
 {
 	using seq = std::integer_sequence<Char, Ts...>;
-	using result = nd::parse_wsv<uintmax_t, nd::parse_natural, ';', seq>;
+	using result = cc::value_seqs<uintmax_t,
+		cc::parse_wsv<uintmax_t, cc::parse_natural, ';', seq>>;
 	static_assert(result::size() <= 3, "Too many semicolons.");
 
 	using helper = nd::detail::range_literal_helper<result>;

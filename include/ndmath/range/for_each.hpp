@@ -24,9 +24,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 		f(make_index(i0));
 }
@@ -40,9 +39,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 		f(make_index(i0, i1));
@@ -57,9 +55,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -75,9 +72,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -94,9 +90,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -114,9 +109,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -135,9 +129,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -157,9 +150,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -180,9 +172,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
@@ -204,9 +195,8 @@ template <
 >
 CC_ALWAYS_INLINE void
 for_each(const range<Bases, Extents, Strides>& r, const Func& f)
-noexcept(noexcept(f(index_cn<Bases::dims(), 0>)))
+noexcept(noexcept(f(cindex_n<Bases::dims(), 0>)))
 {
-	using index_type = typename Bases::index_type;
 	for (auto i0 = r.base(0); i0 != r.extent(0); i0 += r.stride(0))
 	for (auto i1 = r.base(1); i1 != r.extent(1); i1 += r.stride(1))
 	for (auto i2 = r.base(2); i2 != r.extent(2); i2 += r.stride(2))
