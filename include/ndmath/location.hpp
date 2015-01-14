@@ -8,8 +8,9 @@
 #ifndef Z701D60B9_55CC_4BC5_8D75_6504F23D11DB
 #define Z701D60B9_55CC_4BC5_8D75_6504F23D11DB
 
-#include <ndmath/location/constant_location.hpp>
-#include <ndmath/location/binary_location_expr.hpp>
+#include <ndmath/location/location.hpp>
+#include <ndmath/location/location_expr.hpp>
 #include <ndmath/location/end_location.hpp>
+#include <ndmath/location/arithmetic.hpp>
 
 #endif

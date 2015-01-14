@@ -12,18 +12,17 @@
 
 namespace nd {
 
-class end_location final
+struct end_location final
 {
-public:
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto operator()(const Integer n)
-	const noexcept { return n; }
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto eval(const Integer n) noexcept
+	{ return n; }
 };
 
 namespace tokens {
 
-static constexpr auto end = location_wrapper<end_location>{};
+static constexpr auto end = const_location_wrapper<end_location>{};
 
 }
 

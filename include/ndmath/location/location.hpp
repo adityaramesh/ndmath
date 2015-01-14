@@ -16,7 +16,7 @@ class location final
 {
 	const size_t n;
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	explicit location(const size_t n)
 	noexcept : n{n} {}
 
@@ -26,10 +26,27 @@ public:
 	const noexcept { return Integer(n); }
 };
 
+template <size_t N>
+struct const_location final
+{
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	explicit const_location() noexcept {}
+
+	template <class Integer>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto eval(Integer)
+	noexcept { return Integer(N); }
+};
+
+CC_ALWAYS_INLINE constexpr
+auto make_location(const size_t n) noexcept
+{ return location_wrapper<location>{n}; }
+
 namespace tokens {
 
 template <size_t N>
-static constexpr auto c = location_wrapper<location>{N};
+static constexpr auto c =
+const_location_wrapper<const_location<N>>{};
 
 }
 
