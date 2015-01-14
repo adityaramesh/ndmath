@@ -12,8 +12,6 @@ High-performance, multidimensional arrays in modern C++.
 # Immediate TODO
 
 - Update range module.
-- Move `metaparse` into `ccbase/mpl`, and update `ratio_literal` so that it uses
-MPL.
 
 ## Constexpr Notes
 

@@ -40,8 +40,8 @@ public:
 	using const_result   = typename T::const_result;
 	using iterator       = index_iterator<self>;
 	using const_iterator = index_iterator<const self>;
+	using integer        = std::decay_t<result>;
 private:
-	using integer = std::decay_t<result>;
 	using index_list = std::initializer_list<integer>;
 
 	T m_val;
