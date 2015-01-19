@@ -40,6 +40,9 @@ class composite_index final
 	static constexpr auto dims1 = Index1::dims();
 	static constexpr auto dims2 = Index2::dims();
 public:
+	static constexpr auto allows_static_access =
+	i1::allows_static_access && i2::allows_static_access;
+
 	static constexpr auto dims = dims1 + dims2;
 	using const_result = std::common_type_t<r1, r2>;
 
@@ -68,14 +71,19 @@ public:
 	explicit composite_index(index1& i1, index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	template <class Integer, nd_enable_if(!is_const)>
+	template <class Integer, nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static const_result at(const Integer n) noexcept
+	{ return n < dims1 ? i1::at(n) : i2::at(n - dims1); }
+
+	template <class Integer, nd_enable_if(!allows_static_access && !is_const)>
 	CC_ALWAYS_INLINE
-	result operator()(const Integer n) noexcept
+	result at(const Integer n) noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 
-	template <class Integer>
+	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	const_result operator()(const Integer n) const noexcept
+	const_result at(const Integer n) const noexcept
 	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
 };
 

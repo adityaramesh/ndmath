@@ -13,12 +13,14 @@
 #include <utility>
 #include <boost/range/algorithm.hpp>
 #include <ndmath/location.hpp>
-#include <ndmath/index/index_iterator.hpp>
 
 namespace nd {
 
 template <class T>
 class index_wrapper;
+
+template <class Index>
+class index_iterator;
 
 template <size_t A, size_t B, class Index>
 CC_ALWAYS_INLINE constexpr
@@ -36,6 +38,9 @@ class index_wrapper final
 private:
 	using self = index_wrapper<T>;
 public:
+	static constexpr auto allows_static_access =
+	T::allows_static_access;
+	
 	using result         = typename T::result;
 	using const_result   = typename T::const_result;
 	using iterator       = index_iterator<self>;
@@ -82,41 +87,85 @@ public:
 	** Element accessors.
 	*/
 
+	template <class Integer, nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	static const_result at(const Integer n) noexcept
+	{ return T::at(n); }
+
+	template <class Loc, nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	static const_result at(const location_wrapper<Loc> l) noexcept
+	{ return at(l.eval(dims() - 1)); }
+
+	template <class Integer, nd_enable_if(!allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	result at(const Integer n) noexcept
+	{ return m_val.at(n); }
+
+	template <class Integer, nd_enable_if(!allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	const_result at(const Integer n) const noexcept
+	{ return m_val.at(n); }
+
+	template <class Loc, nd_enable_if(!allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	result at(const location_wrapper<Loc> l) noexcept
+	{ return at(l(dims() - 1)); }
+
+	template <class Loc, nd_enable_if(!allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	const_result at(const location_wrapper<Loc> l) const noexcept
+	{ return at(l(dims() - 1)); }
+
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
 	result operator()(const Integer n) noexcept
-	{ return m_val(n); }
+	{ return at(n); }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
 	const_result operator()(const Integer n) const noexcept
-	{ return m_val(n); }
+	{ return at(n); }
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
 	result operator()(const location_wrapper<Loc> l) noexcept
-	{ return m_val(l(dims() - 1)); }
+	{ return at(l); }
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
 	const_result operator()(const location_wrapper<Loc> l) const noexcept
-	{ return m_val(l(dims() - 1)); }
+	{ return at(l); }
 
+	template <nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	static const_result first() noexcept
+	{ return at(uint_fast32_t{0}); }
+
+	template <nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE constexpr
+	static const_result last() noexcept
+	{ return at(uint_fast32_t(dims() - 1)); }
+
+	template <nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	result first() noexcept
-	{ return m_val(uint_fast32_t{0}); }
+	{ return at(uint_fast32_t{0}); }
 
+	template <nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	const_result first() const noexcept
-	{ return m_val(uint_fast32_t{0}); }
+	{ return at(uint_fast32_t{0}); }
 
+	template <nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	result last() noexcept
-	{ return m_val(dims() - 1); }
+	{ return at(uint_fast32_t(dims() - 1)); }
 
+	template <nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	const_result last() const noexcept
-	{ return m_val(dims() - 1); }
+	{ return at(uint_fast32_t(dims() - 1)); }
 
 	/*
 	** Subindex creation.
@@ -125,8 +174,8 @@ public:
 	template <class D1, class D2>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(
-		const const_location_wrapper<D1> l1,
-		const const_location_wrapper<D2> l2
+		const location_wrapper<D1> l1,
+		const location_wrapper<D2> l2
 	) noexcept
 	{
 		constexpr auto a = l1(dims() - 1);
@@ -137,8 +186,8 @@ public:
 	template <class D1, class D2>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(
-		const const_location_wrapper<D1> l1,
-		const const_location_wrapper<D2> l2
+		const location_wrapper<D1> l1,
+		const location_wrapper<D2> l2
 	) const noexcept
 	{
 		constexpr auto a = l1(dims() - 1);

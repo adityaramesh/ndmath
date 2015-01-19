@@ -9,10 +9,9 @@
 #define Z4C7D5762_9A12_4928_BDBC_2F58097EF579
 
 #include <ccbase/unit_test.hpp>
-#include <ndmath/location/arithmetic.hpp>
-#include <ndmath/location/end_location.hpp>
+#include <ndmath/location.hpp>
 
-module("test constant arithmetic")
+module("test static constexpr arithmetic")
 {
 	using namespace nd::tokens;
 
@@ -25,7 +24,7 @@ module("test constant arithmetic")
 	static_assert(l3(10) == 9, "");
 }
 
-module("test constexpr non-constant arithmetic")
+module("test non-static constexpr arithmetic")
 {
 	using namespace nd::tokens;
 
@@ -38,7 +37,7 @@ module("test constexpr non-constant arithmetic")
 	static_assert(l3(10) == 9, "");
 }
 
-module("test non-constant arithmetic")
+module("test runtime arithmetic")
 {
 	using namespace nd::tokens;
 

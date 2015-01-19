@@ -8,9 +8,6 @@
 #ifndef Z31A9D82F_DBFB_4B6A_BD89_544A77E8D805
 #define Z31A9D82F_DBFB_4B6A_BD89_544A77E8D805
 
-#include <ndmath/utility.hpp>
-#include <ndmath/index/index_wrapper.hpp>
-
 namespace nd {
 
 template <size_t A, size_t B, class Index>
@@ -26,6 +23,9 @@ public:
 	>;
 	using const_result = typename index_type::const_result;
 
+	static constexpr auto allows_static_access =
+	Index::allows_static_access;
+
 	static constexpr auto dims = B - A + 1;
 private:
 	Index& m_index;
@@ -33,6 +33,11 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	explicit subindex(Index& index)
 	noexcept : m_index{index} {}
+
+	template <class Integer, nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static const_result at(const Integer n) noexcept
+	{ return index_type::at(n + A); }
 
 	/*
 	** We should only enable this function if `Index` is not `const`;
@@ -43,14 +48,14 @@ public:
 	** the function `constexpr`, and disable it in the case that `Index` is
 	** not `const`.
 	*/
-	template <class Integer, nd_enable_if(!is_const)>
+	template <class Integer, nd_enable_if(!allows_static_access && !is_const)>
 	CC_ALWAYS_INLINE
-	result operator()(const Integer n) noexcept
+	result at(const Integer n) noexcept
 	{ return m_index(n + A); }
 
-	template <class Integer>
+	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	const_result operator()(const Integer n) const noexcept
+	const_result at(const Integer n) const noexcept
 	{ return m_index(n + A); }
 };
 

@@ -8,10 +8,6 @@
 #ifndef Z987B5FF7_DC26_4072_9190_450E247E29E4
 #define Z987B5FF7_DC26_4072_9190_450E247E29E4
 
-#include <cstddef>
-#include <ccbase/platform.hpp>
-#include <ndmath/utility.hpp>
-
 namespace nd {
 
 template <class Index>

@@ -8,9 +8,6 @@
 #ifndef Z50063F86_53D4_490D_9E66_9A944BF570EE
 #define Z50063F86_53D4_490D_9E66_9A944BF570EE
 
-#include <ndmath/arithmetic_functions.hpp>
-#include <ndmath/index/index_wrapper.hpp>
-
 namespace nd {
 
 template <class Op, class Index1, class Index2>
@@ -24,6 +21,8 @@ public:
 	using const_result = result;
 
 	static constexpr auto dims = Index1::dims();
+	static constexpr auto allows_static_access =
+	Index1::allows_static_access && Index2::allows_static_access;
 private:
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -31,15 +30,20 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	explicit index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
+	
+	template <class Integer, nd_enable_if(allows_static_access)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static const_result at(const Integer n) noexcept
+	{ return Op::apply(Index1::at(n), Index2::at(n)); }
 
-	template <class Integer>
+	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	result operator()(const Integer n) noexcept
+	result at(const Integer n) noexcept
 	{ return Op::apply(m_i1(n), m_i2(n)); }
 
-	template <class Integer>
+	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	const_result operator()(const Integer n) const noexcept
+	const_result at(const Integer n) const noexcept
 	{ return Op::apply(m_i1(n), m_i2(n)); }
 };
 
@@ -68,7 +72,7 @@ nd_define_arithmetic_op(+, plus)
 nd_define_arithmetic_op(-, minus)
 nd_define_arithmetic_op(*, times)
 nd_define_arithmetic_op(/, divide)
-nd_define_arithmetic_op(%, mod)
+nd_define_arithmetic_op(%, modulus)
 
 #undef nd_define_arithmetic_op
 

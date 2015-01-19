@@ -6,12 +6,9 @@
 */
 
 #include <ccbase/unit_test.hpp>
-#include <ndmath/index/index.hpp>
-#include <ndmath/index/subindex.hpp>
-#include <ndmath/index/composite_index.hpp>
-#include <ndmath/index/index_expr.hpp>
+#include <ndmath/index.hpp>
 
-module("test constant index")
+module("test static constexpr index")
 {
 	constexpr auto i1 = nd::cindex<1, 2, 3>;
 
@@ -25,7 +22,21 @@ module("test constant index")
 	static_assert(!(i1 != i1), "");
 }
 
-module("test non-constant index")
+module("test non-static constexpr index")
+{
+	constexpr auto i1 = nd::index<1, 2, 3>;
+
+	static_assert(i1.dims() == 3, "");
+	static_assert(i1(0) == 1, "");
+	static_assert(i1(1) == 2, "");
+	static_assert(i1(2) == 3, "");
+	static_assert(i1.first() == 1, "");
+	static_assert(i1.last() == 3, "");
+	static_assert(i1 == i1, "");
+	static_assert(!(i1 != i1), "");
+}
+
+module("test runtime index")
 {
 	auto i1 = nd::make_index(1, 2, 3);
 
@@ -39,7 +50,7 @@ module("test non-constant index")
 	require(!(i1 != i1));
 }
 
-module("test constant subindex")
+module("test static constexpr subindex")
 {
 	using namespace nd::tokens;
 	constexpr auto i1 = nd::cindex<0, 1, 2, 3, 4>;
@@ -51,13 +62,13 @@ module("test constant subindex")
 	static_assert(i1(c<1>, c<3>).last() == 3, "");
 }
 
-module("test non-constant subindex")
+module("test runtime subindex")
 {
 	using namespace nd::tokens;
 	auto i1 = nd::make_index(0, 1, 2, 3, 4);
 
 	require(i1(c<0>, end) == i1);
-	static_assert(decltype(i1(c<1>, c<3>))::dims() == 3, "");
+	static_assert(i1(c<1>, c<3>).dims() == 3, "");
 	require(i1(c<1>, c<3>)(0) == 1);
 	require(i1(c<1>, c<3>).first() == 1);
 	require(i1(c<1>, c<3>).last() == 3);
@@ -66,7 +77,7 @@ module("test non-constant subindex")
 	require(i1 == nd::make_index(0, 7, 8, 9, 4));
 }
 
-module("test constant composite index")
+module("test static constexpr composite index")
 {
 	using namespace nd::tokens;
 	constexpr auto i1 = nd::cindex<0, 1, 2, 3>;
@@ -89,7 +100,7 @@ module("test non-const composite index")
 	require((i1, i2) == nd::make_index(0, 1, 7, 8, 9, 5));
 }
 
-module("test constexpr index arithmetic")
+module("test static constexpr index arithmetic")
 {
 	constexpr auto i1 = nd::cindex<1, 2, 3>;
 
@@ -100,7 +111,7 @@ module("test constexpr index arithmetic")
 	static_assert(i1 * (i1 + i1) / i1 - i1 == i1, "");
 }
 
-module("test dynamic index arithmetic")
+module("test runtime index arithmetic")
 {
 	auto i1 = nd::make_index(1, 2, 3);
 
