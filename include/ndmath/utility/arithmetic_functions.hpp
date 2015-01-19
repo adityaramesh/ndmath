@@ -26,7 +26,7 @@ nd_define_operation(+, plus)
 nd_define_operation(-, minus)
 nd_define_operation(*, times)
 nd_define_operation(/, divide)
-nd_define_operation(%, mod)
+nd_define_operation(%, modulus)
 
 #undef nd_define_operation
 

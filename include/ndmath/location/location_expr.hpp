@@ -13,6 +13,11 @@ namespace nd {
 template <class Op, class Loc1, class Loc2>
 class location_expr final
 {
+public:
+	static constexpr auto allows_static_access =
+	Loc1::allows_static_access &&
+	Loc2::allows_static_access;
+private:
 	const Loc1 m_l1;
 	const Loc2 m_l2;
 public:
@@ -20,22 +25,15 @@ public:
 	explicit location_expr(const Loc1 l1, const Loc2 l2)
 	noexcept : m_l1(l1), m_l2(l2) {}
 
-	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto operator()(const Integer n)
-	const noexcept { return Op::apply(m_l1(n), m_l2(n)); }
-};
-
-template <class Op, class Loc1, class Loc2>
-struct const_location_expr final
-{
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	explicit const_location_expr() noexcept {}
-
-	template <class Integer>
+	template <class Integer, nd_enable_if(allows_static_access)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto eval(const Integer n) noexcept
 	{ return Op::apply(Loc1::eval(n), Loc2::eval(n)); }
+
+	template <class Integer, nd_enable_if(!allows_static_access)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	auto eval(const Integer n) const noexcept
+	{ return Op::apply(m_l1.eval(n), m_l2.eval(n)); }
 };
 
 }

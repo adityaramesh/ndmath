@@ -8,12 +8,27 @@
 #ifndef Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 #define Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 
-#include <ndmath/location/location_wrapper.hpp>
-
 namespace nd {
+
+template <size_t N>
+struct const_location final
+{
+	static constexpr auto allows_static_access = true;
+
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	explicit const_location() noexcept {}
+
+	template <class Integer>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto eval(Integer) noexcept
+	{ return Integer(N); }
+};
 
 class location final
 {
+public:
+	static constexpr auto allows_static_access = false;
+private:
 	const size_t n;
 public:
 	CC_ALWAYS_INLINE constexpr
@@ -21,21 +36,9 @@ public:
 	noexcept : n{n} {}
 
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST
-	constexpr auto operator()(Integer)
-	const noexcept { return Integer(n); }
-};
-
-template <size_t N>
-struct const_location final
-{
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	explicit const_location() noexcept {}
-
-	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto eval(Integer)
-	noexcept { return Integer(N); }
+	auto eval(Integer) const noexcept
+	{ return Integer(n); }
 };
 
 CC_ALWAYS_INLINE constexpr
@@ -46,7 +49,7 @@ namespace tokens {
 
 template <size_t N>
 static constexpr auto c =
-const_location_wrapper<const_location<N>>{};
+location_wrapper<const_location<N>>{};
 
 }
 

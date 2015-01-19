@@ -14,6 +14,8 @@ namespace nd {
 
 struct end_location final
 {
+	static constexpr auto allows_static_access = true;
+
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto eval(const Integer n) noexcept
@@ -22,7 +24,8 @@ struct end_location final
 
 namespace tokens {
 
-static constexpr auto end = const_location_wrapper<end_location>{};
+static constexpr auto end =
+location_wrapper<end_location>{};
 
 }
 
