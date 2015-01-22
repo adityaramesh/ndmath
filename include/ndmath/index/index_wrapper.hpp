@@ -49,16 +49,16 @@ public:
 private:
 	using index_list = std::initializer_list<integer>;
 
-	T m_val;
+	T m_wrapped;
 public:
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	explicit index_wrapper()
-	noexcept : m_val{} {}
+	noexcept : m_wrapped{} {}
 
 	template <class... Args>
 	CC_ALWAYS_INLINE constexpr
 	explicit index_wrapper(in_place_t, Args&&... args)
-	noexcept : m_val(std::forward<Args>(args)...) {}
+	noexcept : m_wrapped(std::forward<Args>(args)...) {}
 
 	CC_ALWAYS_INLINE
 	auto& operator=(const index_list indices) noexcept
@@ -80,8 +80,8 @@ public:
 	*/
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto value() const noexcept
-	{ return m_val; }
+	auto wrapped() const noexcept
+	{ return m_wrapped; }
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto dims() noexcept
@@ -104,12 +104,12 @@ public:
 	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	result at(const Integer n) noexcept
-	{ return m_val.at(n); }
+	{ return m_wrapped.at(n); }
 
 	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	const_result at(const Integer n) const noexcept
-	{ return m_val.at(n); }
+	{ return m_wrapped.at(n); }
 
 	template <class Loc, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
