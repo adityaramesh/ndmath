@@ -96,7 +96,7 @@ noexcept
 	using w2 = index_wrapper<Index2>;
 	using index_type = composite_index<w1, w2>;
 	using w3 = index_wrapper<index_type>;
-	return w3{i1, i2};
+	return w3{in_place, i1, i2};
 }
 
 template <class Index1, class Index2>
@@ -108,7 +108,7 @@ noexcept
 	using w2 = const index_wrapper<Index2>;
 	using index_type = composite_index<w1, w2>;
 	using w3 = index_wrapper<index_type>;
-	return w3{i1, i2};
+	return w3{in_place, i1, i2};
 }
 
 }

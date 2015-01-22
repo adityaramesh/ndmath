@@ -51,9 +51,13 @@ private:
 
 	T m_val;
 public:
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	explicit index_wrapper()
+	noexcept : m_val{} {}
+
 	template <class... Args>
 	CC_ALWAYS_INLINE constexpr
-	explicit index_wrapper(Args&&... args)
+	explicit index_wrapper(in_place_t, Args&&... args)
 	noexcept : m_val(std::forward<Args>(args)...) {}
 
 	CC_ALWAYS_INLINE
@@ -88,14 +92,14 @@ public:
 	*/
 
 	template <class Integer, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE CC_CONST constexpr
 	static const_result at(const Integer n) noexcept
 	{ return T::at(n); }
 
 	template <class Loc, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE CC_CONST constexpr
 	static const_result at(const location_wrapper<Loc> l) noexcept
-	{ return at(l.eval(dims() - 1)); }
+	{ return at(l.value(dims() - 1)); }
 
 	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
@@ -110,12 +114,12 @@ public:
 	template <class Loc, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	result at(const location_wrapper<Loc> l) noexcept
-	{ return at(l(dims() - 1)); }
+	{ return at(l.value(dims() - 1)); }
 
 	template <class Loc, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	const_result at(const location_wrapper<Loc> l) const noexcept
-	{ return at(l(dims() - 1)); }
+	{ return at(l.value(dims() - 1)); }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
@@ -138,12 +142,12 @@ public:
 	{ return at(l); }
 
 	template <nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE CC_CONST constexpr
 	static const_result first() noexcept
 	{ return at(uint_fast32_t{0}); }
 
 	template <nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE CC_CONST constexpr
 	static const_result last() noexcept
 	{ return at(uint_fast32_t(dims() - 1)); }
 
@@ -178,8 +182,8 @@ public:
 		const location_wrapper<D2> l2
 	) noexcept
 	{
-		constexpr auto a = l1(dims() - 1);
-		constexpr auto b = l2(dims() - 1);
+		constexpr auto a = l1.value(dims() - 1);
+		constexpr auto b = l2.value(dims() - 1);
 		return make_subindex<a, b>(*this);
 	}
 
@@ -190,8 +194,8 @@ public:
 		const location_wrapper<D2> l2
 	) const noexcept
 	{
-		constexpr auto a = l1(dims() - 1);
-		constexpr auto b = l2(dims() - 1);
+		constexpr auto a = l1.value(dims() - 1);
+		constexpr auto b = l2.value(dims() - 1);
 		return make_const_subindex<a, b>(*this);
 	}
 
@@ -232,30 +236,53 @@ public:
 	{ return const_iterator{*this, dims() - 1}; }
 };
 
-template <class Index1, class Index2>
-CC_ALWAYS_INLINE constexpr
-auto operator==(
-	const index_wrapper<Index1>& lhs,
-	const index_wrapper<Index2>& rhs
-) noexcept
+template <
+	size_t N, class T,
+	nd_enable_if(index_wrapper<T>::allows_static_access)
+>
+CC_ALWAYS_INLINE CC_CONST constexpr
+static auto at(index_wrapper<T>) noexcept
 {
-	if (lhs.dims() != rhs.dims()) {
-		return false;
-	}
-	for (auto i = size_t{0}; i != lhs.dims(); ++i) {
-		if (lhs(i) != rhs(i)) {
-			return false;
-		}
-	}
-	return true;
+	using integer = typename index_wrapper<T>::integer;
+	return basic_cloc<integer, index_wrapper<T>::at(N)>;
 }
 
-template <class Index1, class Index2>
+template <
+	size_t N, class T,
+	nd_enable_if(!index_wrapper<T>::allows_static_access)
+>
 CC_ALWAYS_INLINE constexpr
-auto operator!=(
-	const index_wrapper<Index1>& lhs,
-	const index_wrapper<Index2>& rhs
-) noexcept { return !(lhs == rhs); }
+auto at(const index_wrapper<T>& w) noexcept
+{ return make_location(w.at(N)); }
+
+#define nd_define_relational_op(symbol)                  \
+                                                         \
+template <class Index1, class Index2>                    \
+CC_ALWAYS_INLINE constexpr                               \
+auto operator symbol (                                   \
+	const index_wrapper<Index1>& lhs,                \
+	const index_wrapper<Index2>& rhs                 \
+) noexcept                                               \
+{                                                        \
+	if (lhs.dims() != rhs.dims()) {                  \
+		return false;                            \
+	}                                                \
+	for (auto i = size_t{0}; i != lhs.dims(); ++i) { \
+		if (!(lhs(i) symbol rhs(i))) {           \
+			return false;                    \
+		}                                        \
+	}                                                \
+	return true;                                     \
+}
+
+nd_define_relational_op(==)
+nd_define_relational_op(!=)
+nd_define_relational_op(>)
+nd_define_relational_op(<)
+nd_define_relational_op(>=)
+nd_define_relational_op(<=)
+
+#undef nd_define_relational_op
 
 template <class Char, class Traits, class Index>
 auto& operator<<(

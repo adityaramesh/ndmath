@@ -14,18 +14,19 @@ namespace nd {
 
 struct end_location final
 {
+	static constexpr auto is_constant = false;
 	static constexpr auto allows_static_access = true;
 
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto eval(const Integer n) noexcept
-	{ return n; }
+	static auto value(const Integer n) noexcept
+	{ return Integer(n); }
 };
 
 namespace tokens {
 
 static constexpr auto end =
-location_wrapper<end_location>{};
+location_wrapper<end_location>{in_place};
 
 }
 

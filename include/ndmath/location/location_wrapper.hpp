@@ -13,38 +13,118 @@
 
 namespace nd {
 
+template <class T, bool IsConstant, bool Enable>
+struct location_traits;
+
+template <class T, bool IsConstant>
+struct location_traits<T, IsConstant, false>
+{
+	template <class Integer>
+	using result = void;
+
+	template <class Integer>
+	using const_result = void;
+};
+
+template <class T>
+struct location_traits<T, true, true>
+{
+	template <class Integer>
+	using result =
+	decltype(std::declval<T>().value());
+
+	template <class Integer>
+	using const_result =
+	decltype(std::declval<const T>().value());
+};
+
+template <class T>
+struct location_traits<T, false, true>
+{
+	template <class Integer>
+	using result =
+	decltype(std::declval<T>().value(Integer{}));
+
+	template <class Integer>
+	using const_result =
+	decltype(std::declval<const T>().value(Integer{}));
+};
+
 template <class T>
 class location_wrapper final
 {
 public:
-	static constexpr auto allows_static_access =
-	T::allows_static_access;
+	static constexpr auto is_constant = T::is_constant;
+	static constexpr auto allows_static_access = T::allows_static_access;
 private:
-	const T m_val;
+	T m_wrapped;
 public:
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	explicit location_wrapper()
+	noexcept : m_wrapped{} {}
+
 	template <class... Args>
 	CC_ALWAYS_INLINE constexpr 
-	explicit location_wrapper(Args&&... args)
-	noexcept : m_val(std::forward<Args>(args)...) {}
+	explicit location_wrapper(in_place_t, Args&&... args)
+	noexcept : m_wrapped(std::forward<Args>(args)...) {}
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto value() const noexcept
-	{ return m_val; }
+	auto wrapped() const noexcept
+	{ return m_wrapped; }
 
-	template <class Integer, nd_enable_if(allows_static_access)>
+	template <class Integer = uint_fast32_t, nd_enable_if(
+		allows_static_access && is_constant
+	)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto eval(const Integer n) noexcept
-	{ return T::eval(n); }
+	static auto value(Integer = 0) noexcept ->
+	typename location_traits<T, is_constant, allows_static_access && is_constant>::
+		template result<Integer>
+	{ return T::value(); }
 
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <class Integer, nd_enable_if(
+		allows_static_access && !is_constant
+	)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto eval(const Integer n) const noexcept
-	{ return m_val.eval(n); }
+	static auto value(const Integer n) noexcept ->
+	typename location_traits<T, is_constant, allows_static_access && !is_constant>::
+		template result<Integer>
+	{ return T::value(n); }
 
-	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto operator()(const Integer n) const noexcept
-	{ return eval(n); }
+	template <class Integer = uint_fast32_t, nd_enable_if(
+		!allows_static_access && is_constant
+	)>
+	CC_ALWAYS_INLINE
+	auto value(Integer = 0) noexcept ->
+	typename location_traits<T, is_constant, !allows_static_access && is_constant>::
+		template result<Integer>
+	{ return m_wrapped.value(); }
+
+	template <class Integer = uint_fast32_t, nd_enable_if(
+		!allows_static_access && is_constant
+	)>
+	CC_ALWAYS_INLINE constexpr
+	auto value(Integer = 0) const noexcept ->
+	typename location_traits<T, is_constant, !allows_static_access && is_constant>::
+		template const_result<Integer>
+	{ return m_wrapped.value(); }
+
+	template <class Integer, nd_enable_if(
+		!allows_static_access && !is_constant
+	)>
+	CC_ALWAYS_INLINE
+	auto value(const Integer n) noexcept ->
+	typename location_traits<T, is_constant, !allows_static_access && !is_constant>::
+		template result<Integer>
+	{ return m_wrapped.value(n); }
+
+	template <class Integer, nd_enable_if(
+		!allows_static_access && !is_constant
+	)>
+	CC_ALWAYS_INLINE constexpr
+	auto value(const Integer n) const noexcept ->
+	typename location_traits<T, is_constant, !allows_static_access && !is_constant>::
+		template const_result<Integer>
+	{ return m_wrapped.value(n); }
 };
 
 }

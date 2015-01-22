@@ -10,46 +10,62 @@
 
 namespace nd {
 
-template <size_t N>
+template <class Integer, Integer N>
 struct const_location final
 {
+	static constexpr auto is_constant = true;
 	static constexpr auto allows_static_access = true;
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	explicit const_location() noexcept {}
 
-	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto eval(Integer) noexcept
-	{ return Integer(N); }
+	static auto value() noexcept
+	{ return N; }
 };
 
+template <class Integer>
 class location final
 {
+	using value_type = std::decay_t<Integer>;
 public:
+	static constexpr auto is_constant = true;
 	static constexpr auto allows_static_access = false;
+	using result = Integer;
+	using const_result = const value_type&;
 private:
-	const size_t n;
+	const Integer n;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit location(const size_t n)
+	explicit location(const Integer n)
 	noexcept : n{n} {}
 
-	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	auto eval(Integer) const noexcept
-	{ return Integer(n); }
+	CC_ALWAYS_INLINE
+	result value() noexcept
+	{ return n; }
+
+	CC_ALWAYS_INLINE constexpr
+	const_result value() const noexcept
+	{ return n; }
 };
 
+template <class Integer>
 CC_ALWAYS_INLINE constexpr
-auto make_location(const size_t n) noexcept
-{ return location_wrapper<location>{n}; }
+auto make_location(const Integer n) noexcept
+{ return location_wrapper<location<const Integer>>{in_place, n}; }
+
+template <class Integer, Integer N>
+static constexpr auto basic_cloc =
+location_wrapper<const_location<Integer, N>>{};
+
+template <uint_fast32_t N>
+static constexpr auto cloc =
+basic_cloc<uint_fast32_t, N>;
 
 namespace tokens {
 
-template <size_t N>
-static constexpr auto c =
-location_wrapper<const_location<N>>{};
+template <uint_fast32_t N>
+static constexpr auto c = cloc<N>;
 
 }
 

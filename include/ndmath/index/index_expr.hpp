@@ -65,7 +65,7 @@ auto operator symbol (                                \
 	                                              \
 	using index_type = index_expr<name, w1, w2>;  \
 	using w3 = index_wrapper<index_type>;         \
-	return w3{i1, i2};                            \
+	return w3{in_place, i1, i2};                  \
 }
 
 nd_define_arithmetic_op(+, plus)

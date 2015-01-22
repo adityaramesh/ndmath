@@ -19,9 +19,9 @@ module("test static constexpr arithmetic")
 	constexpr auto l2 = end - c<1>;
 	constexpr auto l3 = c<2> * (end - c<1>) / c<2>;
 	
-	static_assert(l1(10) == 10, "");
-	static_assert(l2(10) == 9, "");
-	static_assert(l3(10) == 9, "");
+	static_assert(l1.value() == 10, "");
+	static_assert(l2.value(10) == 9, "");
+	static_assert(l3.value(10) == 9, "");
 }
 
 module("test non-static constexpr arithmetic")
@@ -32,9 +32,9 @@ module("test non-static constexpr arithmetic")
 	constexpr auto l2 = end - 1;
 	constexpr auto l3 = 2 * (end - 1) / 2;
 	
-	static_assert(l1(10) == 10, "");
-	static_assert(l2(10) == 9, "");
-	static_assert(l3(10) == 9, "");
+	static_assert(l1.value() == 10, "");
+	static_assert(l2.value(10) == 9, "");
+	static_assert(l3.value(10) == 9, "");
 }
 
 module("test runtime arithmetic")
@@ -46,9 +46,9 @@ module("test runtime arithmetic")
 	auto l2 = end - 1;
 	auto l3 = 2 * (end - 1) / 2;
 	
-	require(l1(n) == 10);
-	require(l2(n) == 9);
-	require(l3(n) == 9);
+	require(l1.value() == 10);
+	require(l2.value(n) == 9);
+	require(l3.value(n) == 9);
 }
 
 suite("location test")

@@ -66,7 +66,7 @@ auto make_subindex(index_wrapper<Index>& w) noexcept
 	using w1 = index_wrapper<Index>;
 	using index_type = subindex<A, B, w1>;
 	using w2 = index_wrapper<index_type>;
-	return w2{w};
+	return w2{in_place, w};
 }
 
 template <size_t A, size_t B, class Index>
@@ -76,7 +76,7 @@ auto make_const_subindex(const index_wrapper<Index>& w) noexcept
 	using w1 = const index_wrapper<Index>;
 	using index_type = subindex<A, B, w1>;
 	using w2 = index_wrapper<index_type>;
-	return w2{w};
+	return w2{in_place, w};
 }
 
 }

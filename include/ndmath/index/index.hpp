@@ -118,7 +118,7 @@ static constexpr auto cindex =
 basic_cindex<uint_fast32_t, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
-static constexpr auto basic_cindex_cn =
+static constexpr auto basic_cindex_n =
 index_wrapper<const_index<
 	mpl::to_values<mpl::repeat_nc<
 		Length, std::integral_constant<Integer, Value>
@@ -126,8 +126,8 @@ index_wrapper<const_index<
 >>{};
 
 template <size_t Length, size_t Value>
-static constexpr auto cindex_cn =
-basic_cindex_cn<uint_fast32_t, Length, Value>;
+static constexpr auto cindex_n =
+basic_cindex_n<uint_fast32_t, Length, Value>;
 
 /*
 ** Utilities for creating `index` objects.
@@ -140,26 +140,26 @@ auto make_index(const Ts... ts) noexcept
 	using index_type = index_t<Integer, sizeof...(Ts)>;
 	using index_list = std::initializer_list<Integer>;
 	using wrapper = index_wrapper<index_type>;
-	return wrapper{index_list{((Integer)ts)...}};
+	return wrapper{in_place, index_list{((Integer)ts)...}};
 }
 
 template <class Integer, Integer... Ts>
 static constexpr auto basic_index =
 index_wrapper<index_t<Integer, sizeof...(Ts)>>
-{std::integer_sequence<Integer, Ts...>{}};
+{in_place, std::integer_sequence<Integer, Ts...>{}};
 
 template <uint_fast32_t... Ts>
 static constexpr auto index =
 basic_index<uint_fast32_t, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
-static constexpr auto basic_index_cn =
+static constexpr auto basic_index_n =
 index_wrapper<index_t<Integer, Length>>
-{mpl::to_values<mpl::repeat_nc<Length, std::integral_constant<Integer, Value>>>{}};
+{in_place, mpl::to_values<mpl::repeat_nc<Length, std::integral_constant<Integer, Value>>>{}};
 
 template <size_t Length, uint_fast32_t Value>
-static constexpr auto index_cn =
-basic_index_cn<uint_fast32_t, Length, Value>;
+static constexpr auto index_n =
+basic_index_n<uint_fast32_t, Length, Value>;
 
 }
 

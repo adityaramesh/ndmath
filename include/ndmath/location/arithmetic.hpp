@@ -12,38 +12,40 @@
 
 namespace nd {
 
-#define nd_define_arithmetic_ops(symbol, name)                                   \
-                                                                                 \
-template <class Loc1, class Loc2>                                                \
-CC_ALWAYS_INLINE CC_CONST constexpr                                              \
-auto operator symbol                                                             \
-(const location_wrapper<Loc1> l1, const location_wrapper<Loc2> l2)               \
-{                                                                                \
-	using loc1_t = location_wrapper<Loc1>;                                   \
-	using loc2_t = location_wrapper<Loc2>;                                   \
-	using expr = location_expr<name, loc1_t, loc2_t>;                        \
-	using wrapper = location_wrapper<expr>;                                  \
-	return wrapper{l1, l2};                                                  \
-}                                                                                \
-                                                                                 \
-template <class Loc>                                                             \
-CC_ALWAYS_INLINE CC_CONST constexpr                                              \
-auto operator symbol (const location_wrapper<Loc> loc, const size_t n)           \
-{                                                                                \
-	using loc_t = location_wrapper<Loc>;                                     \
-	using expr = location_expr<name, loc_t, location>;                       \
-	using wrapper = location_wrapper<expr>;                                  \
-	return wrapper{loc, location{n}};                                        \
-}                                                                                \
-                                                                                 \
-template <class Loc>                                                             \
-CC_ALWAYS_INLINE CC_CONST constexpr                                              \
-auto operator symbol (const size_t n, const location_wrapper<Loc> loc)           \
-{                                                                                \
-	using loc_t = location_wrapper<Loc>;                                     \
-	using expr = location_expr<name, location, loc_t>;                       \
-	using wrapper = location_wrapper<expr>;                                  \
-	return wrapper{location{n}, loc};                                        \
+#define nd_define_arithmetic_ops(symbol, name)                                       \
+                                                                                     \
+template <class Loc1, class Loc2>                                                    \
+CC_ALWAYS_INLINE constexpr                                                           \
+auto operator symbol                                                                 \
+(const location_wrapper<Loc1> l1, const location_wrapper<Loc2> l2)                   \
+{                                                                                    \
+	using loc1_t = location_wrapper<Loc1>;                                       \
+	using loc2_t = location_wrapper<Loc2>;                                       \
+	using expr = location_expr<name, loc1_t, loc2_t>;                            \
+	using wrapper = location_wrapper<expr>;                                      \
+	return wrapper{in_place, l1, l2};                                            \
+}                                                                                    \
+                                                                                     \
+template <class Loc, class Integer>                                                  \
+CC_ALWAYS_INLINE constexpr                                                           \
+auto operator symbol (const location_wrapper<Loc> loc, const Integer n)              \
+{                                                                                    \
+	using loc1_t = location_wrapper<Loc>;                                        \
+	using loc2_t = location_wrapper<location<const Integer>>;                    \
+	using expr = location_expr<name, loc1_t, loc2_t>;                            \
+	using wrapper = location_wrapper<expr>;                                      \
+	return wrapper{in_place, loc, make_location(n)};                             \
+}                                                                                    \
+                                                                                     \
+template <class Integer, class Loc>                                                  \
+CC_ALWAYS_INLINE constexpr                                                           \
+auto operator symbol (const Integer n, const location_wrapper<Loc> loc)              \
+{                                                                                    \
+	using loc1_t = location_wrapper<location<const Integer>>;                    \
+	using loc2_t = location_wrapper<Loc>;                                        \
+	using expr = location_expr<name, loc1_t, loc2_t>;                            \
+	using wrapper = location_wrapper<expr>;                                      \
+	return wrapper{in_place, make_location(n), loc};                             \
 }
 
 nd_define_arithmetic_ops(+, plus)
