@@ -7,9 +7,9 @@
 
 #include <ccbase/unit_test.hpp>
 #include <ndmath/range/range.hpp>
+#include <ndmath/range/loop_optimization.hpp>
 //#include <ndmath/range/range_literal.hpp>
 #include <ndmath/common.hpp>
-#include <ndmath/range/attribute_traits.hpp>
 
 module("test range construction")
 {
@@ -35,7 +35,6 @@ module("test range construction")
 	static_assert(r3.strides() == s, "");
 }
 
-/*
 module("test attribute")
 {
 	using namespace cc::mpl;
@@ -50,11 +49,12 @@ module("test range for_each")
 	using nd::make_range;
 
 	auto j = 0;
-	constexpr auto r1 = make_range(cindex<50, 50, 50>);
+	constexpr auto r1 = make_range(cindex<49, 49, 49>);
 	r1([&] (auto) { ++j; });
 	require(j == 50 * 50 * 50);
 }
 
+/*
 module("test range iterator")
 {
 	using nd::cindex;

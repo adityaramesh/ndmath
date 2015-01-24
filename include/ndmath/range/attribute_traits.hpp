@@ -55,19 +55,19 @@ mpl::foldl<
 	mpl::reverse_args<mpl::quote_trait<detail::apply_trans>>
 >;
 
-template <class Loop, class Policy, class Attribs>
+template <size_t Loop, class Policy, class Attribs>
 using set_loop_unroll_policy =
-mpl::set_at<
+mpl::set_at_c<
 	Loop,
-	set_unroll_policy<Policy, mpl::at<Loop, Attribs>>,
+	set_unroll_policy<Policy, mpl::at_c<Loop, Attribs>>,
 	Attribs
 >;
 
-template <class Loop, class Policy, class Attribs>
+template <size_t Loop, class Policy, class Attribs>
 using set_loop_tile_policy =
-mpl::set_at<
+mpl::set_at_c<
 	Loop,
-	set_tile_policy<Policy, mpl::at<Loop, Attribs>>,
+	set_tile_policy<Policy, mpl::at_c<Loop, Attribs>>,
 	Attribs
 >;
 

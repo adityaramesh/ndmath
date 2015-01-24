@@ -12,10 +12,10 @@ namespace nd {
 namespace detail {
 
 /*
-** Helps prevent combinatorial blowup in number of template specializations due
-** to the chosen direction of traversal along each coordinate. This class can be
-** used to write loops in a direction-independent way, as long as the length of
-** the range traversed by the loop can be described using a relatively simple
+** Helps us to avoid doubling the number of template specializations to address
+** the direction of traversal along each coordinate. This class can be used to
+** write loops in a direction-independent way, as long as the length of the
+** range traversed by the loop can be described using a relatively simple
 ** expression.
 */
 template <class Direction>
@@ -31,7 +31,7 @@ struct direction_helper<forward>
 
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto finish(const Integer& a, const Integer& b, const Integer& l) noexcept
+	static auto finish(const Integer& a, Integer, const Integer& l) noexcept
 	{ return a + l; }
 
 	template <class Integer>
@@ -100,8 +100,8 @@ struct unroll_helper<Cur, End, 1, Policy, Dir, Noexcept>
 	noexcept(Noexcept) { f(o + i); }
 };
 
-template <size_t End, size_t Factor, class Dir, bool Noexcept>
-struct unroll_helper<End, End, Factor, Dir, Noexcept>
+template <size_t End, size_t Factor, class Policy, class Dir, bool Noexcept>
+struct unroll_helper<End, End, Factor, Policy, Dir, Noexcept>
 {
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE CC_CONST constexpr
@@ -144,7 +144,7 @@ struct unroll_helper<
 	) noexcept(Noexcept)
 	{
 		f(o + Integer(Factor) * i + Integer(Cur) * s);
-		next::apply(o, i, l, f);
+		next::apply(o, i, l, s, f);
 	}
 };
 
@@ -183,7 +183,7 @@ struct unroll_helper<
 	) noexcept(Noexcept)
 	{
 		f(o + i + Integer(Cur) * l);
-		next::apply(o, i, l, f);
+		next::apply(o, i, l, s, f);
 	}
 };
 
@@ -223,7 +223,7 @@ struct remainder_loop_helper
 
 		using unroll_policy = contiguous<unroll_fac, false>;
 		using unroll_helper = unroll_helper<
-			dir_h::start(size_t{0}, unroll_fac - 1, unroll_fac),
+			dir_h::start(size_t{0}, unroll_fac - 1),
 			dir_h::finish(size_t{0}, unroll_fac - 1, unroll_fac),
 			unroll_fac, unroll_policy, Dir, Noexcept
 		>;
@@ -246,23 +246,28 @@ struct remainder_loop_helper
 	}
 };
 
+/*
+** This class performs the bulk of the loop optimization work: it addresses all
+** of the possibilities for the kinds of loops that can arise as a result of the
+** interaction among the different loop optimizations.
+*/
 template <size_t C, class Dir, class UnrollPolicy, class TilePolicy, bool Noexcept>
-struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
+struct tile_helper
 {
 	static constexpr auto unroll_fac = UnrollPolicy::factor;
 	static constexpr auto tile_fac   = TilePolicy::factor;
-	static constexpr auto unroll_rem    = UnrollPolicy::unroll_rem;
-	static constexpr auto tile_rem      = TilePolicy::tile_rem;
+	static constexpr auto unroll_rem = UnrollPolicy::has_rem;
+	static constexpr auto tile_rem   = TilePolicy::has_rem;
 
 	using dir_h = direction_helper<Dir>;
 	using rem_loop_h = remainder_loop_helper<Dir, Noexcept>;
 	using tile_count_unroller = unroll_helper<
-		dir_h::start(size_t{0}, unroll_fac - 1, unroll_fac),
+		dir_h::start(size_t{0}, unroll_fac - 1),
 		dir_h::finish(size_t{0}, unroll_fac - 1, unroll_fac),
 		unroll_fac, UnrollPolicy, Dir, Noexcept
 	>;
 	using tile_unroller = unroll_helper<
-		dir_h::start(size_t{0}, tile_fac - 1, tile_fac),
+		dir_h::start(size_t{0}, tile_fac - 1),
 		dir_h::finish(size_t{0}, tile_fac - 1, tile_fac),
 		tile_fac, contiguous<tile_fac, true>, Dir, Noexcept
 	>;
@@ -275,23 +280,23 @@ struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
 	noexcept(Noexcept)
 	{
 		for (
-			auto i = dir_h::start(r.start(C), r.finish(C), r.length(C));
+			auto i = dir_h::start(r.start(C), r.finish(C));
 			i != dir_h::finish(r.start(C), r.finish(C), r.length(C));
 			dir_h::step(i, r.stride(C))
 		) { f(i); }
 	}
 
-	template <class Range, class Func, nd_enable_if(
+	template <class Range, class Func, nd_enable_if((
 		std::is_same<Dir, forward>::value &&
 		tile_fac != 1
-	)>
+	))>
 	CC_ALWAYS_INLINE
 	static void apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		using tf_loc = basic_cloc<integer, tile_fac>;
-		using uf_loc = basic_cloc<integer, unroll_fac>;
+		static constexpr auto tf_loc = basic_ccoord<integer, tile_fac>;
+		static constexpr auto uf_loc = basic_ccoord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -329,7 +334,7 @@ struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
 			rem_loop_h::try_unroll(
 				uf_loc * (length<C>(r) / (stride<C>(r) * tf_loc * uf_loc)),
 				length<C>(r) / (stride<C>(r) * tf_loc),
-				basic_cloc<integer, 1>,
+				basic_ccoord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
 						r.start(C), i, r.stride(C), r.stride(C), f
@@ -353,17 +358,17 @@ struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
 		}
 	}
 
-	template <class Range, class Func, nd_enable_if(
+	template <class Range, class Func, nd_enable_if((
 		std::is_same<Dir, backward>::value &&
 		tile_fac != 1
-	)>
+	))>
 	CC_ALWAYS_INLINE
 	static void apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		using tf_loc = basic_cloc<integer, tile_fac>;
-		using uf_loc = basic_cloc<integer, unroll_fac>;
+		static constexpr auto tf_loc = basic_ccoord<integer, tile_fac>;
+		static constexpr auto uf_loc = basic_ccoord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -401,8 +406,8 @@ struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
 			*/
 			rem_loop_h::try_unroll(
 				length<C>(r) / (stride<C>(r) * tf_loc * uf_loc),
-				basic_cloc<integer, integer(-1)>,
-				basic_cloc<integer, 1>,
+				basic_ccoord<integer, integer(-1)>,
+				basic_ccoord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
 						r.start(C) + r.length(C) %
@@ -429,8 +434,7 @@ struct tile_helper<C, Dir, UnrollPolicy, TilePolicy, Noexcept>
 private:
 	template <class Range>
 	CC_ALWAYS_INLINE
-	static void validate(const Range& r)
-	noexcept(Noexcept)
+	static void validate(const Range& r) noexcept
 	{
 		nd_assert(
 			(!unroll_rem &&
@@ -442,7 +446,7 @@ private:
 		);
 
 		nd_assert(
-			(!tile_rem && r.length(C) % (r.stride(C) * tf_loc) != 0),
+			(!tile_rem && r.length(C) % (r.stride(C) * tile_fac) != 0),
 			"Tiling requires remainder loop, but remainder option "
 			"is set to false. Length of range is $ - $ + $ = $; "
 			"length of tile is $ * $ = $; but $4 % $7 != 0.",
@@ -453,71 +457,107 @@ private:
 };
 
 /*
-** Number of specializations:
-** - 2 directions
-** - 3 types of unrolling (none, without guard, with guard)
-** - 3 types of tiling (none, without guard, with guard)
-** This leads to 18 total specializations.
+** This helper struct is responsible for the following:
+** - Converting the unroll factor `full_unroll_policy` to a positive integer
+** when the range is statically accessible, or triggering a static assertion
+** otherwise.
+** - Setting the remainders for the unroll and tile policy to the correct values
+** when the range is statically accessible. This allows us to avoid generating
+** remainder loops when we can determine that they are not necessary.
 */
 template <
 	size_t Coord,
-	class Dir,
-	size_t UnrollFac,
-	size_t TileFac,
-	bool UnrollGuard,
-	bool TileGuard,
-	bool Noexcept
+	class UnrollPolicy,
+	class TilePolicy,
+	class Range,
+	bool AllowsStaticAccess
 >
-struct evaluate_loop_helper;
+struct policy_traits;
 
-template <size_t C, bool N>
-struct evaluate_loop_helper<C, forward, 1, 1, false, false, N>
+template <size_t Coord, class UnrollPolicy, class TilePolicy, class Range>
+struct policy_traits<Coord, UnrollPolicy, TilePolicy, Range, true>
 {
+	static constexpr auto unroll_fac = UnrollPolicy::factor;
+	static constexpr auto tile_fac = TilePolicy::factor;
+
+	static constexpr auto tile_size = Range::stride(Coord) * tile_fac;
+	static constexpr auto tile_count = Range::length(Coord) / tile_size;
+
+	static constexpr auto adjusted_unroll_fac =
+	UnrollPolicy::factor == full_unroll ? tile_count : unroll_fac;
+
+	/*
+	** Compute the remainders in case we can eliminate a remainder loop.
+	*/
+	static constexpr auto unroll_rem = tile_count % adjusted_unroll_fac;
+	static constexpr auto tile_rem = Range::length(Coord) % tile_size;
+	static constexpr auto has_unroll_rem = !unroll_rem;
+	static constexpr auto has_tile_rem = !tile_rem;
+
+	using adjusted_unroll_policy =
+	modify_policy<unroll_fac, has_unroll_rem, UnrollPolicy>;
+
+	using adjusted_tile_policy =
+	modify_policy<tile_fac, has_tile_rem, TilePolicy>;
+};
+
+template <size_t Coord, class UnrollPolicy, class TilePolicy, class Range>
+struct policy_traits<Coord, UnrollPolicy, TilePolicy, Range, false>
+{
+	static_assert(
+		UnrollPolicy::factor != full_unroll,
+		"Range not statically accessible: full unroll impossible."
+	);
+
+	using adjusted_unroll_policy = UnrollPolicy;
+	using adjusted_tile_policy = TilePolicy;
+};
+
+template <size_t Dim, size_t Dims, class Attribs, bool Noexcept>
+struct evaluate_loop_helper
+{
+	using attrib        = mpl::at_c<Dim, Attribs>;
+	using dir           = typename attrib::dir;
+	using unroll_policy = typename attrib::unroll_policy;
+	using tile_policy   = typename attrib::tile_policy;
+	static constexpr auto coord = attrib::coord;
+
 	template <class Range, class Func>
 	CC_ALWAYS_INLINE
 	static void apply(const Range& r, const Func& f)
-	noexcept(N)
+	noexcept(Noexcept)
 	{
-		for (auto i = r.base(C); i != r.extent(C); i += r.stride(C)) {
-			f(i);
-		}
+		using traits = policy_traits<
+			coord, unroll_policy, tile_policy,
+			Range, Range::allows_static_access
+		>;
+
+		using adj_unroll_policy =
+		typename traits::adjusted_unroll_policy;
+
+		using adj_tile_policy =
+		typename traits::adjusted_tile_policy;
+
+		using helper = tile_helper<
+			coord, dir, adj_unroll_policy,
+			adj_tile_policy, Noexcept
+		>;
+		helper::apply(r, f);
 	}
 };
 
-template <size_t C, size_t U, size_t T, bool N>
-struct evaluate_loop_helper<C, forward, U, T, true, true, N>
-{
-	template <class Range, class Func>
-	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f)
-	noexcept(N)
-	{
-		for (auto i = r.base(C); i != r.extent(C); i += r.stride(C)) {
-			f(i);
-		}
-	}
-};
-
-template <size_t Dim, size_t Dims, bool Noexcept>
+template <size_t Dim, size_t Dims, class Attribs, bool Noexcept>
 struct evaluate_helper
 {
-	using next = evaluate_helper<Dim + 1, Dims, Noexcept>;
+	using next = evaluate_helper<Dim + 1, Dims, Attribs, Noexcept>;
 
 	template <class Range, class Func, class... Args>
 	CC_ALWAYS_INLINE
 	static void apply(const Range& r, const Func& f, const Args&... args)
 	noexcept(Noexcept)
 	{
-		using attrs = typename Range::attributes;
-		using attr = mpl::at_c<Dim, attrs>;
 		using evaluator = evaluate_loop_helper<
-			attr::coord,
-			typename attr::dir,
-			attr::unroll_factor,
-			attr::tile_factor,
-			attr::use_unroll_guard,
-			attr::use_tile_guard,
-			Noexcept
+			Dim, Dims, Attribs, Noexcept
 		>;
 		evaluator::apply(r, [&] (const auto& arg)
 		CC_ALWAYS_INLINE noexcept(Noexcept) {
@@ -526,8 +566,8 @@ struct evaluate_helper
 	}
 };
 
-template <size_t Dims, bool Noexcept>
-struct evaluate_helper<Dims, Dims, Noexcept>
+template <size_t Dims, class Attribs, bool Noexcept>
+struct evaluate_helper<Dims, Dims, Attribs, Noexcept>
 {
 	template <class Range, class Func, class... Args>
 	CC_ALWAYS_INLINE

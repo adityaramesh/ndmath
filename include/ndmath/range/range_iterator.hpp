@@ -38,9 +38,6 @@
 
 namespace nd {
 
-template <class Base, class Extents, class Stride>
-class range;
-
 namespace detail {
 
 template <size_t CurDim>

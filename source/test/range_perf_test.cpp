@@ -23,7 +23,7 @@ int main()
 
 	t1 = high_resolution_clock::now();
 	asm("# BEFORE FIRST LOOP");
-	nd::crange<a, b, c>([&] (const auto&) {
+	nd::crange<a - 1, b - 1, c - 1>([&] (const auto&) {
 		n = 0;
 		asm("");
 	});
