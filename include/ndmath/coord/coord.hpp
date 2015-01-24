@@ -55,17 +55,17 @@ auto make_coord(const Integer n) noexcept
 { return coord_wrapper<coord<const Integer>>{in_place, n}; }
 
 template <class Integer, Integer N>
-static constexpr auto basic_c_coord =
+static constexpr auto basic_ccoord =
 coord_wrapper<const_coord<Integer, N>>{};
 
 template <uint_fast32_t N>
-static constexpr auto c_coord =
-basic_c_coord<uint_fast32_t, N>;
+static constexpr auto ccoord =
+basic_ccoord<uint_fast32_t, N>;
 
 namespace tokens {
 
 template <uint_fast32_t N>
-static constexpr auto c = c_coord<N>;
+static constexpr auto c = ccoord<N>;
 
 }
 
