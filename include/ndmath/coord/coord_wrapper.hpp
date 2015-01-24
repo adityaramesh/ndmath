@@ -1,5 +1,5 @@
 /*
-** File Name: location_wrapper.hpp
+** File Name: coord_wrapper.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/08/2015
 ** Contact:   _@adityaramesh.com
@@ -15,17 +15,17 @@ namespace nd {
 namespace detail {
 
 /*
-** We need the `location_traits` bullshit because:
+** We need the `coord_traits` bullshit because:
 ** (1) The return type of the wrapped objects's member function can depend on
 ** the type of the arguments; and
 ** (2) auto return types strip the reference from the inferred type (otherwise I
 ** would have used auto return types).
 */
 template <class T, bool IsConstant>
-struct location_traits;
+struct coord_traits;
 
 template <class T>
-struct location_traits<T, true>
+struct coord_traits<T, true>
 {
 	template <class Integer>
 	using result =
@@ -37,7 +37,7 @@ struct location_traits<T, true>
 };
 
 template <class T>
-struct location_traits<T, false>
+struct coord_traits<T, false>
 {
 	template <class Integer>
 	using result =
@@ -74,23 +74,23 @@ using const_result = typename result_helper<Integer, Traits, Enable>::const_resu
 }
 
 template <class T>
-class location_wrapper final
+class coord_wrapper final
 {
 public:
 	static constexpr auto is_constant = T::is_constant;
 	static constexpr auto allows_static_access = T::allows_static_access;
 private:
-	using traits = detail::location_traits<T, is_constant>;
+	using traits = detail::coord_traits<T, is_constant>;
 
 	T m_wrapped;
 public:
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	explicit location_wrapper()
+	explicit coord_wrapper()
 	noexcept : m_wrapped{} {}
 
 	template <class... Args>
 	CC_ALWAYS_INLINE constexpr 
-	explicit location_wrapper(in_place_t, Args&&... args)
+	explicit coord_wrapper(in_place_t, Args&&... args)
 	noexcept : m_wrapped(std::forward<Args>(args)...) {}
 
 	CC_ALWAYS_INLINE CC_CONST constexpr

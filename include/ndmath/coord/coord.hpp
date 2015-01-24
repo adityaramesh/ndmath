@@ -1,5 +1,5 @@
 /*
-** File Name: location.hpp
+** File Name: coord.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/08/2015
 ** Contact:   _@adityaramesh.com
@@ -11,13 +11,13 @@
 namespace nd {
 
 template <class Integer, Integer N>
-struct const_location final
+struct const_coord final
 {
 	static constexpr auto is_constant = true;
 	static constexpr auto allows_static_access = true;
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	explicit const_location() noexcept {}
+	explicit const_coord() noexcept {}
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto value() noexcept
@@ -25,7 +25,7 @@ struct const_location final
 };
 
 template <class Integer>
-class location final
+class coord final
 {
 	using value_type = std::decay_t<Integer>;
 public:
@@ -37,7 +37,7 @@ private:
 	const Integer n;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit location(const Integer n)
+	explicit coord(const Integer n)
 	noexcept : n{n} {}
 
 	CC_ALWAYS_INLINE
@@ -51,21 +51,21 @@ public:
 
 template <class Integer>
 CC_ALWAYS_INLINE constexpr
-auto make_location(const Integer n) noexcept
-{ return location_wrapper<location<const Integer>>{in_place, n}; }
+auto make_coord(const Integer n) noexcept
+{ return coord_wrapper<coord<const Integer>>{in_place, n}; }
 
 template <class Integer, Integer N>
-static constexpr auto basic_cloc =
-location_wrapper<const_location<Integer, N>>{};
+static constexpr auto basic_c_coord =
+coord_wrapper<const_coord<Integer, N>>{};
 
 template <uint_fast32_t N>
-static constexpr auto cloc =
-basic_cloc<uint_fast32_t, N>;
+static constexpr auto c_coord =
+basic_c_coord<uint_fast32_t, N>;
 
 namespace tokens {
 
 template <uint_fast32_t N>
-static constexpr auto c = cloc<N>;
+static constexpr auto c = c_coord<N>;
 
 }
 
