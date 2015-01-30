@@ -19,8 +19,9 @@ struct const_coord final
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	explicit const_coord() noexcept {}
 
+	template <class Integer_>
 	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto value() noexcept
+	static auto value(Integer_ = 0) noexcept
 	{ return N; }
 };
 
@@ -40,12 +41,14 @@ public:
 	explicit coord(const Integer n)
 	noexcept : n{n} {}
 
+	template <class Integer_>
 	CC_ALWAYS_INLINE
-	result value() noexcept
+	result value(Integer_ = 0) noexcept
 	{ return n; }
 
+	template <class Integer_>
 	CC_ALWAYS_INLINE constexpr
-	const_result value() const noexcept
+	const_result value(Integer_ = 0) const noexcept
 	{ return n; }
 };
 

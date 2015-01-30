@@ -14,10 +14,6 @@ template <class Op, class Coord1, class Coord2>
 class coord_expr final
 {
 public:
-	static constexpr auto is_constant =
-	Coord1::is_constant &&
-	Coord2::is_constant;
-
 	static constexpr auto allows_static_access =
 	Coord1::allows_static_access &&
 	Coord2::allows_static_access;
@@ -30,29 +26,13 @@ public:
 	noexcept : m_l1{l1}, m_l2{l2} {}
 
 	template <class Integer, nd_enable_if(
-		allows_static_access && is_constant
-	)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto value(Integer) noexcept
-	{ return Op::apply(Coord1::value(), Coord2::value()); }
-
-	template <class Integer, nd_enable_if(
-		allows_static_access && !is_constant
-	)>
+		allows_static_access)>
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto value(const Integer n) noexcept
 	{ return Op::apply(Coord1::value(n), Coord2::value(n)); }
 
 	template <class Integer, nd_enable_if(
-		!allows_static_access && is_constant
-	)>
-	CC_ALWAYS_INLINE constexpr
-	auto value(Integer) const noexcept
-	{ return Op::apply(m_l1.value(), m_l2.value()); }
-
-	template <class Integer, nd_enable_if(
-		!allows_static_access && !is_constant
-	)>
+		!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	auto value(const Integer n) const noexcept
 	{ return Op::apply(m_l1.value(n), m_l2.value(n)); }

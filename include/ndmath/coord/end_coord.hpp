@@ -14,7 +14,6 @@ namespace nd {
 
 struct end_coord final
 {
-	static constexpr auto is_constant = false;
 	static constexpr auto allows_static_access = true;
 
 	template <class Integer>
