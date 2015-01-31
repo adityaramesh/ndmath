@@ -14,15 +14,7 @@ template <class Op, class Index1, class Index2>
 class index_expr final
 {
 public:
-	using result = std::common_type_t<
-		typename Index1::result,
-		typename Index2::result
-	>;
-	using const_result = result;
-
-	static constexpr auto dims = Index1::dims();
-	static constexpr auto allows_static_access =
-	Index1::allows_static_access && Index2::allows_static_access;
+	static constexpr auto dims = Index1::dims().value();
 private:
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -31,20 +23,21 @@ public:
 	explicit index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 	
-	template <class Integer, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static const_result at(const Integer n) noexcept
-	{ return Op::apply(Index1::at(n), Index2::at(n)); }
-
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE constexpr
-	result at(const Integer n) noexcept
-	{ return Op::apply(m_i1(n), m_i2(n)); }
+	auto get() noexcept
+	{
+		using tokens::c;
+		return Op::apply(m_i1(c<N>), m_i2(c<N>));
+	}
 
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE constexpr
-	const_result at(const Integer n) const noexcept
-	{ return Op::apply(m_i1(n), m_i2(n)); }
+	auto get() const noexcept
+	{
+		using tokens::c;
+		return Op::apply(m_i1(c<N>), m_i2(c<N>));
+	}
 };
 
 #define nd_define_arithmetic_op(symbol, name)         \

@@ -13,19 +13,9 @@ namespace nd {
 template <size_t A, size_t B, class Index>
 class subindex final
 {
-	using index_type = std::remove_const_t<Index>;
-	static constexpr auto is_const = std::is_const<Index>::value;
+	static constexpr auto is_const =
+	std::is_const<Index>::value;
 public:
-	using result = std::conditional_t<
-		is_const,
-		typename index_type::const_result,
-		typename index_type::result
-	>;
-	using const_result = typename index_type::const_result;
-
-	static constexpr auto allows_static_access =
-	Index::allows_static_access;
-
 	static constexpr auto dims = B - A + 1;
 private:
 	Index& m_index;
@@ -34,11 +24,6 @@ public:
 	explicit subindex(Index& index)
 	noexcept : m_index{index} {}
 
-	template <class Integer, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static const_result at(const Integer n) noexcept
-	{ return index_type::at(n + A); }
-
 	/*
 	** We should only enable this function if `Index` is not `const`;
 	** otherwise, we run into the following conflict. If `Index` is `const`,
@@ -46,20 +31,27 @@ public:
 	** cannot be marked `constexpr` if `Index` is not `const`, since
 	** `m_index` may return a non-const reference. So we choose not to mark
 	** the function `constexpr`, and disable it in the case that `Index` is
-	** not `const`.
-	*/
-	template <class Integer, nd_enable_if(!allows_static_access && !is_const)>
+	** not `const`.	*/
+	template <uint_fast32_t N, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE
-	result at(const Integer n) noexcept
-	{ return m_index(n + A); }
+	auto get() noexcept ->
+	decltype(std::declval<Index>().at(tokens::c<N + A>))
+	{
+		using tokens::c;
+		return m_index(c<N + A>);
+	}
 
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE constexpr
-	const_result at(const Integer n) const noexcept
-	{ return m_index(n + A); }
+	auto get() const noexcept ->
+	decltype(std::declval<const Index>().at(tokens::c<N + A>))
+	{
+		using tokens::c;
+		return m_index(c<N + A>);
+	}
 };
 
-template <size_t A, size_t B, class Index>
+template <uint_fast32_t A, uint_fast32_t B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_subindex(index_wrapper<Index>& w) noexcept
 {
@@ -69,7 +61,7 @@ auto make_subindex(index_wrapper<Index>& w) noexcept
 	return w2{in_place, w};
 }
 
-template <size_t A, size_t B, class Index>
+template <uint_fast32_t A, uint_fast32_t B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_const_subindex(const index_wrapper<Index>& w) noexcept
 {

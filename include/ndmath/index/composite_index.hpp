@@ -11,80 +11,112 @@
 #include <ndmath/index/index_wrapper.hpp>
 
 namespace nd {
+namespace detail {
+
+/*
+** Note: Using plain auto return types for the `get` member function will cause
+** the reference to be stripped from the inferred return type. To prevent this
+** from happening, we need to use a traits struct.
+*/
+
+template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2, bool First>
+struct composite_index_traits;
+
+template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
+struct composite_index_traits<N, Dims1, I1, I2, true>
+{ using type = decltype(std::declval<I1>().at(nd::tokens::c<N>)); };
+
+template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
+struct composite_index_traits<N, Dims1, I1, I2, false>
+{ using type = decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>)); };
+
+template <uint_fast32_t N, uint_fast32_t Dims1, bool First>
+struct composite_index_helper;
+
+template <uint_fast32_t N, uint_fast32_t Dims1>
+struct composite_index_helper<N, Dims1, true>
+{
+	template <class I1, class I2>
+	CC_ALWAYS_INLINE 
+	static auto get(I1& i1, I2) noexcept ->
+	decltype(std::declval<I1>().at(nd::tokens::c<N>))
+	{
+		using tokens::c;
+		return i1(c<N>);
+	}
+
+	template <class I1, class I2>
+	CC_ALWAYS_INLINE constexpr
+	static auto get_const(I1& i1, I2) noexcept ->
+	decltype(std::declval<I1>().at(nd::tokens::c<N>))
+	{
+		using tokens::c;
+		return i1(c<N>);
+	}
+};
+
+template <uint_fast32_t N, uint_fast32_t Dims1>
+struct composite_index_helper<N, Dims1, false>
+{
+	template <class I1, class I2>
+	CC_ALWAYS_INLINE 
+	static auto get(I1, I2& i2) noexcept ->
+	decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>))
+	{
+		using tokens::c;
+		return i2(c<N - Dims1>);
+	}
+
+	template <class I1, class I2>
+	CC_ALWAYS_INLINE constexpr
+	static auto get_const(I1, I2& i2) noexcept ->
+	decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>))
+	{
+		using tokens::c;
+		return i2(c<N - Dims1>);
+	}
+};
+
+}
 
 template <class Index1, class Index2>
 class composite_index final
 {
-	using i1 = std::remove_const_t<Index1>;
-	using i2 = std::remove_const_t<Index2>;
-
-	/*
-	** If either one of the indices is non-const, then this view should be
-	** non-const.
-	*/
-	static constexpr auto is_const =
-	std::is_const<Index1>::value ||
-	std::is_const<Index2>::value;
-
-	using r1 = std::conditional_t<
-		is_const,
-		typename i1::const_result,
-		typename i1::result
-	>;
-	using r2 = std::conditional_t<
-		is_const,
-		typename i2::const_result,
-		typename i2::result
-	>;
-
-	static constexpr auto dims1 = Index1::dims();
-	static constexpr auto dims2 = Index2::dims();
+	using i1 = std::decay_t<Index1>;
+	using i2 = std::decay_t<Index2>;
+	static constexpr auto dims1 = i1::dims().value();
+	static constexpr auto dims2 = i2::dims().value();
 public:
-	static constexpr auto allows_static_access =
-	i1::allows_static_access && i2::allows_static_access;
-
 	static constexpr auto dims = dims1 + dims2;
-	using const_result = std::common_type_t<r1, r2>;
-
-	/*
-	** The only case in which this view allows modifiations is when both
-	** indices return lvalue references to the same integral type.
-	** Otherwise, we make this view non-modifiable, and alias `result` to
-	** `const_result`.
-	*/
-	using result = std::conditional_t<
-		!is_const && std::is_same<r1, r2>::value,
-		r1, const_result
-	>;
 private:
-	using index1 = std::conditional_t<
-		is_const, const i1, i1
-	>;
-	using index2 = std::conditional_t<
-		is_const, const i2, i2
-	>;
-
-	index1& m_i1;
-	index2& m_i2;
+	Index1& m_i1;
+	Index2& m_i2;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit composite_index(index1& i1, index2& i2)
+	explicit composite_index(Index1& i1, Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	template <class Integer, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static const_result at(const Integer n) noexcept
-	{ return n < dims1 ? i1::at(n) : i2::at(n - dims1); }
-
-	template <class Integer, nd_enable_if(!allows_static_access && !is_const)>
+	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE
-	result at(const Integer n) noexcept
-	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
+	auto get() noexcept ->
+	typename detail::composite_index_traits<
+		N, dims1, Index1, Index2, N < dims1
+	>::type
+	{
+		using helper = detail::composite_index_helper<N, dims1, N < dims1>;
+		return helper::get(m_i1, m_i2);
+	}
 
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE constexpr
-	const_result at(const Integer n) const noexcept
-	{ return n < dims1 ? m_i1(n) : m_i2(n - dims1); }
+	auto get() const noexcept ->
+	typename detail::composite_index_traits<
+		N, dims1, Index1, Index2, N < dims1
+	>::type
+	{
+		using helper = detail::composite_index_helper<N, dims1, N < dims1>;
+		return helper::get_const(m_i1, m_i2);
+	}
 };
 
 template <class Index1, class Index2>
