@@ -28,7 +28,7 @@ module("test non-static constexpr arithmetic")
 {
 	using namespace nd::tokens;
 
-	constexpr auto c1 = nd::make_coord(10);
+	constexpr auto c1 = nd::make_c_coord(10);
 	constexpr auto c2 = end - 1;
 	constexpr auto c3 = 2 * (end - 1) / 2;
 	

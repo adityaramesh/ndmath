@@ -34,7 +34,7 @@ auto operator symbol (const coord_wrapper<Coord> c, const Integer n) \
 	using coord2_t = coord_wrapper<coord<const Integer>>;        \
 	using expr = coord_expr<name, coord1_t, coord2_t>;           \
 	using wrapper = coord_wrapper<expr>;                         \
-	return wrapper{in_place, c, make_coord(n)};                  \
+	return wrapper{in_place, c, make_c_coord(n)};                \
 }                                                                    \
                                                                      \
 template <class Integer, class Coord>                                \
@@ -45,7 +45,7 @@ auto operator symbol (const Integer n, const coord_wrapper<Coord> c) \
 	using coord2_t = coord_wrapper<Coord>;                       \
 	using expr = coord_expr<name, coord1_t, coord2_t>;           \
 	using wrapper = coord_wrapper<expr>;                         \
-	return wrapper{in_place, make_coord(n), c};                  \
+	return wrapper{in_place, make_c_coord(n), c};                \
 }
 
 nd_define_arithmetic_ops(+, plus)

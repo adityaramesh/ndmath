@@ -15,6 +15,8 @@ namespace nd {
 struct end_coord final
 {
 	static constexpr auto allows_static_access = true;
+	static constexpr auto is_constant = false;
+	using integer = void;
 
 	template <class Integer>
 	CC_ALWAYS_INLINE CC_CONST constexpr
