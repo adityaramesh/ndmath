@@ -13,14 +13,15 @@
 
 namespace nd {
 
-#define nd_define_operation(symbol, name)               \
-	struct name final                               \
-	{                                               \
-		CC_ALWAYS_INLINE CC_CONST               \
-		static constexpr auto                   \
-		apply(const size_t& a, const size_t& b) \
-		noexcept { return a symbol b; }         \
-	};                                              \
+#define nd_define_operation(symbol, name)          \
+	struct name final                          \
+	{                                          \
+		template <class T, class U>        \
+		CC_ALWAYS_INLINE CC_CONST          \
+		static constexpr                   \
+		auto apply(const T& a, const U& b) \
+		noexcept { return a symbol b; }    \
+	};
 
 nd_define_operation(+, plus)
 nd_define_operation(-, minus)

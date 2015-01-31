@@ -11,20 +11,27 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-- Update range module.
+- Finish range operations.
+  - Finish `range_builder.hpp`.
+    - Add terse syntax for creating ranges using `operator[]`: `r[5]`,
+    `r[5][10][2]`, `r[5, 5][10, 10][2, 2]`. Add this to the `tokens` namespace.
+    - Considering allowing `c<N>` in the above expressions. Then we can create
+    constant and non-constant ranges using the same syntax.
+  - Update `range_iterator.hpp` so that the direction attribute is taken into
+  account.
+  - Add the appropriate unit tests for range_iterator.
+- Finish array module.
+- Replace ccbase mpl parsing with metaparse library; just include metaparse in
+ccbase.
+  - Replace `parse_natural, parse_ratio, parse_wsv`, etc.
+  - Update `ratio_literal.hpp`.
+  - Deleted the unused headers.
+  - Update `range_literal.hpp`?
 
 ## Constexpr Notes
 
-- Expressions should store their arguments by value, but views (e.g. `subarray`)
-should store their arguments by reference.
-  - This is because expressions are usually created from prvalues of other
-  expressions, and the terminal nodes contain references to the concrete types
-  in the expression hierarchy. So expressions act as storage for these prvalues.
-  - On the other hand, views are created from lvalues, so copying the object
-  that is being viewed is wasteful.
-
 - Don't use `CC_CONST` for any function that writes to memory at all, even if
-teh function just writes to single int member variable.
+the function just writes to single int member variable.
 
 - For both the location and index modules, we can get away with only having one
 specialization of the wrapper class (I hope), because the constructor of the
@@ -45,20 +52,12 @@ it has a non-constexpr constructor, and a nontrivial destructor.
     compatibile with `dynamic_array` since `operator()` must be `constexpr` for
     the former?
 
-## Range Module
-
-### Long-Term TODO
-
-- Use expression templates to define an algebra of loop optimizations for
-ranges (e.g. unrolling, tiling, parallelization, etc).
-  - The `range_base` class should be responsible for evaluating the for loop
-  corresponding to each dimension by calling the appropriate method of its
-  derived class.
-  - When `for_each` is called on a `range_base` class, a reference to an index
-  is passed to the `range_base`, and the for loops are evaluated recursively.
-  - How about range fusion (i.e. nested loop fusion)?
-
 ## Array Module
+
+
+- Use the comma operator for doing elementwise operations like Matlab/Numpy.
+  - E.g. `a ,< b` should return a functional_array whose element at index i
+  indicates whether `a(i) < b(i)`.
 
 - Supported expressions:
   - `array_base` (const and non-const specializations)
@@ -76,11 +75,11 @@ ranges (e.g. unrolling, tiling, parallelization, etc).
 - Use constexpr for arrays to implement compile-time arrays with the following
 syntax:
 
-  	using arr = "
-		1 2 3
-		4 5 6
-		7 8 9
-	"_array;
+  	constexpr auto arr = carray(
+		1.0 0 0
+		0 -1.0 0
+		0 0 1.0
+	);
 
 - Consider making the iterator for arrays derive from or encapsulate the
 iterator for ranges.
@@ -100,7 +99,24 @@ iterator for ranges.
 
 ### Long-Term TODO
 
+- arr() switches to elementwise view
+- exp(arr).normalize();
+  - Make normalize a generic function that applies a reduction operation and
+  then a binary operation to each element. By default, it uses + and /.
+- syntax for slicing?
+
+- Profile the code thoroughly and apply restrict where appropriate. See here for
+notes on restrict: https://gcc.gnu.org/onlinedocs/gcc/Restricted-Pointers.html.
+
 - Come up with the syntax to write loops using generic packets instead of the
 same scalar type of the array. This would allow the loop operation to be
 expressed using SIMD operations. Combined with the syntax for unrolling loops,
 this can become very powerful.
+
+- Support for tensor notation. See this page for more details:
+http://eigen.tuxfamily.org/index.php?title=Working_notes_-_Tensor_module.
+- Support for reduction and broadcasting operations:
+http://eigen.tuxfamily.org/dox/group__TutorialReductionsVisitorsBroadcasting.html.
+  - See this SO question for a nice example illustrating how to calculate sample
+  covariance:
+  http://stackoverflow.com/questions/15138634/eigen-is-there-an-inbuilt-way-to-calculate-sample-covariance/15142446#15142446.
