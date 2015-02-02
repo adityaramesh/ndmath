@@ -245,6 +245,7 @@ public:
 		return make_const_subindex<a, b>(*this);
 	}
 
+	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto head() noexcept
 	{
@@ -252,6 +253,7 @@ public:
 		return (*this)(c<0>, end - c<1>);
 	}
 
+	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto head() const noexcept
 	{
@@ -259,6 +261,7 @@ public:
 		return (*this)(c<0>, end - c<1>);
 	}
 
+	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto tail() noexcept
 	{
@@ -266,12 +269,33 @@ public:
 		return (*this)(c<1>, end);
 	}
 
+	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto tail() const noexcept
 	{
 		using namespace tokens;
 		return (*this)(c<1>, end);
 	}
+
+	template <nd_enable_if(dims() == 1)>
+	CC_ALWAYS_INLINE constexpr
+	auto head() noexcept
+	{ return *this; }
+
+	template <nd_enable_if(dims() == 1)>
+	CC_ALWAYS_INLINE constexpr
+	auto head() const noexcept
+	{ return *this; }
+
+	template <nd_enable_if(dims() == 1)>
+	CC_ALWAYS_INLINE constexpr
+	auto tail() noexcept
+	{ return *this; }
+
+	template <nd_enable_if(dims() == 1)>
+	CC_ALWAYS_INLINE constexpr
+	auto tail() const noexcept
+	{ return *this; }
 };
 
 #define nd_define_relational_op(name, symbol)     \

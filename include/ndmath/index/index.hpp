@@ -38,30 +38,52 @@ public:
 ** Utilities for creating non-static indices.
 */
 
+namespace detail {
+
+template <class Integer>
+struct make_index_helper
+{
+	template <class T, nd_enable_if(std::is_integral<T>::value)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto make(const T& t) noexcept
+	{ return make_coord((Integer)t); }
+
+	template <class T, nd_enable_if(std::is_integral<T>::value)>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto make_const(const T& t) noexcept
+	{ return make_c_coord((Integer)t); }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto make(const coord_wrapper<Coord>& c) noexcept
+	{ return c; }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto make_const(const coord_wrapper<Coord>& c) noexcept
+	{ return c; }
+};
+
+}
+
 template <class Integer = uint_fast32_t, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto make_index(const Ts... ts) noexcept
 {
-	using coord_type = coord_wrapper<coord<Integer>>;
-	using index_type = index_t<std::conditional_t<
-		std::is_same<decltype(ts), decltype(ts)>::value,
-		coord_type, void
-	>...>;
-	using wrapper = index_wrapper<index_type>;
-	return wrapper{in_place, make_coord(Integer(ts))...};
+	using helper     = detail::make_index_helper<Integer>;
+	using index_type = index_t<decltype(helper::make(ts))...>;
+	using wrapper    = index_wrapper<index_type>;
+	return wrapper{in_place, helper::make(ts)...};
 }
 
 template <class Integer = uint_fast32_t, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto make_c_index(const Ts... ts) noexcept
 {
-	using coord_type = coord_wrapper<coord<const Integer>>;
-	using index_type = index_t<std::conditional_t<
-		std::is_same<decltype(ts), decltype(ts)>::value,
-		coord_type, void
-	>...>;
-	using wrapper = index_wrapper<index_type>;
-	return wrapper{in_place, make_c_coord(Integer(ts))...};
+	using helper     = detail::make_index_helper<Integer>;
+	using index_type = index_t<decltype(helper::make_const(ts))...>;
+	using wrapper    = index_wrapper<index_type>;
+	return wrapper{in_place, helper::make_const(ts)...};
 }
 
 namespace detail {

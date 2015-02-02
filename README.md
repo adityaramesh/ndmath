@@ -13,20 +13,16 @@ High-performance, multidimensional arrays in modern C++.
 
 - Finish range module.
   - Finish `range_builder.hpp`.
-    - Add terse syntax for creating ranges using `operator[]`: `r[5]`,
-    `r[5][10][2]`, `r[5, 5][10, 10][2, 2]`. Add this to the `tokens` namespace.
-    - Considering allowing `c<N>` in the above expressions. Then we can create
-    constant and non-constant ranges using the same syntax.
+  - Add the appropriate unit tests for range_iterator.
   - Update `range_iterator.hpp` so that the direction attribute is taken into
   account.
-  - Add the appropriate unit tests for range_iterator.
-- Finish array module.
 - Replace ccbase mpl parsing with metaparse library; just include metaparse in
 ccbase.
   - Replace `parse_natural, parse_ratio, parse_wsv`, etc.
   - Update `ratio_literal.hpp`.
   - Deleted the unused headers.
   - Update `range_literal.hpp`?
+- Finish array module.
 
 ## Constexpr Notes
 
@@ -54,6 +50,8 @@ it has a non-constexpr constructor, and a nontrivial destructor.
 
 ## Array Module
 
+- Consider using the new C++14 named operators (e.g. `<repeat>`) where
+appropriate.
 
 - Use the comma operator for doing elementwise operations like Matlab/Numpy.
   - E.g. `a ,< b` should return a functional_array whose element at index i

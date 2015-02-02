@@ -95,11 +95,13 @@ public:
 			"end points not larger than starting points: $ ≱ $",
 			finish, start
 		);
+		/*
 		nd_assert(
 			((finish - start) % strides == sc_index_n<dims(), 0>),
 			"lengths not multiples of strides: ($ - $) % $ ≠ 0",
 			finish, start, strides
 		);
+		*/
 	}
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
@@ -325,7 +327,7 @@ make_range(nd::basic_sc_index_n<Integer, Length, Value>);
 
 template <size_t Length, size_t Value>
 static constexpr auto sc_range_n =
-basic_c_range_n<uint_fast32_t, Length, Value>;
+basic_sc_range_n<uint_fast32_t, Length, Value>;
 
 }
 

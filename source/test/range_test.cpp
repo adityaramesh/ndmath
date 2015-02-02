@@ -8,6 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/range/range.hpp>
 #include <ndmath/range/loop_optimization.hpp>
+#include <ndmath/range/range_builder.hpp>
 //#include <ndmath/range/range_literal.hpp>
 #include <ndmath/common.hpp>
 
@@ -15,9 +16,10 @@ module("test range construction")
 {
 	using nd::sc_index;
 	using nd::make_range;
+	using namespace nd::tokens;
 
 	static constexpr auto b = sc_index<0, 0, 0>;
-	static constexpr auto e = sc_index<50, 50, 50>;
+	static constexpr auto e = sc_index<49, 49, 49>;
 	static constexpr auto s = sc_index<1, 1, 1>;
 
 	constexpr auto r1 = make_range(e);
@@ -51,6 +53,11 @@ module("test range for_each")
 	auto j = 0;
 	constexpr auto r1 = make_range(sc_index<49, 49, 49>);
 	r1([&] (auto) { ++j; });
+	require(j == 50 * 50 * 50);
+
+	j = 0;
+	auto r2 = r1.reverse<0, 2>();
+	r2([&] (auto) { ++j; });
 	require(j == 50 * 50 * 50);
 }
 

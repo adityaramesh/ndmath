@@ -3,6 +3,8 @@
 ** Author:    Aditya Ramesh
 ** Date:      01/30/2015
 ** Contact:   _@adityaramesh.com
+**
+** Convenient syntax for defining 1D ranges.
 */
 
 #ifndef ZAD301DEC_3C71_4AE6_937F_3A77189CCD3C
@@ -10,12 +12,31 @@
 
 namespace nd {
 
-class range_builder
+class range_builder final
 {
+public:
+	template <class A, class B>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	auto operator()(const A& a, const B& b)
+	const noexcept
+	{
+		return make_range(make_index(a), make_index(b));
+	}
 
+	template <class A, class B, class S>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	auto operator()(const A& a, const B& b, const S& s)
+	const noexcept
+	{
+		return make_range(make_index(a), make_index(b), make_index(s));
+	}
 };
 
-// TODO tokens namespace with static instance of builder
+namespace tokens {
+
+static constexpr auto r = range_builder{};
+
+}
 
 }
 
