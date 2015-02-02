@@ -14,7 +14,7 @@ template <class Op, class Index1, class Index2>
 class index_expr final
 {
 public:
-	static constexpr auto dims = Index1::dims().value();
+	static constexpr auto dims = Index1::dims();
 private:
 	const Index1& m_i1;
 	const Index2& m_i2;
@@ -22,21 +22,13 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	explicit index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
-	
-	template <uint_fast32_t N>
-	CC_ALWAYS_INLINE constexpr
-	auto get() noexcept
-	{
-		using tokens::c;
-		return Op::apply(m_i1(c<N>), m_i2(c<N>));
-	}
 
 	template <uint_fast32_t N>
 	CC_ALWAYS_INLINE constexpr
-	auto get() const noexcept
+	const auto get() const noexcept
 	{
 		using tokens::c;
-		return Op::apply(m_i1(c<N>), m_i2(c<N>));
+		return Op::apply(m_i1.at_l(c<N>), m_i2.at_l(c<N>));
 	}
 };
 

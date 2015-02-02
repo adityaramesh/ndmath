@@ -24,11 +24,11 @@ struct composite_index_traits;
 
 template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, true>
-{ using type = decltype(std::declval<I1>().at(nd::tokens::c<N>)); };
+{ using type = decltype(std::declval<I1>().at_l(nd::tokens::c<N>)); };
 
 template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, false>
-{ using type = decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>)); };
+{ using type = decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>)); };
 
 template <uint_fast32_t N, uint_fast32_t Dims1, bool First>
 struct composite_index_helper;
@@ -39,19 +39,19 @@ struct composite_index_helper<N, Dims1, true>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static auto get(I1& i1, I2) noexcept ->
-	decltype(std::declval<I1>().at(nd::tokens::c<N>))
+	decltype(std::declval<I1>().at_l(nd::tokens::c<N>))
 	{
 		using tokens::c;
-		return i1(c<N>);
+		return i1.at_l(c<N>);
 	}
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static auto get_const(I1& i1, I2) noexcept ->
-	decltype(std::declval<I1>().at(nd::tokens::c<N>))
+	const decltype(std::declval<I1>().at_l(nd::tokens::c<N>))
 	{
 		using tokens::c;
-		return i1(c<N>);
+		return i1.at_l(c<N>);
 	}
 };
 
@@ -61,19 +61,19 @@ struct composite_index_helper<N, Dims1, false>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static auto get(I1, I2& i2) noexcept ->
-	decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>))
+	decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>))
 	{
 		using tokens::c;
-		return i2(c<N - Dims1>);
+		return i2.at_l(c<N - Dims1>);
 	}
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static auto get_const(I1, I2& i2) noexcept ->
-	decltype(std::declval<I2>().at(nd::tokens::c<N - Dims1>))
+	const decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>))
 	{
 		using tokens::c;
-		return i2(c<N - Dims1>);
+		return i2.at_l(c<N - Dims1>);
 	}
 };
 
@@ -84,8 +84,8 @@ class composite_index final
 {
 	using i1 = std::decay_t<Index1>;
 	using i2 = std::decay_t<Index2>;
-	static constexpr auto dims1 = i1::dims().value();
-	static constexpr auto dims2 = i2::dims().value();
+	static constexpr auto dims1 = i1::dims();
+	static constexpr auto dims2 = i2::dims();
 public:
 	static constexpr auto dims = dims1 + dims2;
 private:

@@ -30,7 +30,7 @@ public:
 
 	template <size_t N>
 	CC_ALWAYS_INLINE constexpr
-	auto& get() const noexcept
+	const auto& get() const noexcept
 	{ return std::get<N>(m_args); }
 };
 

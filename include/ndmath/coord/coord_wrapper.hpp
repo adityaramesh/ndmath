@@ -64,7 +64,7 @@ public:
 
 	template <class Integer = uint_fast32_t, nd_enable_if(
 		allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n = 0) noexcept ->
 	decltype(std::declval<const T>().value(n))
 	{ return T::value(n); }
@@ -84,7 +84,8 @@ public:
 	{ return m_wrapped.value(n); }
 
 	template <nd_enable_if(is_constant)>
-	constexpr operator integer() const noexcept
+	CC_ALWAYS_INLINE constexpr
+	operator integer() const noexcept
 	{ return value(); }
 };
 

@@ -3,6 +3,20 @@
 ** Author:    Aditya Ramesh
 ** Date:      01/13/2015
 ** Contact:   _@adityaramesh.com
+**
+** Note that the const qualifiers added to the return types in the index module
+** serve an important purpose. To see why, suppose that we did not add the const
+** qualifier to the return types of the const accessor functions returning
+** `coord` objects. Consider a const subindex whose integer value at coordinate
+** `n` is used in a static assertion (e.g. `i(n) == 0`). The _const_ accessor
+** functions of the index object underlying the subindex will still return
+** _non-const_ `coord` objects. When we call `operator()` on the subindex, the
+** subindex will invoke `at` on the underlying index object. `at` will return a
+** _non-const_ `coord` object, and `operator()` will invoke `value` on this
+** object. This call should be constexpr since `operator()` is constexpr, but
+** the call to `value` is not constexpr. (The reason being that a non-const
+** `coord` objects may return a non-const lvalue references, so that the `coord`
+** object can be modified.)
 */
 
 #ifndef Z26650853_4E79_4AA8_A435_BE8BBAB75C90
@@ -29,11 +43,49 @@ CC_ALWAYS_INLINE constexpr
 auto make_const_subindex(const index_wrapper<Index>& w)
 noexcept;
 
+namespace detail {
+
+template <class Index, size_t N>
+struct index_return_type_helper
+{
+	using coord        = decltype(std::declval<Index>().template get<N>());
+	using coord_type   = std::decay_t<coord>;
+	using integer      = decltype(std::declval<coord>().value());
+	using integer_type = std::decay_t<integer>;
+};
+
+template <class Index, class Seq>
+struct index_traits;
+
+template <class Index, class Integer, Integer... Ts>
+struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
+{
+	/*
+	** The integer type common to all of the `coord` objects stored by the
+	** index.
+	*/
+	using integer = std::common_type_t<
+		typename index_return_type_helper<Index, Ts>::integer_type...
+	>;
+};
+
+template <size_t N, class Index>
+using coord_at = typename index_return_type_helper<Index, N>::coord;
+
+template <size_t N, class Index>
+using integer_at = typename index_return_type_helper<Index, N>::integer;
+
+}
+
 template <class T>
 class index_wrapper final
 {
-	using self = index_wrapper<T>;
-
+	using self   = index_wrapper<T>;
+	using seq    = std::make_index_sequence<T::dims>;
+	using traits = detail::index_traits<T, seq>;
+public:
+	using integer = typename traits::integer;
+private:
 	T m_wrapped;
 public:
 	CC_ALWAYS_INLINE CC_CONST constexpr
@@ -71,7 +123,7 @@ public:
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	static auto dims() noexcept
-	{ return tokens::c<T::dims>; }
+	{ return T::dims; }
 
 	/*
 	** Element accessors.
@@ -79,53 +131,91 @@ public:
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
-	auto at(const coord_wrapper<Loc> c) noexcept ->
-	decltype(std::declval<T>().template get<c.value(T::dims - 1)>())
+	auto at_l(const coord_wrapper<Loc> c) noexcept ->
+	detail::coord_at<c.value(dims() - 1), T>
 	{
-		constexpr auto value = c.value(T::dims - 1);
+		constexpr auto value = c.value(dims() - 1);
 		return m_wrapped.template get<value>();
+	}
+
+	template <class Loc>
+	CC_ALWAYS_INLINE constexpr
+	auto at_l(const coord_wrapper<Loc> c) const noexcept ->
+	const detail::coord_at<c.value(dims() - 1), const T>
+	{
+		constexpr auto value = c.value(dims() - 1);
+		return m_wrapped.template get<value>();
+	}
+
+	template <class Loc>
+	CC_ALWAYS_INLINE constexpr
+	auto at(const coord_wrapper<Loc> c) noexcept ->
+	detail::integer_at<c.value(dims() - 1), T>
+	{
+		constexpr auto value = c.value(dims() - 1);
+		return m_wrapped.template get<value>().value();
 	}
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
 	auto at(const coord_wrapper<Loc> c) const noexcept ->
-	decltype(std::declval<const T>().template get<c.value(T::dims - 1)>())
+	detail::integer_at<c.value(dims() - 1), const T>
 	{
-		constexpr auto value = c.value(T::dims - 1);
-		return m_wrapped.template get<value>();
+		constexpr auto value = c.value(dims() - 1);
+		return m_wrapped.template get<value>().value();
 	}
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const coord_wrapper<Loc> c) noexcept ->
-	decltype(std::declval<T>().template get<c.value(T::dims - 1)>())
+	detail::integer_at<c.value(dims() - 1), T>
 	{ return at(c); }
 
 	template <class Loc>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const coord_wrapper<Loc> c) const noexcept ->
-	decltype(std::declval<const T>().template get<c.value(T::dims - 1)>())
+	detail::integer_at<c.value(dims() - 1), const T>
 	{ return at(c); }
 
 	CC_ALWAYS_INLINE constexpr
+	auto first_l() noexcept ->
+	detail::coord_at<0, T>
+	{ return at_l(tokens::c<0>); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto first_l() const noexcept ->
+	const detail::coord_at<0, const T>
+	{ return at_l(tokens::c<0>); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto last_l() noexcept ->
+	detail::coord_at<dims() - 1, T>
+	{ return at_l(tokens::c<dims() - 1>); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto last_l() const noexcept ->
+	const detail::coord_at<dims() - 1, const T>
+	{ return at_l(tokens::c<dims() - 1>); }
+
+	CC_ALWAYS_INLINE constexpr
 	auto first() noexcept ->
-	decltype(std::declval<T>().template get<0>())
+	detail::integer_at<0, T>
 	{ return at(tokens::c<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	auto first() const noexcept ->
-	decltype(std::declval<const T>().template get<0>())
+	const detail::integer_at<0, const T>
 	{ return at(tokens::c<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	auto last() noexcept ->
-	decltype(std::declval<T>().template get<T::dims - 1>())
-	{ return at(tokens::c<T::dims - 1>); }
+	detail::integer_at<dims() - 1, T>
+	{ return at(tokens::c<dims() - 1>); }
 
 	CC_ALWAYS_INLINE constexpr
 	auto last() const noexcept ->
-	decltype(std::declval<const T>().template get<T::dims - 1>())
-	{ return at(tokens::c<T::dims - 1>); }
+	const detail::integer_at<dims() - 1, const T>
+	{ return at(tokens::c<dims() - 1>); }
 
 	/*
 	** Subindex creation.
@@ -138,8 +228,8 @@ public:
 		const coord_wrapper<D2> l2
 	) noexcept
 	{
-		constexpr auto a = l1.value(T::dims - 1);
-		constexpr auto b = l2.value(T::dims - 1);
+		constexpr auto a = l1.value(dims() - 1);
+		constexpr auto b = l2.value(dims() - 1);
 		return make_subindex<a, b>(*this);
 	}
 
@@ -150,8 +240,8 @@ public:
 		const coord_wrapper<D2> l2
 	) const noexcept
 	{
-		constexpr auto a = l1.value(T::dims - 1);
-		constexpr auto b = l2.value(T::dims - 1);
+		constexpr auto a = l1.value(dims() - 1);
+		constexpr auto b = l2.value(dims() - 1);
 		return make_const_subindex<a, b>(*this);
 	}
 
