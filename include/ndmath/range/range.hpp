@@ -17,6 +17,35 @@
 
 namespace nd {
 
+template <class Start, class Finish, class Stride, class Attribs>
+class range;
+
+namespace detail {
+
+template <size_t Coord, class Range>
+static constexpr auto start =
+std::decay_t<decltype(
+	std::declval<Range>().start().at_l(tokens::c<Coord>)
+)>::value();
+
+template <size_t Coord, class Range>
+static constexpr auto finish =
+std::decay_t<decltype(
+	std::declval<Range>().finish().at_l(tokens::c<Coord>)
+)>::value();
+
+template <size_t Coord, class Range>
+static constexpr auto stride =
+std::decay_t<decltype(
+	std::declval<Range>().strides().at_l(tokens::c<Coord>)
+)>::value();
+
+template <size_t Coord, class Range>
+static constexpr auto length =
+finish<Coord, Range> - start<Coord, Range> + stride<Coord, Range>;
+
+}
+
 template <
 	class Start, class Finish, class Stride,
 	class Attribs = default_attribs<Start::dims()>
@@ -24,8 +53,21 @@ template <
 class range final
 {
 public:
-	static CC_ALWAYS_INLINE CC_CONST
-	constexpr auto dims() noexcept { return Start::dims(); }
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto dims() noexcept { return Start::dims(); }
+
+	template <size_t N>
+	CC_ALWAYS_INLINE CC_CONST constexpr
+	static auto allows_static_access() noexcept
+	{
+		using tokens::c;
+		using a = std::decay_t<decltype(std::declval<Start>().at_l(c<N>))>;
+		using b = std::decay_t<decltype(std::declval<Finish>().at_l(c<N>))>;
+		using s = std::decay_t<decltype(std::declval<Stride>().at_l(c<N>))>;
+		return a::allows_static_access &&
+		       b::allows_static_access &&
+		       s::allows_static_access;
+	}
 
 	using self           = range<Start, Finish, Stride, Attribs>;
 	using integer        = typename Start::integer;
@@ -33,11 +75,6 @@ public:
 	using iterator       = range_iterator<self>;
 	using const_iterator = iterator;
 	*/
-
-	static constexpr auto allows_static_access =
-	Start::allows_static_access  &&
-	Finish::allows_static_access &&
-	Stride::allows_static_access;
 private:
 	const Start& m_start;
 	const Finish& m_finish;
@@ -59,7 +96,7 @@ public:
 			finish, start
 		);
 		nd_assert(
-			((finish - start) % strides == cindex_n<dims(), 0>),
+			((finish - start) % strides == sc_index_n<dims(), 0>),
 			"lengths not multiples of strides: ($ - $) % $ ≠ 0",
 			finish, start, strides
 		);
@@ -77,45 +114,53 @@ public:
 	const auto& strides() const noexcept
 	{ return m_strides; }
 
-	template <class Integer, nd_enable_if(Start::allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto start(const Integer n) noexcept
-	{ return Start::at(n); }
+	/*
+	** XXX: the accessors below strip the reference from the inferred return
+	** type, due to the use of auto return types. Right now, I'm leaning
+	** toward ranges being immutable, so this doesn't really matter. If we
+	** want to add non-const overloads in the future, we should probably
+	** make a traits class.
+	*/
 
-	template <class Integer, nd_enable_if(Finish::allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto finish(const Integer n) noexcept
-	{ return Finish::at(n); }
-
-	template <class Integer, nd_enable_if(Stride::allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto stride(const Integer n) noexcept
-	{ return Stride::at(n); }
-
-	template <class Integer, nd_enable_if(allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
-	static auto length(const Integer n) noexcept
-	{ return Finish::at(n) - Start::at(n) + Stride::at(n); }
-
-	template <class Integer, nd_enable_if(!Start::allows_static_access)>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	start(const Integer n) const noexcept
-	{ return m_start(n); }
+	start_l(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_start.at_l(c); }
 
-	template <class Integer, nd_enable_if(!Finish::allows_static_access)>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	finish(const Integer n) const noexcept
-	{ return m_finish(n); }
+	finish_l(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_finish.at_l(c); }
 
-	template <class Integer, nd_enable_if(!Stride::allows_static_access)>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	stride(const Integer n) const noexcept
-	{ return m_strides(n); }
+	stride_l(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_strides.at_l(c); }
 
-	template <class Integer, nd_enable_if(!allows_static_access)>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto length(const Integer n) const noexcept
-	{ return finish(n) - start(n) + stride(n); } 
+	auto length_l(const coord_wrapper<Coord>& c) const noexcept
+	{ return finish_l(c) - start_l(c) + stride_l(c); }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE constexpr auto
+	start(const coord_wrapper<Coord>& c) const noexcept
+	{ return start_l(c).value(); }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE constexpr auto
+	finish(const coord_wrapper<Coord>& c) const noexcept
+	{ return finish_l(c).value(); }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE constexpr auto
+	stride(const coord_wrapper<Coord>& c) const noexcept
+	{ return stride_l(c).value(); }
+
+	template <class Coord>
+	CC_ALWAYS_INLINE constexpr
+	auto length(const coord_wrapper<Coord>& c) const noexcept
+	{ return length_l(c).value(); }
 
 	template <size_t... Loops>
 	CC_ALWAYS_INLINE constexpr
@@ -159,7 +204,7 @@ public:
 	template <class Func>
 	CC_ALWAYS_INLINE void
 	operator()(const Func& f)
-	const noexcept(noexcept(f(cindex_n<Start::dims(), 0>)))
+	const noexcept(noexcept(f(sc_index_n<dims(), 0>)))
 	{ for_each(*this, f); }
 
 	/*
@@ -173,6 +218,7 @@ public:
 	*/
 };
 
+/*
 template <
 	size_t N, class Start, class Finish,
 	class Stride, class Attribs,
@@ -252,6 +298,7 @@ template <
 CC_ALWAYS_INLINE constexpr
 auto length(const range<Start, Finish, Stride, Attribs>& r)
 noexcept { return finish<N>(r) - start<N>(r) + stride<N>(r); }
+*/
 
 template <
 	class Start1, class Start2,
@@ -334,7 +381,7 @@ noexcept
 {
 	constexpr auto dims = Start::dims();
 	using integer = typename Start::integer;
-	return make_range(b, e, basic_cindex_n<integer, dims, 1>);
+	return make_range(b, e, basic_sc_index_n<integer, dims, 1>);
 }
 
 template <class Finish>
@@ -343,12 +390,12 @@ auto make_range(const Finish& e) noexcept
 {
 	constexpr auto dims = Finish::dims();
 	using integer = typename Finish::integer;
-	return make_range(basic_cindex_n<integer, dims, 0>, e);
+	return make_range(basic_sc_index_n<integer, dims, 0>, e);
 }
 
 template <class Integer, Integer... Ts>
 static constexpr auto basic_crange =
-make_range(nd::basic_cindex<Integer, Ts...>);
+make_range(nd::basic_sc_index<Integer, Ts...>);
 
 template <uint_fast32_t... Ts>
 static constexpr auto crange =
@@ -356,7 +403,7 @@ basic_crange<uint_fast32_t, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
 static constexpr auto basic_crange_n =
-make_range(nd::basic_cindex_n<Integer, Length, Value>);
+make_range(nd::basic_sc_index_n<Integer, Length, Value>);
 
 template <size_t Length, size_t Value>
 static constexpr auto crange_n =

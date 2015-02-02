@@ -13,12 +13,12 @@
 
 module("test range construction")
 {
-	using nd::cindex;
+	using nd::sc_index;
 	using nd::make_range;
 
-	static constexpr auto b = cindex<0, 0, 0>;
-	static constexpr auto e = cindex<50, 50, 50>;
-	static constexpr auto s = cindex<1, 1, 1>;
+	static constexpr auto b = sc_index<0, 0, 0>;
+	static constexpr auto e = sc_index<50, 50, 50>;
+	static constexpr auto s = sc_index<1, 1, 1>;
 
 	constexpr auto r1 = make_range(e);
 	constexpr auto r2 = make_range(b, e);
@@ -45,11 +45,11 @@ module("test attribute")
 
 module("test range for_each")
 {
-	using nd::cindex;
+	using nd::sc_index;
 	using nd::make_range;
 
 	auto j = 0;
-	constexpr auto r1 = make_range(cindex<49, 49, 49>);
+	constexpr auto r1 = make_range(sc_index<49, 49, 49>);
 	r1([&] (auto) { ++j; });
 	require(j == 50 * 50 * 50);
 }
@@ -68,9 +68,7 @@ module("test range iterator")
 	}
 	require(j == 50 * 50 * 50);
 }
-*/
 
-/*
 module("test range literal")
 {
 	constexpr auto r1 = "0 0 0; 50 50 50; 1 1 1"_range;

@@ -87,6 +87,11 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	operator integer() const noexcept
 	{ return value(); }
+
+	template <nd_enable_if(is_constant)>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()() const noexcept
+	{ return value(); }
 };
 
 #define nd_define_relational_op(symbol)    \

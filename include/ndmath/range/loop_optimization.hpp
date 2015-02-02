@@ -240,7 +240,7 @@ struct remainder_loop_helper
 	static void try_unroll(const L1& l1, const L2& l2, const L3& l3, const Func& f)
 	noexcept(Noexcept)
 	{
-		for (auto i = l1.value(); i != l2.value(); dir_h::step(i, l3.value())) {
+		for (auto i = l1(); i != l2(); dir_h::step(i, l3())) {
 			f(i);
 		}
 	}
@@ -251,13 +251,14 @@ struct remainder_loop_helper
 ** of the possibilities for the kinds of loops that can arise as a result of the
 ** interaction among the different loop optimizations.
 */
-template <size_t C, class Dir, class UnrollPolicy, class TilePolicy, bool Noexcept>
+template <size_t Coord, class Dir, class UnrollPolicy, class TilePolicy, bool Noexcept>
 struct tile_helper
 {
 	static constexpr auto unroll_fac = UnrollPolicy::factor;
 	static constexpr auto tile_fac   = TilePolicy::factor;
 	static constexpr auto unroll_rem = UnrollPolicy::has_rem;
 	static constexpr auto tile_rem   = TilePolicy::has_rem;
+	static constexpr auto n          = tokens::c<Coord>;
 
 	using dir_h = direction_helper<Dir>;
 	using rem_loop_h = remainder_loop_helper<Dir, Noexcept>;
@@ -280,9 +281,9 @@ struct tile_helper
 	noexcept(Noexcept)
 	{
 		for (
-			auto i = dir_h::start(r.start(C), r.finish(C));
-			i != dir_h::finish(r.start(C), r.finish(C), r.length(C));
-			dir_h::step(i, r.stride(C))
+			auto i = dir_h::start(r.start(n), r.finish(n));
+			i != dir_h::finish(r.start(n), r.finish(n), r.length(n));
+			dir_h::step(i, r.stride(n))
 		) { f(i); }
 	}
 
@@ -295,8 +296,8 @@ struct tile_helper
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		static constexpr auto tf_loc = basic_ccoord<integer, tile_fac>;
-		static constexpr auto uf_loc = basic_ccoord<integer, unroll_fac>;
+		static constexpr auto tf_loc = basic_sc_coord<integer, tile_fac>;
+		static constexpr auto uf_loc = basic_sc_coord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -305,7 +306,7 @@ struct tile_helper
 		*/
 		for (
 			auto i = integer{0};
-			i != r.length(C) / (r.stride(C) * tf_loc * uf_loc);
+			i != r.length(n) / (r.stride(n) * tf_loc() * uf_loc());
 			++i
 		)
 		{
@@ -314,13 +315,14 @@ struct tile_helper
 			*/
 			tile_count_unroller::apply(
 				0, i,
-				r.length(C) / (r.stride(C) * tf_loc * uf_loc), 1,
+				r.length(n) / (r.stride(n) * tf_loc() * uf_loc()), 1,
 				/*
 				** Unroll the loop over each tile.
 				*/
 				[&] (const auto& j) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
-						r.start(C), j, r.stride(C), r.stride(C), f
+						r.start(n), j, r.stride(n),
+						r.stride(n), f
 					);
 				}
 			);
@@ -332,12 +334,13 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				uf_loc * (length<C>(r) / (stride<C>(r) * tf_loc * uf_loc)),
-				length<C>(r) / (stride<C>(r) * tf_loc),
-				basic_ccoord<integer, 1>,
+				uf_loc * (r.length_l(n) / (r.stride_l(n) * tf_loc * uf_loc)),
+				r.length_l(n) / (r.stride_l(n) * tf_loc),
+				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
-						r.start(C), i, r.stride(C), r.stride(C), f
+						r.start(n), i, r.stride(n),
+						r.stride(n), f
 					);
 				}
 			);
@@ -351,9 +354,9 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				start<C>(r) + stride<C>(r) * tile_fac *
-				(length<C>(r) / (stride<C>(r) * tf_loc)),
-				finish<C>(r), stride<C>(r), f
+				r.start_l(n) + r.stride_l(n) * tf_loc *
+				(r.length_l(n) / (r.stride_l(n) * tf_loc)),
+				r.finish_l(n), r.stride_l(n), f
 			);
 		}
 	}
@@ -367,8 +370,8 @@ struct tile_helper
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		static constexpr auto tf_loc = basic_ccoord<integer, tile_fac>;
-		static constexpr auto uf_loc = basic_ccoord<integer, unroll_fac>;
+		static constexpr auto tf_loc = basic_sc_coord<integer, tile_fac>;
+		static constexpr auto uf_loc = basic_sc_coord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -376,8 +379,8 @@ struct tile_helper
 		** Unrolled loop over tile numbers.
 		*/
 		for (
-			auto i = r.length(C) / (r.stride(C) * tile_fac) - 1;
-			i != r.length(C) / (r.stride(C) * tile_fac * unroll_fac);
+			auto i = r.length(n) / (r.stride(n) * tile_fac) - 1;
+			i != r.length(n) / (r.stride(n) * tf_loc() * uf_loc());
 			--i
 		)
 		{
@@ -385,15 +388,15 @@ struct tile_helper
 			** Unroll the loop over the chunk of `unroll_fac` tiles.
 			*/
 			tile_count_unroller::apply(
-				0, i, r.length(C) / (tile_fac * unroll_fac), 1,
+				0, i, r.length(n) / (tf_loc() * uf_loc()), 1,
 				/*
 				** Unroll the loop over each tile.
 				*/
 				[&] (const auto& j) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
-						r.start(C) +
-						r.length(C) % (r.stride(C) * tile_fac),
-						j, r.stride(C), r.stride(C), f
+						r.start(n) + r.length(n) %
+						(r.stride(n) * tf_loc()), j,
+						r.stride(n), r.stride(n), f
 					);
 				}
 			);
@@ -405,14 +408,14 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				length<C>(r) / (stride<C>(r) * tf_loc * uf_loc),
-				basic_ccoord<integer, integer(-1)>,
-				basic_ccoord<integer, 1>,
+				r.length_l(n) / (r.stride_l(n) * tf_loc * uf_loc),
+				basic_sc_coord<integer, integer(-1)>,
+				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
-						r.start(C) + r.length(C) %
-						(r.stride(C) * tile_fac),
-						i, r.stride(C), r.stride(C), f
+						r.start(n) + r.length(n) %
+						(r.stride(n) * tf_loc()),
+						i, r.stride(n), r.stride(n), f
 					);
 				}
 			);
@@ -426,8 +429,8 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				start<C>(r) + length<C>(r) % (stride<C>(r) * tf_loc),
-				start<C>(r) - stride<C>(r), stride<C>(r), f
+				r.start_l(n) + r.length_l(n) % (r.stride_l(n) * tf_loc),
+				r.start_l(n) - r.stride_l(n), r.stride_l(n), f
 			);
 		}
 	}
@@ -438,20 +441,20 @@ private:
 	{
 		nd_assert(
 			(!unroll_rem &&
-			(r.length(C) / (r.stride(C) * tile_fac)) % unroll_fac != 0),
+			(r.length(n) / (r.stride(n) * tile_fac)) % unroll_fac != 0),
 			"Unrolling requires remainder loop, but remainder option "
 			"is set to false. Number of tiles is $; unroll factor is $; "
 			"but $1 % $2 != 0.",
-			r.length(C) / (r.stride(C) * tile_fac), unroll_fac
+			r.length(n) / (r.stride(n) * tile_fac), unroll_fac
 		);
 
 		nd_assert(
-			(!tile_rem && r.length(C) % (r.stride(C) * tile_fac) != 0),
+			(!tile_rem && r.length(n) % (r.stride(n) * tile_fac) != 0),
 			"Tiling requires remainder loop, but remainder option "
 			"is set to false. Length of range is $ - $ + $ = $; "
 			"length of tile is $ * $ = $; but $4 % $7 != 0.",
-			r.finish(C), r.start(C), r.stride(C), r.length(C),
-			r.stride(C), tile_fac, r.stride(C) * r.tile_fac
+			r.finish(n), r.start(n), r.stride(n), r.length(n),
+			r.stride(n), tile_fac, r.stride(n) * r.tile_fac
 		);
 	}
 };
@@ -462,8 +465,9 @@ private:
 ** when the range is statically accessible, or triggering a static assertion
 ** otherwise.
 ** - Setting the remainders for the unroll and tile policy to the correct values
-** when the range is statically accessible. This allows us to avoid generating
-** remainder loops when we can determine that they are not necessary.
+** when the range is statically accessible along the given coordinate. This
+** allows us to avoid generating remainder loops when we can determine that they
+** are not necessary.
 */
 template <
 	size_t Coord,
@@ -478,26 +482,25 @@ template <size_t Coord, class UnrollPolicy, class TilePolicy, class Range>
 struct policy_traits<Coord, UnrollPolicy, TilePolicy, Range, true>
 {
 	static constexpr auto unroll_fac = UnrollPolicy::factor;
-	static constexpr auto tile_fac = TilePolicy::factor;
+	static constexpr auto tile_fac   = TilePolicy::factor;
+	static constexpr auto tile_size  = stride<Coord, Range> * tile_fac;
+	static constexpr auto tile_count = length<Coord, Range> / tile_size;
 
-	static constexpr auto tile_size = Range::stride(Coord) * tile_fac;
-	static constexpr auto tile_count = Range::length(Coord) / tile_size;
-
-	static constexpr auto adjusted_unroll_fac =
+	static constexpr auto checked_unroll_fac =
 	UnrollPolicy::factor == full_unroll ? tile_count : unroll_fac;
 
 	/*
 	** Compute the remainders in case we can eliminate a remainder loop.
 	*/
-	static constexpr auto unroll_rem = tile_count % adjusted_unroll_fac;
-	static constexpr auto tile_rem = Range::length(Coord) % tile_size;
+	static constexpr auto unroll_rem     = tile_count % checked_unroll_fac;
+	static constexpr auto tile_rem       = length<Coord, Range> % tile_size;
 	static constexpr auto has_unroll_rem = !unroll_rem;
-	static constexpr auto has_tile_rem = !tile_rem;
+	static constexpr auto has_tile_rem   = !tile_rem;
 
-	using adjusted_unroll_policy =
+	using checked_unroll_policy =
 	modify_policy<unroll_fac, has_unroll_rem, UnrollPolicy>;
 
-	using adjusted_tile_policy =
+	using checked_tile_policy =
 	modify_policy<tile_fac, has_tile_rem, TilePolicy>;
 };
 
@@ -509,8 +512,8 @@ struct policy_traits<Coord, UnrollPolicy, TilePolicy, Range, false>
 		"Range not statically accessible: full unroll impossible."
 	);
 
-	using adjusted_unroll_policy = UnrollPolicy;
-	using adjusted_tile_policy = TilePolicy;
+	using checked_unroll_policy = UnrollPolicy;
+	using checked_tile_policy = TilePolicy;
 };
 
 template <size_t Dim, size_t Dims, class Attribs, bool Noexcept>
@@ -529,18 +532,20 @@ struct evaluate_loop_helper
 	{
 		using traits = policy_traits<
 			coord, unroll_policy, tile_policy,
-			Range, Range::allows_static_access
+			Range, Range::template allows_static_access<coord>()
 		>;
 
-		using adj_unroll_policy =
-		typename traits::adjusted_unroll_policy;
+		using checked_unroll_policy =
+		typename traits::checked_unroll_policy;
 
-		using adj_tile_policy =
-		typename traits::adjusted_tile_policy;
+		using checked_tile_policy =
+		typename traits::checked_tile_policy;
 
 		using helper = tile_helper<
-			coord, dir, adj_unroll_policy,
-			adj_tile_policy, Noexcept
+			coord, dir,
+			checked_unroll_policy,
+			checked_tile_policy,
+			Noexcept
 		>;
 		helper::apply(r, f);
 	}
@@ -560,9 +565,9 @@ struct evaluate_helper
 			Dim, Dims, Attribs, Noexcept
 		>;
 		evaluator::apply(r, [&] (const auto& arg)
-		CC_ALWAYS_INLINE noexcept(Noexcept) {
-			next::apply(r, f, args..., arg);
-		});
+			CC_ALWAYS_INLINE noexcept(Noexcept) {
+				next::apply(r, f, args..., arg);
+			});
 	}
 };
 

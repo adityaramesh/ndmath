@@ -11,7 +11,7 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
-- Finish range operations.
+- Finish range module.
   - Finish `range_builder.hpp`.
     - Add terse syntax for creating ranges using `operator[]`: `r[5]`,
     `r[5][10][2]`, `r[5, 5][10, 10][2, 2]`. Add this to the `tokens` namespace.

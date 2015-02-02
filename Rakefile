@@ -6,7 +6,7 @@ boost  = ENV['BOOST_INCLUDE_PATH']
 ccbase = ENV['CCBASE_INCLUDE_PATH']
 
 langflags  = "-std=c++1y"
-wflags     = "-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-conversion"
+wflags     = "-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-ignored-qualifiers"
 archflags  = "-march=native"
 incflags   = "-I include -isystem #{boost} -isystem #{ccbase}"
 ldflags    = ""
@@ -23,7 +23,7 @@ debug_cxxflags = "#{base_cxxflags} #{debug_optflags}"
 release_cxxflags = "#{base_cxxflags} #{release_optflags}"
 
 dirs  = ["out"]
-tests = ["out/index_test.run"] #FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")}
+tests = ["out/range_test.run"] #FileList["source/test/*"].map{|f| f.sub("source/test", "out").ext("run")}
 
 multitask :default, [:mode] => dirs + tests
 multitask :tests, [:mode] => dirs + tests

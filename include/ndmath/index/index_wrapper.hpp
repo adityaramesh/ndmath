@@ -307,7 +307,7 @@ auto& operator<<(
 	for_each(w.head(),
 		[&] (const auto& x)
 		CC_ALWAYS_INLINE noexcept {
-			os << x.value() << ", ";
+			os << x << ", ";
 		});
 	return os << w.last() << "]";
 }
