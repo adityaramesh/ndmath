@@ -218,88 +218,6 @@ public:
 	*/
 };
 
-/*
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(Start::allows_static_access)
->
-CC_ALWAYS_INLINE CC_CONST constexpr
-static auto start(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.start()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(Finish::allows_static_access)
->
-CC_ALWAYS_INLINE CC_CONST constexpr
-static auto finish(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.finish()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(Stride::allows_static_access)
->
-CC_ALWAYS_INLINE CC_CONST constexpr
-static auto strides(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.strides()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(!Start::allows_static_access)
->
-CC_ALWAYS_INLINE constexpr
-auto start(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.start()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(!Finish::allows_static_access)
->
-CC_ALWAYS_INLINE constexpr
-auto finish(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.finish()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(!Stride::allows_static_access)
->
-CC_ALWAYS_INLINE constexpr
-auto stride(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return at<N>(r.strides()); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if((
-		Start::allows_static_access  &&
-		Finish::allows_static_access &&
-		Stride::allows_static_access
-	))
->
-CC_ALWAYS_INLINE CC_CONST constexpr
-static auto length(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return finish<N>(r) - start<N>(r) + stride<N>(r); }
-
-template <
-	size_t N, class Start, class Finish,
-	class Stride, class Attribs,
-	nd_enable_if(!(
-		Start::allows_static_access  &&
-		Finish::allows_static_access &&
-		Stride::allows_static_access
-	))
->
-CC_ALWAYS_INLINE constexpr
-auto length(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return finish<N>(r) - start<N>(r) + stride<N>(r); }
-*/
-
 template <
 	class Start1, class Start2,
 	class Finish1, class Finish2,
@@ -394,20 +312,20 @@ auto make_range(const Finish& e) noexcept
 }
 
 template <class Integer, Integer... Ts>
-static constexpr auto basic_crange =
+static constexpr auto basic_sc_range =
 make_range(nd::basic_sc_index<Integer, Ts...>);
 
 template <uint_fast32_t... Ts>
-static constexpr auto crange =
-basic_crange<uint_fast32_t, Ts...>;
+static constexpr auto sc_range =
+basic_sc_range<uint_fast32_t, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
-static constexpr auto basic_crange_n =
+static constexpr auto basic_sc_range_n =
 make_range(nd::basic_sc_index_n<Integer, Length, Value>);
 
 template <size_t Length, size_t Value>
-static constexpr auto crange_n =
-basic_crange_n<uint_fast32_t, Length, Value>;
+static constexpr auto sc_range_n =
+basic_c_range_n<uint_fast32_t, Length, Value>;
 
 }
 
