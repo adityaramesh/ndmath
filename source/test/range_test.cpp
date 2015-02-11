@@ -9,7 +9,6 @@
 #include <ndmath/range/range.hpp>
 #include <ndmath/range/loop_optimization.hpp>
 #include <ndmath/range/range_builder.hpp>
-//#include <ndmath/range/range_literal.hpp>
 #include <ndmath/common.hpp>
 
 module("test range construction")
