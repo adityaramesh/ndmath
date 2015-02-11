@@ -12,8 +12,9 @@ High-performance, multidimensional arrays in modern C++.
 # Immediate TODO
 
 - Finish range module.
-  - Finish `range_builder.hpp`.
-  - Add the appropriate unit tests for range_iterator.
+  - For 1D ranges, disable the usual `reverse`, `tile`, and other loop
+  optimization functions, and set the value of the loop to zero. Disable
+  `permute` entirely, since it's useless for 1D ranges.
   - Update `range_iterator.hpp` so that the direction attribute is taken into
   account.
 - Replace ccbase mpl parsing with metaparse library; just include metaparse in

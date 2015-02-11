@@ -36,6 +36,9 @@ namespace tokens {
 
 static constexpr auto r = range_builder{};
 
+template <uint_fast32_t A, uint_fast32_t B, uint_fast32_t S = 1>
+static constexpr auto cr = r(c<A>, c<B>, c<S>);
+
 }
 
 }

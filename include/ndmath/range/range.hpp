@@ -76,9 +76,9 @@ public:
 	using const_iterator = iterator;
 	*/
 private:
-	const Start& m_start;
-	const Finish& m_finish;
-	const Stride& m_strides;
+	const Start m_start;
+	const Finish m_finish;
+	const Stride m_strides;
 public:
 	CC_ALWAYS_INLINE CC_CONST constexpr
 	explicit range(
@@ -95,13 +95,11 @@ public:
 			"end points not larger than starting points: $ ≱ $",
 			finish, start
 		);
-		/*
 		nd_assert(
 			((finish - start) % strides == sc_index_n<dims(), 0>),
 			"lengths not multiples of strides: ($ - $) % $ ≠ 0",
 			finish, start, strides
 		);
-		*/
 	}
 
 	CC_ALWAYS_INLINE CC_CONST constexpr
