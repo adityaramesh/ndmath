@@ -30,7 +30,7 @@ public:
 private:
 	T m_wrapped;
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	explicit coord_wrapper()
 	noexcept : m_wrapped{} {}
 
@@ -58,7 +58,7 @@ public:
 		return *this;
 	}
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto wrapped() const noexcept
 	{ return m_wrapped; }
 

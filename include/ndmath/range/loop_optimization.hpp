@@ -25,12 +25,12 @@ template <>
 struct direction_helper<forward>
 {
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto start(const Integer& a, Integer) noexcept
 	{ return a; }
 
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto finish(const Integer& a, Integer, const Integer& l) noexcept
 	{ return a + l; }
 
@@ -44,12 +44,12 @@ template <>
 struct direction_helper<backward>
 {
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto start(Integer, const Integer& b) noexcept
 	{ return b; }
 
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto finish(Integer, const Integer& b, const Integer& l) noexcept
 	{ return b - l; }
 
@@ -104,7 +104,7 @@ template <size_t End, size_t Factor, class Policy, class Dir, bool Noexcept>
 struct unroll_helper<End, End, Factor, Policy, Dir, Noexcept>
 {
 	template <class Integer, class Func>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static void apply(Integer, Integer, Integer, Integer, Func)
 	noexcept {}
 };

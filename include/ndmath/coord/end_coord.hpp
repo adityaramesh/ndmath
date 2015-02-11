@@ -19,7 +19,7 @@ struct end_coord final
 	using integer = void;
 
 	template <class Integer>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n) noexcept
 	{ return Integer(n); }
 };

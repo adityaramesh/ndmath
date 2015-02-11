@@ -18,11 +18,11 @@ public:
 	static constexpr auto is_constant = true;
 	using integer = Integer;
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	explicit const_coord() noexcept {}
 
 	template <class Integer_ = int>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto value(Integer_ = 0) noexcept
 	{ return N; }
 };

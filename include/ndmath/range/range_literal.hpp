@@ -116,7 +116,7 @@ struct range_literal_helper<cc::seq<
 }}
 
 template <class Char, Char... Ts>
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto operator"" _range() noexcept
 {
 	using seq = std::integer_sequence<Char, Ts...>;

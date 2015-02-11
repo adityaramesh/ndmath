@@ -54,7 +54,7 @@ public:
 
 	template <class Integer, nd_enable_if(
 		allows_static_access)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n) noexcept
 	{ return Op::apply(Coord1::value(n), Coord2::value(n)); }
 

@@ -16,7 +16,7 @@ class range_builder final
 {
 public:
 	template <class A, class B>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto operator()(const A& a, const B& b)
 	const noexcept
 	{
@@ -24,7 +24,7 @@ public:
 	}
 
 	template <class A, class B, class S>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto operator()(const A& a, const B& b, const S& s)
 	const noexcept
 	{

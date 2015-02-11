@@ -88,7 +88,7 @@ public:
 private:
 	T m_wrapped;
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	explicit index_wrapper()
 	noexcept : m_wrapped{} {}
 
@@ -117,11 +117,11 @@ public:
 	** General accessors.
 	*/
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto wrapped() const noexcept
 	{ return m_wrapped; }
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto dims() noexcept
 	{ return T::dims; }
 

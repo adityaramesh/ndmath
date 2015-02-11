@@ -53,11 +53,11 @@ template <
 class range final
 {
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto dims() noexcept { return Start::dims(); }
 
 	template <size_t N>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto allows_static_access() noexcept
 	{
 		using tokens::c;
@@ -80,7 +80,7 @@ private:
 	const Finish m_finish;
 	const Stride m_strides;
 public:
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	explicit range(
 		const Start& start,
 		const Finish& finish,
@@ -102,15 +102,15 @@ public:
 		);
 	}
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	const auto& start() const noexcept
 	{ return m_start; }
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	const auto& finish() const noexcept
 	{ return m_finish; }
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	const auto& strides() const noexcept
 	{ return m_strides; }
 
@@ -208,11 +208,11 @@ public:
 	{ for_each(*this, f); }
 
 	/*
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto begin() const noexcept
 	{ return iterator{*this}; }
 
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	auto end() const noexcept
 	{ return iterator{*this}; }
 	*/
@@ -251,12 +251,12 @@ auto operator!=(
 ** TODO: uncomment once implemented.
 **
 template <class Start, class Finish, class Stride, class Attribs>
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto begin(const range<Start, Finish, Stride, Attribs>& r)
 noexcept { return r.begin(); }
 
 template <class Start, class Finish, class Stride, class Attribs>
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto end(const range<Start, Finish, Stride, Attribs>& r)
 noexcept { return r.end(); }
 */
@@ -278,7 +278,7 @@ template <
 		>::value
 	))
 >
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto make_range(const Start& b, const Finish& e, const Stride& s)
 noexcept { return range<Start, Finish, Stride>{b, e, s}; }
 
@@ -293,7 +293,7 @@ template <
 		>::value
 	))
 >
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto make_range(const Start& b, const Finish& e)
 noexcept
 {
@@ -303,7 +303,7 @@ noexcept
 }
 
 template <class Finish>
-CC_ALWAYS_INLINE CC_CONST constexpr
+CC_ALWAYS_INLINE constexpr
 auto make_range(const Finish& e) noexcept
 {
 	constexpr auto dims = Finish::dims();

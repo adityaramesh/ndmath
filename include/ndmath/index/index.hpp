@@ -44,22 +44,22 @@ template <class Integer>
 struct make_index_helper
 {
 	template <class T, nd_enable_if(std::is_integral<T>::value)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto make(const T& t) noexcept
 	{ return make_coord((Integer)t); }
 
 	template <class T, nd_enable_if(std::is_integral<T>::value)>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto make_const(const T& t) noexcept
 	{ return make_c_coord((Integer)t); }
 
 	template <class Coord>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto make(const coord_wrapper<Coord>& c) noexcept
 	{ return c; }
 
 	template <class Coord>
-	CC_ALWAYS_INLINE CC_CONST constexpr
+	CC_ALWAYS_INLINE constexpr
 	static auto make_const(const coord_wrapper<Coord>& c) noexcept
 	{ return c; }
 };
