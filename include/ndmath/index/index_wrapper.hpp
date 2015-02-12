@@ -69,12 +69,6 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 	>;
 };
 
-template <size_t N, class Index>
-using coord_at = typename index_return_type_helper<Index, N>::coord;
-
-template <size_t N, class Index>
-using integer_at = typename index_return_type_helper<Index, N>::integer;
-
 }
 
 template <class T>
@@ -129,93 +123,77 @@ public:
 	** Element accessors.
 	*/
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at_l(const coord_wrapper<Loc> c) noexcept ->
-	detail::coord_at<c.value(dims() - 1), T>
-	{
-		constexpr auto value = c.value(dims() - 1);
-		return m_wrapped.template get<value>();
-	}
+	auto at_l(const coord_wrapper<Coord> c) noexcept
+	nd_deduce_return_type(
+		m_wrapped.template get<c.value(dims() - 1)>()
+	)
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at_l(const coord_wrapper<Loc> c) const noexcept ->
-	const detail::coord_at<c.value(dims() - 1), const T>
-	{
-		constexpr auto value = c.value(dims() - 1);
-		return m_wrapped.template get<value>();
-	}
+	auto at_l(const coord_wrapper<Coord> c) const noexcept
+	nd_deduce_const_return_type(
+		m_wrapped.template get<c.value(dims() - 1)>()
+	)
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at(const coord_wrapper<Loc> c) noexcept ->
-	detail::integer_at<c.value(dims() - 1), T>
-	{
-		constexpr auto value = c.value(dims() - 1);
-		return m_wrapped.template get<value>().value();
-	}
+	auto at(const coord_wrapper<Coord> c) noexcept
+	nd_deduce_return_type(
+		m_wrapped.template get<c.value(dims() - 1)>().value()
+	)
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at(const coord_wrapper<Loc> c) const noexcept ->
-	detail::integer_at<c.value(dims() - 1), const T>
-	{
-		constexpr auto value = c.value(dims() - 1);
-		return m_wrapped.template get<value>().value();
-	}
+	auto at(const coord_wrapper<Coord> c) const noexcept
+	nd_deduce_return_type(
+		m_wrapped.template get<c.value(dims() - 1)>().value()
+	)
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto operator()(const coord_wrapper<Loc> c) noexcept ->
-	detail::integer_at<c.value(dims() - 1), T>
+	auto operator()(const coord_wrapper<Coord> c) noexcept ->
+	decltype(m_wrapped.template get<c.value(dims() - 1)>().value())
 	{ return at(c); }
 
-	template <class Loc>
+	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto operator()(const coord_wrapper<Loc> c) const noexcept ->
-	detail::integer_at<c.value(dims() - 1), const T>
+	auto operator()(const coord_wrapper<Coord> c) const noexcept ->
+	const decltype(m_wrapped.template get<c.value(dims() - 1)>().value())
 	{ return at(c); }
 
 	CC_ALWAYS_INLINE constexpr
-	auto first_l() noexcept ->
-	detail::coord_at<0, T>
-	{ return at_l(tokens::c<0>); }
+	auto first_l() noexcept
+	nd_deduce_return_type(at_l(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto first_l() const noexcept ->
-	const detail::coord_at<0, const T>
-	{ return at_l(tokens::c<0>); }
+	auto first_l() const noexcept
+	nd_deduce_const_return_type(at_l(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last_l() noexcept ->
-	detail::coord_at<dims() - 1, T>
-	{ return at_l(tokens::c<dims() - 1>); }
+	auto last_l() noexcept
+	nd_deduce_return_type(at_l(tokens::c<dims() - 1>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last_l() const noexcept ->
-	const detail::coord_at<dims() - 1, const T>
-	{ return at_l(tokens::c<dims() - 1>); }
+	auto last_l() const noexcept
+	nd_deduce_const_return_type(at_l(tokens::c<dims() - 1>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto first() noexcept ->
-	detail::integer_at<0, T>
-	{ return at(tokens::c<0>); }
+	auto first() noexcept
+	nd_deduce_return_type(at(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto first() const noexcept ->
-	const detail::integer_at<0, const T>
-	{ return at(tokens::c<0>); }
+	auto first() const noexcept
+	nd_deduce_const_return_type(at(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last() noexcept ->
-	detail::integer_at<dims() - 1, T>
-	{ return at(tokens::c<dims() - 1>); }
+	auto last() noexcept
+	nd_deduce_return_type(at(tokens::c<dims() - 1>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last() const noexcept ->
-	const detail::integer_at<dims() - 1, const T>
-	{ return at(tokens::c<dims() - 1>); }
+	auto last() const noexcept
+	nd_deduce_const_return_type(at(tokens::c<dims() - 1>))
 
 	/*
 	** Subindex creation.

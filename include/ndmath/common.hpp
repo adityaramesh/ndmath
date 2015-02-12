@@ -79,6 +79,12 @@
 		std::is_same<EnableIfDummyType, EnableIfDummyType>::value && x, int \
 	> = 0
 
+#define nd_deduce_return_type(x) \
+	-> decltype(x) { return x; }
+
+#define nd_deduce_const_return_type(x) \
+	-> const decltype(x) { return x; }
+
 namespace nd {
 	
 namespace mpl = cc::mpl;
