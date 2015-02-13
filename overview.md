@@ -88,7 +88,7 @@ ndmath is organized into four modules:
 	// Boolean indexing:
 
 	m1(m1.max(1) <= 6)
-	// Result: [[1 2 3], [4 5 6]]
+	// Result: [[1 2 3] [4 5 6]]
 
 ### Performance Optimization
 
@@ -99,7 +99,7 @@ ndmath is organized into four modules:
 	*/
 	auto gen  = std::default_random_engine{};
 	auto dist = std::uniform_real_distribution<double>{0.0, 1.0};
-	auto rand = nd::make_array{[&] (...) { return dist(gen); }, 10000, 10000};
+	auto rand = nd::make_array([&] (...) { return dist(gen); }, 10000, 10000);
 
 	// Initialize three dynamically-allocated matrices using `rand`.
 	auto a = nd::make_darray(rand);
