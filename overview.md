@@ -17,19 +17,19 @@ it has now become commonplace for high-performance libraries to implement
 the same algorithms twice, once for CPUs in C++ and once for GPUs in CUDA (Torch
 for deep learning, OpenCV for computer vision, etc.).
 
-It has now become possible to solve many of the problems mentioned in the
-previous paragraph. Here are ndmath's goals:
+It is now possible to solve many of the problems mentioned in the previous
+paragraph. Here are ndmath's goals:
   - Generalize the abstraction patterns used by high-performance C++ linear
   algebra libraries (e.g. Blaze and Eigen) to an arbitrary number of dimensions.
   - Incorporate the syntax of numpy using C++14 features.
   - Integrate a framework for loop nest optimization into the library,
   including:
-    - Loop unrolling, tiling, permutation, and parallelizations (allow the
-    programmer to write an algorithm once, and select the best loop optimization
-    parameters for each architecture).
-    - GPU gridification (this allows the same expression to be evaluated either
-    on the CPU or the GPU, so the programmer doesn't have to rewrite the same
-    algorithm twice).
+      - Loop unrolling, tiling, permutation, and parallelizations (allow the
+      programmer to write an algorithm once, and select the best loop
+      optimization parameters for each architecture).
+      - GPU gridification (this allows the same expression to be evaluated
+      either on the CPU or the GPU, so the programmer doesn't have to rewrite
+      the same algorithm twice).
 
 ## Overview
 
