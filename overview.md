@@ -23,7 +23,7 @@ paragraph. Here are ndmath's goals:
 algebra libraries (e.g. Blaze and Eigen) to an arbitrary number of dimensions.
 - Incorporate the syntax of numpy using C++14 features.
 - Integrate a framework for loop nest optimization into the library.
-  - Loop unrolling, tiling, permutation, and parallelizations (allow the
+  - Loop unrolling, tiling, permutation, and parallelization (allow the
   programmer to write an algorithm once, and select the best loop optimization
   parameters for each architecture).
   - GPU gridification (this allows the same expression to be evaluated either on
