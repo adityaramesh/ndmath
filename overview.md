@@ -38,8 +38,8 @@ ndmath is organized into four modules:
   expressions. Allows the programmer to write things like `arr(end - 5) = 3`.
   - The `index` module. Extends the `coord` module to multiple dimensions.
   - The `range` module. A range is composed of three indices: the start, finish,
-  and stride. Ranges encode the information necessary to represented nested
-  loops, and allows loop optimizations to be applied to them.
+  and stride. Ranges encode the information necessary to represent nested loops,
+  and allow loop optimizations to be applied to them.
   - The `array` module. Implements numpy's syntax for n-dimensional arrays.
 
 ## Examples
@@ -109,8 +109,10 @@ ndmath is organized into four modules:
 
 	// "Unoptimized" computation:
 	d = a * b + c;
+
 	// Unroll and tile the resulting loop nest:
 	d = (a * b + c).unroll<1, 4>().tile<0, 8>();
+
 	// GPU gridification using 128 threads per block (once CUDA supports
 	// C++14).
 	d = (a * b + c).gridify<128, 128>();
