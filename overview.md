@@ -19,12 +19,10 @@ for deep learning, OpenCV for computer vision, etc.).
 
 It is now possible to solve many of the problems mentioned in the previous
 paragraph. Here are ndmath's goals:
-  - Generalize the abstraction patterns used by high-performance C++ linear
-  algebra libraries (e.g. Blaze and Eigen) to an arbitrary number of dimensions.
-  - Incorporate the syntax of numpy using C++14 features.
-  - Integrate a framework for loop nest optimization into the library.
-
-- Types of loop optimizations:
+- Generalize the abstraction patterns used by high-performance C++ linear
+algebra libraries (e.g. Blaze and Eigen) to an arbitrary number of dimensions.
+- Incorporate the syntax of numpy using C++14 features.
+- Integrate a framework for loop nest optimization into the library.
   - Loop unrolling, tiling, permutation, and parallelizations (allow the
   programmer to write an algorithm once, and select the best loop optimization
   parameters for each architecture).
