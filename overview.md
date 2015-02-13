@@ -112,15 +112,13 @@ ndmath is organized into four modules:
 	// Unroll and tile the resulting loop nest:
 	d = (a * b + c).unroll<1, 4>().tile<0, 8>();
 	// GPU gridification using 128 threads per block (once CUDA supports
-	// host-side C++14).
+	// C++14).
 	d = (a * b + c).gridify<128, 128>();
 
-	/*
-	** Note: arbitrary expressions written using this library can be
-	** gridified, including those that perform reductions, broadcasting, or
-	** use advanced indexing techniques. This allows the user to generate
-	** specialized CUDA kernels optimized for performing the tasks at hand.
-	** Unrolling, tiling, and permutation can be applied to loops _within_
-	** the CUDA kernel, and grid searches can be performed automatically
-	** over these parameters to select the kernel with the best speedup.
-	*/
+Once `gridify` works, it can be applied to arbitrary expressions written using
+ndmath, including those that perform reductions, broadcasting, or use advanced
+indexing techniques. This allows the user to generate specialized CUDA kernels
+optimized for performing the tasks at hand. Unrolling, tiling, and permutation
+can be applied to the inner loops executed _within_ the CUDA kernel, and grid
+searches can be performed automatically over these parameters to select the
+kernel yielding the best speedup.
