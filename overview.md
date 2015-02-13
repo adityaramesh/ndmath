@@ -65,7 +65,7 @@ ndmath is organized into four modules:
 	// Result: [1 4 7]
 
 	// Select the top-left 2x2 submatrix.
-	m1(cr<0, 2>, cr<0, 2>)
+	m1(cr<0, 1>, cr<0, 1>)
 	// Result: [[1 2] [4 5]]
 
 	// Create a submatrix from the corner elements.
