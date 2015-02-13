@@ -24,12 +24,12 @@ paragraph. Here are ndmath's goals:
   - Incorporate the syntax of numpy using C++14 features.
   - Integrate a framework for loop nest optimization into the library,
   including:
-      - Loop unrolling, tiling, permutation, and parallelizations (allow the
-      programmer to write an algorithm once, and select the best loop
-      optimization parameters for each architecture).
-      - GPU gridification (this allows the same expression to be evaluated
-      either on the CPU or the GPU, so the programmer doesn't have to rewrite
-      the same algorithm twice).
+     - Loop unrolling, tiling, permutation, and parallelizations (allow the
+     programmer to write an algorithm once, and select the best loop
+     optimization parameters for each architecture).
+     - GPU gridification (this allows the same expression to be evaluated either
+     on the CPU or the GPU, so the programmer doesn't have to rewrite the same
+     algorithm twice).
 
 ## Overview
 
