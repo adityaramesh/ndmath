@@ -110,11 +110,11 @@ ndmath is organized into four modules:
 	// "Unoptimized" computation:
 	d = a * b + c;
 
-	// Unroll and tile the resulting loop nest:
+	// Unroll the inner loop and tile the outer loop:
 	d = (a * b + c).unroll<1, 4>().tile<0, 8>();
 
 	// GPU gridification using 128 threads per block (once CUDA supports
-	// C++14).
+	// C++14):
 	d = (a * b + c).gridify<128, 128>();
 
 Once `gridify` works, it can be applied to arbitrary expressions written using
