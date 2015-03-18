@@ -120,6 +120,7 @@ module("test static constexpr index arithmetic")
 
 module("test runtime index arithmetic")
 {
+	using namespace nd::tokens;
 	auto i1 = nd::index<1, 2, 3>;
 
 	require((i1 + i1 == nd::index<2, 4, 6>));
