@@ -3,6 +3,12 @@
 ** Author:    Aditya Ramesh
 ** Date:      01/11/2015
 ** Contact:   _@adityaramesh.com
+**
+** Note: the reason that range iterators are not implemented right now is
+** because simulating a for loop using an iterator results in a performance
+** degradation. I could not get the generated code to be equivalent to what
+** would be generated for an actual for loop. For this reason, I would
+** discourage using range iterators even if they were implemented.
 */
 
 #ifndef Z2FFF753A_E01F_4298_B56F_AFB95A4D87C5
@@ -114,6 +120,15 @@ public:
 	const auto& strides() const noexcept
 	{ return m_strides; }
 
+	CC_ALWAYS_INLINE constexpr
+	auto size() const noexcept
+	{
+		return prod(
+			(m_finish - m_start) / m_strides +
+			sc_index_n<dims(), 1>
+		);
+	}
+
 	/*
 	** XXX: the accessors below strip the reference from the inferred return
 	** type, due to the use of auto return types. Right now, I'm leaning
@@ -203,9 +218,8 @@ public:
 
 	template <class Func>
 	CC_ALWAYS_INLINE void
-	operator()(const Func& f)
-	const noexcept(noexcept(f(sc_index_n<dims(), 0>)))
-	{ for_each(*this, f); }
+	operator()(const Func& f) const
+	nd_deduce_noexcept(for_each(*this, f))
 
 	/*
 	CC_ALWAYS_INLINE constexpr
