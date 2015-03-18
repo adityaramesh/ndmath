@@ -31,7 +31,8 @@ public:
 	** cannot be marked `constexpr` if `Index` is not `const`, since
 	** `m_index` may return a non-const reference. So we choose not to mark
 	** the function `constexpr`, and disable it in the case that `Index` is
-	** not `const`.	*/
+	** not `const`.
+	**/
 	template <uint_fast32_t N, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE
 	auto get() noexcept ->

@@ -71,6 +71,38 @@ nd_define_relational_op(less, <)
 namespace detail {
 
 template <uint_fast32_t Cur, uint_fast32_t Max>
+struct prod_helper
+{
+	using next = prod_helper<Cur + 1, Max>;
+
+	template <class W>
+	CC_ALWAYS_INLINE constexpr
+	static auto apply(const W& w) noexcept
+	{ return w(nd::tokens::c<Cur>) * next::apply(w); }
+};
+
+template <uint_fast32_t Max>
+struct prod_helper<Max, Max>
+{
+	template <class W>
+	CC_ALWAYS_INLINE constexpr
+	static auto apply(const W& w) noexcept
+	{ return w(nd::tokens::c<Max>); }
+};
+
+}
+
+template <class W>
+CC_ALWAYS_INLINE constexpr
+auto prod(const W& w) noexcept
+{
+	using helper = detail::prod_helper<0, W::dims() - 1>;
+	return helper::apply(w);
+}
+
+namespace detail {
+
+template <uint_fast32_t Cur, uint_fast32_t Max>
 struct for_each_helper
 {
 	using next = for_each_helper<Cur + 1, Max>;

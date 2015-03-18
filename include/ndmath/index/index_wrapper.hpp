@@ -297,6 +297,8 @@ nd_define_relational_op(less, <)
 
 #undef nd_define_relational_op
 
+using fusion::prod;
+
 template <class Char, class Traits, class Index>
 auto& operator<<(
 	std::basic_ostream<Char, Traits>& os,
