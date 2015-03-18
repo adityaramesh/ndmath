@@ -123,11 +123,11 @@ public:
 	CC_ALWAYS_INLINE
 	range_iterator(range_iterator&&) = default;
 
-	CC_ALWAYS_INLINE auto
+	CC_ALWAYS_INLINE auto&
 	operator=(const range_iterator& rhs) noexcept
 	{ m_pos = rhs.m_pos; return *this; }
 
-	CC_ALWAYS_INLINE auto
+	CC_ALWAYS_INLINE auto&
 	operator=(range_iterator&& rhs) noexcept
 	{ m_pos = rhs.m_pos; return *this; }
 
