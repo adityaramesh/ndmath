@@ -8,7 +8,6 @@
 #ifndef ZFF60AFF1_88C6_4555_A018_43F5FCE35128
 #define ZFF60AFF1_88C6_4555_A018_43F5FCE35128
 
-#include <utility>
 #include <ndmath/common.hpp>
 
 namespace nd {
