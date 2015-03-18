@@ -79,11 +79,22 @@
 		std::is_same<EnableIfDummyType, EnableIfDummyType>::value && x, int \
 	> = 0
 
+#define nd_deduce_noexcept(x) \
+	noexcept(noexcept(x)) { x; }
+
 #define nd_deduce_return_type(x) \
 	-> decltype(x) { return x; }
 
 #define nd_deduce_const_return_type(x) \
 	-> const decltype(x) { return x; }
+
+#define nd_deduce_noexcept_and_return_type(x) \
+	noexcept(noexcept(x))                 \
+	-> decltype(x) { return x; }
+
+#define nd_deduce_noexcept_and_const_return_type(x) \
+	noexcept(noexcept(x))                       \
+	-> decltype(const x) { return x; }
 
 namespace nd {
 	
