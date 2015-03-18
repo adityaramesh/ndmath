@@ -28,12 +28,15 @@ module("test range construction")
 	static_assert(r1.start() == b, "");
 	static_assert(r1.finish() == e, "");
 	static_assert(r1.strides() == s, "");
+	static_assert(r1.size() == 125000, "");
 	static_assert(r2.start() == b, "");
 	static_assert(r2.finish() == e, "");
 	static_assert(r2.strides() == s, "");
+	static_assert(r2.size() == 125000, "");
 	static_assert(r3.start() == b, "");
 	static_assert(r3.finish() == e, "");
 	static_assert(r3.strides() == s, "");
+	static_assert(r3.size() == 125000, "");
 }
 
 module("test attribute")
