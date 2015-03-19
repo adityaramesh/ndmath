@@ -4,6 +4,8 @@
 ** Date:      01/13/2015
 ** Contact:   _@adityaramesh.com
 **
+** # A technical note regarding the use of const qualifiers in return types:
+**
 ** Note that the const qualifiers added to the return types in the index module
 ** serve an important purpose. To see why, suppose that we did not add the const
 ** qualifier to the return types of the const accessor functions returning
@@ -113,8 +115,8 @@ public:
 	auto& operator=(const std::initializer_list<Integer> rhs) noexcept
 	{
 		nd_assert(
-			rhs.size() <= dims(),
-			"Cannot assign initializer list to index of smaller "
+			rhs.size() == dims(),
+			"Cannot assign initializer list to index of unequal "
 			"size. Size of index: $; size of initializer list: $.",
 			dims(), rhs.size()
 		);

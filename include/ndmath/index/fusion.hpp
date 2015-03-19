@@ -162,27 +162,102 @@ struct iter_to_index_copy_helper<Max, Max>
 	static void apply(Iterator, Iterator, W) noexcept {}
 };
 
-template <uint_fast32_t Cur, uint_fast32_t Max>
-struct index_to_index_copy_helper
-{
-	using next = index_to_index_copy_helper<Cur + 1, Max>;
+template <
+	uint_fast32_t Cur,
+	uint_fast32_t Last,
+	bool SrcStaticallyAccessible,
+	bool DstStaticallyAccessible
+>
+struct index_to_index_copy_helper;
 
+template <uint_fast32_t Cur, uint_fast32_t Last>
+struct index_to_index_copy_helper<Cur, Last, true, true>
+{
 	template <class W1, class W2>
 	CC_ALWAYS_INLINE
-	static void apply(W1& w1, W2& w2) noexcept
+	static void apply(const W1& w1, W2& w2) noexcept
 	{
 		using tokens::c;
-		w1.at_l(c<Cur>) = w2.at_l(c<Cur>);
+		using c1 = std::decay_t<decltype(w1.at_l(c<Cur>))>;
+		using c2 = std::decay_t<decltype(w2.at_l(c<Cur>))>;
+		static_assert(
+			c1::value() == c2::value(),
+			"Attempt to change a constant extent of an index."
+		);
+
+		using n1 = std::decay_t<decltype(w1.at_l(c<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_l(c<Cur + 1>))>;
+		using next = index_to_index_copy_helper<
+			Cur + 1, Last,
+			n1::allows_static_access,
+			n2::allows_static_access
+		>;
 		next::apply(w1, w2);
 	}
 };
 
-template <uint_fast32_t Max>
-struct index_to_index_copy_helper<Max, Max>
+template <uint_fast32_t Cur, uint_fast32_t Last, bool SrcStaticallyAccessible>
+struct index_to_index_copy_helper<Cur, Last, SrcStaticallyAccessible, false>
 {
 	template <class W1, class W2>
 	CC_ALWAYS_INLINE
-	static void apply(W1, W2) noexcept {}
+	static void apply(const W1& w1, W2& w2) noexcept
+	{
+		using tokens::c;
+		w2.at_l(c<Cur>) = w1.at_l(c<Cur>);
+
+		using n1 = std::decay_t<decltype(w1.at_l(c<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_l(c<Cur + 1>))>;
+		using next = index_to_index_copy_helper<
+			Cur + 1, Last,
+			n1::allows_static_access,
+			n2::allows_static_access
+		>;
+		next::apply(w1, w2);
+	}
+};
+
+template <
+	uint_fast32_t Cur,
+	uint_fast32_t Last,
+	bool SrcStaticallyAccessible,
+	bool DstStaticallyAccessible
+>
+struct index_to_index_copy_helper
+{
+	static_assert(
+		Cur == 0 && false,
+		"Attempt to change a constant extent of an index."
+	);
+};
+
+template <uint_fast32_t Last>
+struct index_to_index_copy_helper<Last, Last, true, true>
+{
+	template <class W1, class W2>
+	CC_ALWAYS_INLINE
+	static void apply(const W1& w1, const W2& w2) noexcept
+	{
+		using tokens::c;
+		using c1 = std::decay_t<decltype(w1.at_l(c<Last>))>;
+		using c2 = std::decay_t<decltype(w2.at_l(c<Last>))>;
+		static_assert(
+			c1::value() == c2::value(),
+			"Attempt to change a constant extent of an index."
+		);
+	}
+};
+
+template <uint_fast32_t Last, bool SrcStaticallyAccessible>
+struct index_to_index_copy_helper<Last, Last, SrcStaticallyAccessible, false>
+{
+	template <class W1, class W2>
+	CC_ALWAYS_INLINE
+	static void apply(const W1& w1, W2& w2) noexcept
+	{
+		using tokens::c;
+		w2.at_l(c<Last>) = w1.at_l(c<Last>);
+	}
 };
 
 }
@@ -197,9 +272,16 @@ auto copy(Iterator f, Iterator l, W& w) noexcept
 
 template <class W1, class W2>
 CC_ALWAYS_INLINE
-auto copy(W1& w1, W2& w2) noexcept
+auto copy(const W1& w1, W2& w2) noexcept
 {
-	using helper = detail::index_to_index_copy_helper<0, W1::dims()>;
+	using tokens::c;
+	using t1 = std::decay_t<decltype(w1.at_l(c<0>))>;
+	using t2 = std::decay_t<decltype(w2.at_l(c<0>))>;
+	using helper = detail::index_to_index_copy_helper<
+		0, W1::dims() - 1,
+		t1::allows_static_access,
+		t2::allows_static_access
+	>;
 	return helper::apply(w1, w2);
 }
 
