@@ -99,9 +99,16 @@ public:
 		return *this;
 	}
 
+	CC_ALWAYS_INLINE
+	auto& operator=(const index_wrapper& rhs) noexcept
+	{
+		fusion::copy(rhs, *this);
+		return *this;
+	}
+
 	template <class Index>
 	CC_ALWAYS_INLINE
-	auto& operator=(const index_wrapper<Index> rhs) noexcept
+	auto& operator=(const index_wrapper<Index>& rhs) noexcept
 	{
 		fusion::copy(rhs, *this);
 		return *this;

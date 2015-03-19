@@ -149,7 +149,7 @@ struct iter_to_index_copy_helper
 	{
 		using tokens::c;
 		if (f == l) return;
-		w(c<Cur>) = *f;
+		w.at_l(c<Cur>) = *f;
 		next::apply(f + 1, l, w);
 	}
 };
@@ -172,7 +172,7 @@ struct index_to_index_copy_helper
 	static void apply(W1& w1, W2& w2) noexcept
 	{
 		using tokens::c;
-		w1(c<Cur>) = w2(c<Cur>);
+		w1.at_l(c<Cur>) = w2.at_l(c<Cur>);
 		next::apply(w1, w2);
 	}
 };

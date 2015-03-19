@@ -32,6 +32,8 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	const auto& get() const noexcept
 	{ return std::get<N>(m_args); }
+
+	auto& args() { return m_args; }
 };
 
 /*
