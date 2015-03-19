@@ -131,7 +131,7 @@ public:
 		return *this;
 	}
 
-	template <class Index>
+	template <class Index, nd_enable_if(T::dims == Index::dims)>
 	CC_ALWAYS_INLINE
 	auto& operator=(const index_wrapper<Index>& rhs) noexcept
 	{
