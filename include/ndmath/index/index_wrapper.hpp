@@ -52,6 +52,9 @@ struct index_return_type_helper
 	using coord_type   = std::decay_t<coord>;
 	using integer      = decltype(std::declval<coord>().value());
 	using integer_type = std::decay_t<integer>;
+
+	static constexpr auto allows_static_access =
+	coord_type::allows_static_access;
 };
 
 template <class Index, class Seq>
@@ -67,6 +70,14 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 	using integer = std::common_type_t<
 		typename index_return_type_helper<Index, Ts>::integer_type...
 	>;
+
+	static constexpr auto is_statically_accessible =
+	mpl::apply<
+		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
+		mpl::to_types<std::integer_sequence<bool,
+			!index_return_type_helper<Index, Ts>::allows_static_access...
+		>>
+	>::value;
 };
 
 }
@@ -77,6 +88,9 @@ class index_wrapper final
 	using self   = index_wrapper<T>;
 	using seq    = std::make_index_sequence<T::dims>;
 	using traits = detail::index_traits<T, seq>;
+
+	static constexpr auto is_statically_accessible =
+	traits::is_statically_accessible;
 public:
 	using integer = typename traits::integer;
 private:
@@ -91,10 +105,19 @@ public:
 	explicit index_wrapper(in_place_t, Args&&... args)
 	noexcept : m_wrapped(std::forward<Args>(args)...) {}
 
-	template <class Integer, nd_enable_if(std::is_integral<Integer>::value)>
+	template <class Integer, nd_enable_if((
+		std::is_integral<Integer>::value &&
+		is_statically_accessible
+	))>
 	CC_ALWAYS_INLINE
 	auto& operator=(const std::initializer_list<Integer> rhs) noexcept
 	{
+		nd_assert(
+			rhs.size() <= dims(),
+			"Cannot assign initializer list to index of smaller "
+			"size. Size of index: $; size of initializer list: $.",
+			dims(), rhs.size()
+		);
 		fusion::copy(rhs.begin(), rhs.end(), *this);
 		return *this;
 	}
