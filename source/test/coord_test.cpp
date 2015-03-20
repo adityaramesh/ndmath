@@ -5,9 +5,6 @@
 ** Contact:   _@adityaramesh.com
 */
 
-#ifndef Z4C7D5762_9A12_4928_BDBC_2F58097EF579
-#define Z4C7D5762_9A12_4928_BDBC_2F58097EF579
-
 #include <ccbase/unit_test.hpp>
 #include <ndmath/coord.hpp>
 
@@ -52,5 +49,3 @@ module("test runtime arithmetic")
 }
 
 suite("location test")
-
-#endif
