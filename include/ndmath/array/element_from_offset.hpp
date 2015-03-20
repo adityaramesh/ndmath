@@ -16,6 +16,17 @@
 namespace nd {
 namespace detail {
 
+/*
+** Suppose we are given an array with extents $e_1, ..., e_n$ and an offset off.
+** Assume that the storage order of the array is such that $e_n$ increases the
+** fastest and $e_1$ the slowest. Then the coordinates $c_1, ..., c_n$
+** corresponding to off are given by:
+** - c_1 = floor(off / e_2 * ... * e_n)
+** - c_2 = floor(off / e_3 * ... * e_n) % e_2
+** - c_3 = floor(off / e_4 * ... * e_n) % e_3
+** - c_n = off % e_n
+*/
+
 template <size_t CurDim, size_t LastDim, class SizeType>
 struct element_from_offset_helper
 {
@@ -32,12 +43,13 @@ struct element_from_offset_helper
 	{
 		using namespace tokens;
 
-		const auto cur_extent =
-		arr.extents().at(c<arr.storage_order.at_l(c<CurDim>).value()>);
-
 		return next::apply(
-			off, prod * cur_extent,
-			(off / prod) % cur_extent, ts...
+			off,
+			prod * arr.extents().at(
+				arr.storage_order().at_l(c<LastDim - CurDim>)),
+			(off / prod) % arr.extents().at(
+				arr.storage_order().at_l(c<LastDim - CurDim>)),
+			ts...
 		);
 	}
 };
@@ -67,7 +79,7 @@ struct element_from_offset
 	{
 		using size_type = typename Array::size_type;
 		using helper = detail::element_from_offset_helper<
-			1, Array::dims, size_type>;
+			0, Array::dims - 1, size_type>;
 		return helper::apply(off, 1, arr);
 	}
 };

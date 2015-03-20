@@ -29,11 +29,11 @@ struct element_access_helper<T, std::index_sequence<Ts...>>
 	noexcept(std::declval<T>().get(Ts...));
 };
 
-template <class T>
+template <class T, size_t Dims>
 struct element_access_traits
 {
 	using seq = mpl::to_values<
-		mpl::repeat_nc<T::dims(), std::integral_constant<size_t, 0>>
+		mpl::repeat_nc<Dims, std::integral_constant<size_t, 0>>
 	>;
 
 	using traits          = element_access_helper<T, seq>;
@@ -103,15 +103,39 @@ struct direct_view_traits<T, ValueType, false>
 template <class T>
 struct array_traits
 {
-	static constexpr auto dims = T::dims();
+	using storage_order = std::decay_t<
+		decltype(std::declval<T>().storage_order())>;
 
+	static constexpr auto dims = storage_order::dims();
+
+	/*
+	** An array is resizable only if the range of the RHS is compatible with
+	** the range of the LHS. That is, the following conditions must hold:
+	** - Both ranges have the same number of dimensions.
+	** - If a coordinate of the LHS is a static constant, then the
+	** corresponding coordinate of the RHS is the same static constant.
+	**
+	** Our goal is to determine if the wrapped type is _ever_ resizable. The
+	** two conditions given above always hold when we try to resize RHS
+	** using its own extents. The code below checks to see if we can do
+	** this.
+	*/
 	template <class U>
-	static constexpr auto check_resizable(U*) ->
-	decltype(std::declval<U>().resize(sc_range_n<dims, 1>), bool{})
+	static constexpr auto check_safe_resize(U*) ->
+	decltype(std::declval<U>().safe_resize(std::declval<U>().extents()), bool{})
 	{ return true; }
 
 	template <class U>
-	static constexpr auto check_resizable(...)
+	static constexpr auto check_safe_resize(...)
+	{ return false; }
+
+	template <class U>
+	static constexpr auto check_unsafe_resize(U*) ->
+	decltype(std::declval<U>().unsafe_resize(std::declval<U>().extents()), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check_unsafe_resize(...)
 	{ return false; }
 
 	template <class U>
@@ -141,18 +165,14 @@ struct array_traits
 	static constexpr auto check_memory_size(...)
 	{ return false; }
 
-	static constexpr auto is_view                   = T::is_view;
-	static constexpr auto is_resizable              = check_resizable<T>(0);
-	static constexpr auto supports_direct_view      = check_direct_view<T>(0);
-	static constexpr auto supports_fast_flat_view   = check_flat_view<T>(0);
-	static constexpr auto provides_memory_size      = check_memory_size<T>(0);
+	static constexpr auto is_view                 = T::is_view;
+	static constexpr auto is_safe_resizable       = check_safe_resize<T>(0);
+	static constexpr auto is_unsafe_resizable     = check_unsafe_resize<T>(0);
+	static constexpr auto supports_direct_view    = check_direct_view<T>(0);
+	static constexpr auto supports_fast_flat_view = check_flat_view<T>(0);
+	static constexpr auto provides_memory_size    = check_memory_size<T>(0);
 
-	static_assert(
-		!(is_view && is_resizable),
-		"Views should not be resizable."
-	);
-
-	using et = detail::element_access_traits<T>;
+	using et = detail::element_access_traits<T, dims>;
 
 	using size_type       = typename T::size_type;
 	using reference       = typename et::reference;
@@ -163,11 +183,9 @@ struct array_traits
 	et::is_noexcept_accessible;
 
 	using fvt = detail::flat_view_traits<
-		T, reference, const_reference, supports_fast_flat_view
-	>;
+		T, reference, const_reference, supports_fast_flat_view>;
 	using dvt = detail::direct_view_traits<
-		T, value_type, supports_direct_view
-	>;
+		T, value_type, supports_direct_view>;
 
 	using flat_iterator         = typename fvt::iterator;
 	using const_flat_iterator   = typename fvt::const_iterator;

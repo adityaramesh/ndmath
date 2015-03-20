@@ -81,7 +81,7 @@ struct move_assign_helper;
 			"Destination extents: $; source extents: $.",   \
 			dst.extents(), src.extents()                    \
 		);                                                      \
-		dst.resize(src.extents());                              \
+		dst.unsafe_resize(src.extents());                       \
 	}
 
 #define nd_move_assign_assert                                           \
@@ -93,7 +93,7 @@ struct move_assign_helper;
 			"Destination extents: $; source extents: $.",   \
 			dst.extents(), src.extents()                    \
 		);                                                      \
-		dst.resize(src.extents());                              \
+		dst.unsafe_resize(src.extents());                       \
 	}
 
 template <bool UseDirectViewCopy, bool UseFlatViewCopy>

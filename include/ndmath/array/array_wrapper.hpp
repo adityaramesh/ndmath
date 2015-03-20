@@ -349,36 +349,6 @@ public:
 };
 
 /*
-** Used by `array_wrapper_impl` to determine whether `T::get() const` is
-** constexpr. Based on Johannes Schaub's answer here:
-** http://stackoverflow.com/questions/13299394/is-is-constexpr-possible-in-c11
-**
-** TODO: remove this if the code compiles without requiring an enable_if due to
-** constexpr correctness.
-**
-template <class Seq>
-struct provides_constexpr_access_helper;
-
-template <size_t... Ts>
-struct provides_constexpr_access_helper
-{
-	template <class T>
-	static constexpr auto apply(const T& t)
-	{ return t.get(Ts...); }
-};
-
-template <class T>
-constexpr auto provides_constexpr_access(const T& t)
-{
-	using seq = mpl::to_values<
-		mpl::repeat_nc<T::dims(), std::integral_constant<size_t, 0>>
-	>;
-	using helper = provides_constexpr_access_helper<seq>;
-	return helper::apply(t);
-}
-*/
-
-/*
 ** TODO: First test the non-constexpr version of array wrapper. Afterwards,
 ** place all of the functionality common to both specializations in macros, and
 ** create the second specialization.
@@ -422,7 +392,8 @@ public:
 	using underlying_type       = typename traits::underlying_type;
 
 	static constexpr auto is_view                   = traits::is_view;
-	static constexpr auto is_resizable              = traits::is_resizable;
+	static constexpr auto is_safe_resizable         = traits::is_safe_resizable;
+	static constexpr auto is_unsafe_resizable       = traits::is_unsafe_resizable;
 	static constexpr auto is_noexcept_accessible    = traits::is_noexcept_accessible;
 	static constexpr auto supports_direct_view      = traits::supports_direct_view;
 	static constexpr auto supports_fast_flat_view   = traits::supports_fast_flat_view;
@@ -666,22 +637,41 @@ public:
 	CC_ALWAYS_INLINE
 	auto operator()(const Ts&... ts)
 	noexcept(noexcept(is_noexcept_accessible))
-	{ m_wrapped.get(ts...); }
+	{
+		nd_assert(
+			make_index(ts...) < extents().finish(),
+			"Index out of bounds. Index: $; extents: $.",
+			make_index(ts...), extents().finish()
+		);
+		m_wrapped.get(ts...);
+	}
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const Ts&... ts) const
 	noexcept(noexcept(is_noexcept_accessible))
-	{ m_wrapped.get(ts...); }
+	{
+		nd_assert(
+			make_index(ts...) < extents().finish(),
+			"Index out of bounds. Index: $; extents: $.",
+			make_index(ts...), extents().finish()
+		);
+		m_wrapped.get(ts...);
+	}
 
 	/*
 	** Mutating operations.
 	*/
 
-	template <class Range, nd_enable_if(is_resizable)>
+	template <class Range, nd_enable_if(is_safe_resizable)>
 	CC_ALWAYS_INLINE
-	void resize(const Range& r)
-	nd_deduce_noexcept(m_wrapped.resize(r))
+	void safe_resize(const Range& r)
+	nd_deduce_noexcept(m_wrapped.safe_resize(r))
+
+	template <class Range, nd_enable_if(is_unsafe_resizable)>
+	CC_ALWAYS_INLINE
+	void unsafe_resize(const Range& r)
+	nd_deduce_noexcept(m_wrapped.unsafe_resize(r))
 };
 
 }}

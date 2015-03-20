@@ -18,7 +18,7 @@
 #include <boost/preprocessor/comparison/equal.hpp>
 #include <boost/preprocessor/variadic/size.hpp>
 
-#ifndef ND_NO_DEBUG
+#ifndef nd_no_debug
 	#define nd_print_assert_2(cond, file, line) \
 		cc::errln("Assertion `$` failed in `$`, line $.", \
 			cond, file, line)
