@@ -14,7 +14,7 @@ template <class... Args>
 class index_t final
 {
 public:
-	static constexpr auto dims = uint_fast32_t(sizeof...(Args));
+	static constexpr auto dims = unsigned(sizeof...(Args));
 private:
 	std::tuple<Args...> m_args;
 public:
@@ -68,7 +68,7 @@ struct make_index_helper
 
 }
 
-template <class Integer = uint_fast32_t, class... Ts>
+template <class Integer = unsigned, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto make_index(const Ts... ts) noexcept
 {
@@ -78,7 +78,7 @@ auto make_index(const Ts... ts) noexcept
 	return wrapper{in_place, helper::make(ts)...};
 }
 
-template <class Integer = uint_fast32_t, class... Ts>
+template <class Integer = unsigned, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto make_c_index(const Ts... ts) noexcept
 {
@@ -123,9 +123,9 @@ template <class Integer, Integer... Ts>
 static constexpr auto basic_sc_index =
 detail::seq_to_index<std::integer_sequence<Integer, Ts...>>::make_sc();
 
-template <uint_fast32_t... Ts>
+template <unsigned... Ts>
 static constexpr auto sc_index =
-basic_sc_index<uint_fast32_t, Ts...>;
+basic_sc_index<unsigned, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
 static constexpr auto basic_sc_index_n =
@@ -137,7 +137,7 @@ detail::seq_to_index<
 
 template <size_t Length, size_t Value>
 static constexpr auto sc_index_n =
-basic_sc_index_n<uint_fast32_t, Length, Value>;
+basic_sc_index_n<unsigned, Length, Value>;
 
 /*
 ** Shorthand notation for creating non-static const indices.
@@ -147,9 +147,9 @@ template <class Integer, Integer... Ts>
 static constexpr auto basic_index =
 detail::seq_to_index<std::integer_sequence<Integer, Ts...>>::make();
 
-template <uint_fast32_t... Ts>
+template <unsigned... Ts>
 static constexpr auto index =
-basic_index<uint_fast32_t, Ts...>;
+basic_index<unsigned, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
 static constexpr auto basic_index_n =
@@ -157,9 +157,9 @@ detail::seq_to_index<mpl::to_values<
 	mpl::repeat_nc<Length, std::integral_constant<Integer, Value>>
 >>::make();
 
-template <size_t Length, uint_fast32_t Value>
+template <size_t Length, unsigned Value>
 static constexpr auto index_n =
-basic_index_n<uint_fast32_t, Length, Value>;
+basic_index_n<unsigned, Length, Value>;
 
 /*
 ** Shorthand notation for creating non-static non-const indices.
@@ -169,9 +169,9 @@ template <class Integer, Integer... Ts>
 static constexpr auto basic_c_index =
 detail::seq_to_index<std::integer_sequence<Integer, Ts...>>::make_c();
 
-template <uint_fast32_t... Ts>
+template <unsigned... Ts>
 static constexpr auto c_index =
-basic_c_index<uint_fast32_t, Ts...>;
+basic_c_index<unsigned, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
 static constexpr auto basic_c_index_n =
@@ -179,9 +179,9 @@ detail::seq_to_index<mpl::to_values<
 	mpl::repeat_nc<Length, std::integral_constant<Integer, Value>>
 >>::make_c();
 
-template <size_t Length, uint_fast32_t Value>
+template <size_t Length, unsigned Value>
 static constexpr auto c_index_n =
-basic_c_index_n<uint_fast32_t, Length, Value>;
+basic_c_index_n<unsigned, Length, Value>;
 
 }
 

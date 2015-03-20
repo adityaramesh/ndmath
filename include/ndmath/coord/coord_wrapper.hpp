@@ -61,21 +61,21 @@ public:
 	auto wrapped() const noexcept
 	{ return m_wrapped; }
 
-	template <class Integer = uint_fast32_t, nd_enable_if(
+	template <class Integer = unsigned, nd_enable_if(
 		allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n = 0) noexcept ->
 	decltype(std::declval<const T>().value(n))
 	{ return T::value(n); }
 
-	template <class Integer = uint_fast32_t, nd_enable_if(
+	template <class Integer = unsigned, nd_enable_if(
 		!allows_static_access)>
 	CC_ALWAYS_INLINE
 	auto value(const Integer n = 0) noexcept ->
 	decltype(std::declval<T>().value(n))
 	{ return m_wrapped.value(n); }
 
-	template <class Integer = uint_fast32_t, nd_enable_if(
+	template <class Integer = unsigned, nd_enable_if(
 		!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	auto value(const Integer n = 0) const noexcept ->

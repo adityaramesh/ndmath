@@ -329,9 +329,9 @@ template <class Integer, Integer... Ts>
 static constexpr auto basic_sc_range =
 make_range(nd::basic_sc_index<Integer, Ts...>);
 
-template <uint_fast32_t... Ts>
+template <unsigned... Ts>
 static constexpr auto sc_range =
-basic_sc_range<uint_fast32_t, Ts...>;
+basic_sc_range<unsigned, Ts...>;
 
 template <class Integer, size_t Length, size_t Value>
 static constexpr auto basic_sc_range_n =
@@ -339,7 +339,7 @@ make_range(nd::basic_sc_index_n<Integer, Length, Value>);
 
 template <size_t Length, size_t Value>
 static constexpr auto sc_range_n =
-basic_sc_range_n<uint_fast32_t, Length, Value>;
+basic_sc_range_n<unsigned, Length, Value>;
 
 }
 

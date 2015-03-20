@@ -35,12 +35,12 @@ namespace nd {
 template <class T>
 class index_wrapper;
 
-template <uint_fast32_t A, uint_fast32_t B, class Index>
+template <unsigned A, unsigned B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_subindex(index_wrapper<Index>& w)
 noexcept;
 
-template <uint_fast32_t A, uint_fast32_t B, class Index>
+template <unsigned A, unsigned B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_const_subindex(const index_wrapper<Index>& w)
 noexcept;

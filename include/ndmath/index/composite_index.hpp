@@ -19,21 +19,21 @@ namespace detail {
 ** from happening, we need to use a traits struct.
 */
 
-template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2, bool First>
+template <unsigned N, unsigned Dims1, class I1, class I2, bool First>
 struct composite_index_traits;
 
-template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
+template <unsigned N, unsigned Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, true>
 { using type = decltype(std::declval<I1>().at_l(nd::tokens::c<N>)); };
 
-template <uint_fast32_t N, uint_fast32_t Dims1, class I1, class I2>
+template <unsigned N, unsigned Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, false>
 { using type = decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>)); };
 
-template <uint_fast32_t N, uint_fast32_t Dims1, bool First>
+template <unsigned N, unsigned Dims1, bool First>
 struct composite_index_helper;
 
-template <uint_fast32_t N, uint_fast32_t Dims1>
+template <unsigned N, unsigned Dims1>
 struct composite_index_helper<N, Dims1, true>
 {
 	template <class I1, class I2>
@@ -55,7 +55,7 @@ struct composite_index_helper<N, Dims1, true>
 	}
 };
 
-template <uint_fast32_t N, uint_fast32_t Dims1>
+template <unsigned N, unsigned Dims1>
 struct composite_index_helper<N, Dims1, false>
 {
 	template <class I1, class I2>
@@ -96,7 +96,7 @@ public:
 	explicit composite_index(Index1& i1, Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	template <uint_fast32_t N>
+	template <unsigned N>
 	CC_ALWAYS_INLINE
 	auto get() noexcept ->
 	typename detail::composite_index_traits<
@@ -107,7 +107,7 @@ public:
 		return helper::get(m_i1, m_i2);
 	}
 
-	template <uint_fast32_t N>
+	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	auto get() const noexcept ->
 	typename detail::composite_index_traits<

@@ -18,7 +18,7 @@ class index_wrapper;
                                                                          \
 namespace detail {                                                       \
                                                                          \
-template <uint_fast32_t Cur, uint_fast32_t Max>                          \
+template <unsigned Cur, unsigned Max>                          \
 struct name ## _range_helper                                             \
 {                                                                        \
 	using next = name ## _range_helper<Cur + 1, Max>;                \
@@ -35,7 +35,7 @@ struct name ## _range_helper                                             \
 	}                                                                \
 };                                                                       \
                                                                          \
-template <uint_fast32_t Max>                                             \
+template <unsigned Max>                                             \
 struct name ## _range_helper<Max, Max>                                   \
 {                                                                        \
 	template <class W1, class W2>                                    \
@@ -70,7 +70,7 @@ nd_define_relational_op(less, <)
 
 namespace detail {
 
-template <uint_fast32_t Cur, uint_fast32_t Max>
+template <unsigned Cur, unsigned Max>
 struct prod_helper
 {
 	using next = prod_helper<Cur + 1, Max>;
@@ -81,7 +81,7 @@ struct prod_helper
 	{ return w(nd::tokens::c<Cur>) * next::apply(w); }
 };
 
-template <uint_fast32_t Max>
+template <unsigned Max>
 struct prod_helper<Max, Max>
 {
 	template <class W>
@@ -102,7 +102,7 @@ auto prod(const W& w) noexcept
 
 namespace detail {
 
-template <uint_fast32_t Cur, uint_fast32_t Max>
+template <unsigned Cur, unsigned Max>
 struct for_each_helper
 {
 	using next = for_each_helper<Cur + 1, Max>;
@@ -117,7 +117,7 @@ struct for_each_helper
 	}
 };
 
-template <uint_fast32_t Max>
+template <unsigned Max>
 struct for_each_helper<Max, Max>
 {
 	template <class W, class Func>
@@ -138,7 +138,7 @@ auto for_each(const W& w, const Func& f) noexcept
 
 namespace detail {
 
-template <uint_fast32_t Cur, uint_fast32_t Max>
+template <unsigned Cur, unsigned Max>
 struct iter_to_index_copy_helper
 {
 	using next = iter_to_index_copy_helper<Cur + 1, Max>;
@@ -154,7 +154,7 @@ struct iter_to_index_copy_helper
 	}
 };
 
-template <uint_fast32_t Max>
+template <unsigned Max>
 struct iter_to_index_copy_helper<Max, Max>
 {
 	template <class Iterator, class W>
@@ -163,14 +163,14 @@ struct iter_to_index_copy_helper<Max, Max>
 };
 
 template <
-	uint_fast32_t Cur,
-	uint_fast32_t Last,
+	unsigned Cur,
+	unsigned Last,
 	bool SrcStaticallyAccessible,
 	bool DstStaticallyAccessible
 >
 struct index_to_index_copy_helper;
 
-template <uint_fast32_t Cur, uint_fast32_t Last>
+template <unsigned Cur, unsigned Last>
 struct index_to_index_copy_helper<Cur, Last, true, true>
 {
 	template <class W1, class W2>
@@ -196,7 +196,7 @@ struct index_to_index_copy_helper<Cur, Last, true, true>
 	}
 };
 
-template <uint_fast32_t Cur, uint_fast32_t Last, bool SrcStaticallyAccessible>
+template <unsigned Cur, unsigned Last, bool SrcStaticallyAccessible>
 struct index_to_index_copy_helper<Cur, Last, SrcStaticallyAccessible, false>
 {
 	template <class W1, class W2>
@@ -218,8 +218,8 @@ struct index_to_index_copy_helper<Cur, Last, SrcStaticallyAccessible, false>
 };
 
 template <
-	uint_fast32_t Cur,
-	uint_fast32_t Last,
+	unsigned Cur,
+	unsigned Last,
 	bool SrcStaticallyAccessible,
 	bool DstStaticallyAccessible
 >
@@ -231,7 +231,7 @@ struct index_to_index_copy_helper
 	);
 };
 
-template <uint_fast32_t Last>
+template <unsigned Last>
 struct index_to_index_copy_helper<Last, Last, true, true>
 {
 	template <class W1, class W2>
@@ -248,7 +248,7 @@ struct index_to_index_copy_helper<Last, Last, true, true>
 	}
 };
 
-template <uint_fast32_t Last, bool SrcStaticallyAccessible>
+template <unsigned Last, bool SrcStaticallyAccessible>
 struct index_to_index_copy_helper<Last, Last, SrcStaticallyAccessible, false>
 {
 	template <class W1, class W2>

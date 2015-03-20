@@ -66,13 +66,13 @@ template <class Integer, Integer N>
 static constexpr auto basic_sc_coord =
 coord_wrapper<const_coord<Integer, N>>{};
 
-template <uint_fast32_t N>
+template <unsigned N>
 static constexpr auto sc_coord =
-basic_sc_coord<uint_fast32_t, N>;
+basic_sc_coord<unsigned, N>;
 
 namespace tokens {
 
-template <uint_fast32_t N>
+template <unsigned N>
 static constexpr auto c = sc_coord<N>;
 
 }

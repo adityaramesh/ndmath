@@ -33,7 +33,7 @@ public:
 	** the function `constexpr`, and disable it in the case that `Index` is
 	** not `const`.
 	**/
-	template <uint_fast32_t N, nd_enable_if(!is_const)>
+	template <unsigned N, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE
 	auto get() noexcept ->
 	decltype(std::declval<Index>().at_l(tokens::c<N + A>))
@@ -42,7 +42,7 @@ public:
 		return m_index.at_l(c<N + A>);
 	}
 
-	template <uint_fast32_t N>
+	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	auto get() const noexcept ->
 	const decltype(std::declval<const Index>().at_l(tokens::c<N + A>))
@@ -52,7 +52,7 @@ public:
 	}
 };
 
-template <uint_fast32_t A, uint_fast32_t B, class Index>
+template <unsigned A, unsigned B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_subindex(index_wrapper<Index>& w) noexcept
 {
@@ -62,7 +62,7 @@ auto make_subindex(index_wrapper<Index>& w) noexcept
 	return w2{in_place, w};
 }
 
-template <uint_fast32_t A, uint_fast32_t B, class Index>
+template <unsigned A, unsigned B, class Index>
 CC_ALWAYS_INLINE constexpr
 auto make_const_subindex(const index_wrapper<Index>& w) noexcept
 {

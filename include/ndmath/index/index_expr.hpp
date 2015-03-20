@@ -23,7 +23,7 @@ public:
 	explicit index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}
 
-	template <uint_fast32_t N>
+	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	const auto get() const noexcept
 	{
