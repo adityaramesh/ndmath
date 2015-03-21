@@ -317,7 +317,24 @@ template <
 >
 CC_ALWAYS_INLINE constexpr
 auto make_range(const Start& b, const Finish& e, const Stride& s)
-noexcept { return range<Start, Finish, Stride>{b, e, s}; }
+noexcept
+{
+	/*
+	** Why is it important to invoke `eval` on the indices before creating
+	** the range? If the indices are expressions (e.g. the result of
+	** subtracting two indices), then instead of storing the result, we
+	** would store the expression. Each expression stores copies of the two
+	** indices involved in the corresponding arithmetic operation. (The
+	** expression cannot store references, because it must be
+	** default-constructible.) The end result is that storing the expression
+	** may cause us to use many times more memory than is necessary to store
+	** the result of evaluating the expression.
+	*/
+	using start  = decltype(eval(b));
+	using finish = decltype(eval(e));
+	using stride = decltype(eval(s));
+	return range<start, finish, stride>{eval(b), eval(e), eval(s)};
+}
 
 template <
 	class Start,
@@ -363,6 +380,17 @@ make_range(nd::basic_sc_index_n<Integer, Length, Value>);
 template <size_t Length, size_t Value>
 static constexpr auto sc_range_n =
 basic_sc_range_n<unsigned, Length, Value>;
+
+template <unsigned... Ts>
+static constexpr auto cextents =
+basic_sc_range<unsigned, (Ts - 1)...>;
+
+template <class... Ts>
+CC_ALWAYS_INLINE constexpr
+auto extents(const Ts... ts) noexcept
+{
+	return make_range(make_index(ts...) - sc_index_n<sizeof...(Ts), 1>);
+}
 
 }
 

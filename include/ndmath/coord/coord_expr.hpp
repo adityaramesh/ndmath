@@ -45,9 +45,12 @@ private:
 public:
 	using integer = typename traits::integer;
 private:
-	const Coord1 m_l1;
-	const Coord2 m_l2;
+	Coord1 m_l1{};
+	Coord2 m_l2{};
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit coord_expr() noexcept {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit coord_expr(const Coord1 l1, const Coord2 l2)
 	noexcept : m_l1{l1}, m_l2{l2} {}

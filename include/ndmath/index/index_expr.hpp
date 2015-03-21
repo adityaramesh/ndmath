@@ -16,9 +16,12 @@ class index_expr final
 public:
 	static constexpr auto dims = Index1::dims();
 private:
-	const Index1& m_i1;
-	const Index2& m_i2;
+	Index1 m_i1{};
+	Index2 m_i2{};
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit index_expr() noexcept {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit index_expr(const Index1& i1, const Index2& i2)
 	noexcept : m_i1{i1}, m_i2{i2} {}

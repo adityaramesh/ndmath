@@ -99,9 +99,17 @@ private:
 
 	friend struct detail::dense_storage_helper<T>;
 
-	using start = decltype(std::declval<Extents>().start());
-	using strides = decltype(std::declval<Extents>().strides());
+	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
+	using strides = std::decay_t<decltype(std::declval<Extents>().strides())>;
 
+	static_assert(
+		start::allows_static_access,
+		"Start of range must be statically accessible."
+	);
+	static_assert(
+		strides::allows_static_access,
+		"Strides of range must be statically accessible."
+	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
 		"Start of range must be the zero index."
@@ -308,12 +316,46 @@ private:
 	{ return helper::underlying_size(size()); }
 };
 
-/*
-** TODO: Creating a dynamic array with an existing instance of an allocator will
-** require some work. We have to make it convenient to get the underlying type
-** of the storage before actually creating it, since the underlying type is
-** required to specialize and instantiate the allocator instance.
-*/
+template <class T>
+using underlying_type =
+typename detail::dense_storage_helper<T>::underlying_type;
+
+namespace detail {
+
+template <class T>
+struct is_integer_or_coord
+{
+	static constexpr auto value =
+	std::is_integral<T>::value;
+};
+
+template <class Coord>
+struct is_integer_or_coord<coord_wrapper<Coord>>
+{
+	static constexpr auto value = true;
+};
+
+}
+
+template <class T, class... Ts,
+nd_enable_if((
+	mpl::apply<
+		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
+		mpl::to_types<std::integer_sequence<bool,
+			detail::is_integer_or_coord<Ts>::value...
+		>>
+	>::value
+))>
+CC_ALWAYS_INLINE
+auto make_darray(const Ts... ts)
+{
+	using extents       = decltype(extents(ts...));
+	using storage_order = decltype(default_storage_order<sizeof...(Ts)>);
+	using allocator     = mpl::quote<std::allocator>;
+	using storage_type  = dense_storage<T, extents, storage_order, allocator>;
+	using array_type    = array_wrapper<storage_type>;
+	return array_type{nd::extents(ts...)};
+}
 
 template <
 	class T,
@@ -324,6 +366,8 @@ template <
 CC_ALWAYS_INLINE
 auto make_darray(
 	const Extents& e,
+	const mpl::apply<Alloc, underlying_type<T>>& alloc =
+		mpl::apply<Alloc, underlying_type<T>>{},
 	StorageOrder = default_storage_order<Extents::dims()>
 )
 {

@@ -35,8 +35,6 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	const auto& get() const noexcept
 	{ return std::get<N>(m_args); }
-
-	auto& args() { return m_args; }
 };
 
 /*
@@ -61,12 +59,12 @@ struct make_index_helper
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
 	static auto make(const coord_wrapper<Coord>& c) noexcept
-	{ return c; }
+	{ return eval(c); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
 	static auto make_const(const coord_wrapper<Coord>& c) noexcept
-	{ return c; }
+	{ return eval(c); }
 };
 
 }
@@ -185,6 +183,35 @@ detail::seq_to_index<mpl::to_values<
 template <size_t Length, unsigned Value>
 static constexpr auto c_index_n =
 basic_c_index_n<unsigned, Length, Value>;
+
+namespace detail {
+
+template <class Seq>
+struct index_eval_helper;
+
+template <size_t... Ts>
+struct index_eval_helper<std::index_sequence<Ts...>>
+{
+	template <class Index>
+	CC_ALWAYS_INLINE constexpr
+	static auto apply(const Index& i) noexcept
+	{
+		using tokens::c;
+		return make_index(i.at_l(c<Ts>)...);
+	}
+};
+
+}
+
+template <class Index>
+CC_ALWAYS_INLINE constexpr
+auto eval(const index_wrapper<Index>& i) noexcept
+{
+	using wrapper = index_wrapper<Index>;
+	using seq     = std::make_index_sequence<wrapper::dims()>;
+	using helper  = detail::index_eval_helper<seq>;
+	return helper::apply(i);
+}
 
 }
 

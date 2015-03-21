@@ -73,6 +73,24 @@ template <unsigned N>
 static constexpr auto sc_coord =
 basic_sc_coord<unsigned, N>;
 
+template <class Coord, nd_enable_if(Coord::allows_static_access)>
+CC_ALWAYS_INLINE constexpr
+auto eval(const coord_wrapper<Coord>&) noexcept
+{
+	using wrapper = coord_wrapper<Coord>;
+	using integer = typename wrapper::integer;
+	return basic_sc_coord<integer, wrapper::value()>;
+}
+
+template <class Coord, nd_enable_if(!Coord::allows_static_access)>
+CC_ALWAYS_INLINE constexpr
+auto eval(const Coord& c) noexcept
+{
+	using wrapper = coord_wrapper<Coord>;
+	using integer = typename wrapper::integer;
+	return make_coord(c.value());
+}
+
 namespace tokens {
 
 template <unsigned N>

@@ -77,7 +77,7 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 	mpl::apply<
 		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
 		mpl::to_types<std::integer_sequence<bool,
-			!index_return_type_helper<Index, Ts>::allows_static_access...
+			index_return_type_helper<Index, Ts>::allows_static_access...
 		>>
 	>::value;
 };
@@ -109,7 +109,7 @@ public:
 
 	template <class Integer, nd_enable_if((
 		std::is_integral<Integer>::value &&
-		allows_static_access
+		!allows_static_access
 	))>
 	CC_ALWAYS_INLINE
 	auto& operator=(const std::initializer_list<Integer> rhs) noexcept
