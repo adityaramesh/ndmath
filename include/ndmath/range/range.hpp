@@ -14,6 +14,7 @@
 #ifndef Z2FFF753A_E01F_4298_B56F_AFB95A4D87C5
 #define Z2FFF753A_E01F_4298_B56F_AFB95A4D87C5
 
+#include <ccbase/format.hpp>
 #include <ccbase/platform.hpp>
 #include <ndmath/index.hpp>
 #include <ndmath/range/attribute.hpp>
@@ -64,7 +65,7 @@ public:
 
 	template <size_t N>
 	CC_ALWAYS_INLINE constexpr
-	static auto allows_static_access() noexcept
+	static auto dim_allows_static_access() noexcept
 	{
 		using tokens::c;
 		using a = std::decay_t<decltype(std::declval<Start>().at_l(c<N>))>;
@@ -81,11 +82,19 @@ public:
 	using iterator       = range_iterator<self>;
 	using const_iterator = iterator;
 	*/
+
+	static constexpr auto allows_static_access =
+	Start::allows_static_access  &&
+	Finish::allows_static_access &&
+	Stride::allows_static_access;
 private:
-	const Start m_start;
-	const Finish m_finish;
-	const Stride m_strides;
+	Start m_start{};
+	Finish m_finish{};
+	Stride m_strides{};
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit range() noexcept {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit range(
 		const Start& start,
@@ -274,6 +283,20 @@ CC_ALWAYS_INLINE constexpr
 auto end(const range<Start, Finish, Stride, Attribs>& r)
 noexcept { return r.end(); }
 */
+
+template <
+	class Char, class Traits, class Start,
+	class Finish, class Stride, class Attribs
+>
+auto& operator<<(
+	std::basic_ostream<Char, Traits>& os,
+	const range<Start, Finish, Stride, Attribs>& r
+) noexcept
+{
+	cc::writeln(os, "Range (start: $ • finish: $ • strides: $).",
+		r.start(), r.finish(), r.strides());
+	return os;
+}
 
 template <
 	class Start,

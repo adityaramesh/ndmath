@@ -14,6 +14,10 @@
 #include <boost/range/algorithm/copy.hpp>
 
 namespace nd {
+
+template <class T>
+class array_wrapper;
+
 namespace detail {
 
 template <class SrcIter, class DstIter>
@@ -75,10 +79,10 @@ struct move_assign_helper;
 #define nd_copy_assign_assert                                           \
 	if (dst.extents() != src.extents()) {                           \
 		nd_assert(                                              \
-			array_wrapper<T>::is_resizable,                 \
-			"Destination of copy assignment has different " \
+			array_wrapper<T>::is_unsafe_resizable,          \
+			"destination of copy assignment has different " \
 			"extents from source, but is not resizable. "   \
-			"Destination extents: $; source extents: $.",   \
+			"Destination extents: $; source extents: $",    \
 			dst.extents(), src.extents()                    \
 		);                                                      \
 		dst.unsafe_resize(src.extents());                       \
@@ -87,10 +91,10 @@ struct move_assign_helper;
 #define nd_move_assign_assert                                           \
 	if (dst.extents() != src.extents()) {                           \
 		nd_assert(                                              \
-			array_wrapper<T>::is_resizable,                 \
-			"Destination of move assignment has different " \
+			array_wrapper<T>::is_unsafe_resizable,          \
+			"destination of move assignment has different " \
 			"extents from source, but is not resizable. "   \
-			"Destination extents: $; source extents: $.",   \
+			"Destination extents: $; source extents: $",    \
 			dst.extents(), src.extents()                    \
 		);                                                      \
 		dst.unsafe_resize(src.extents());                       \
@@ -100,8 +104,9 @@ template <bool UseDirectViewCopy, bool UseFlatViewCopy>
 struct copy_assign_helper<true, UseDirectViewCopy, UseFlatViewCopy>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	copy_assign(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{ dst.wrapped() = src.wrapped(); }
 };
 
@@ -109,8 +114,9 @@ template <bool UseFlatViewCopy>
 struct copy_assign_helper<false, true, UseFlatViewCopy>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	copy_assign(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		nd_copy_assign_assert
 		boost::copy(src.direct_view(), dst.direct_view());
@@ -121,8 +127,9 @@ template <>
 struct copy_assign_helper<false, false, true>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	copy_assign(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		nd_copy_assign_assert
 		boost::copy(src.flat_view(), dst.flat_view());
@@ -133,8 +140,9 @@ template <>
 struct copy_assign_helper<false, false, false>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	copy_assign(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		nd_copy_assign_assert
 		for_each(src.extents(),
@@ -148,8 +156,9 @@ template <bool UseDirectViewMove, bool UseFlatViewMove>
 struct move_assign_helper<true, UseDirectViewMove, UseFlatViewMove>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	move_assign(array_wrapper<T>& dst, array_wrapper<U>&& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{ dst.wrapped() = std::move(src.wrapped()); }
 };
 
@@ -157,8 +166,9 @@ template <bool UseFlatViewMove>
 struct move_assign_helper<false, true, UseFlatViewMove>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	move_assign(array_wrapper<T>& dst, array_wrapper<U>&& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		nd_move_assign_assert
 		std::move(
@@ -173,8 +183,9 @@ template <>
 struct move_assign_helper<false, false, true>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	move_assign(array_wrapper<T>& dst, array_wrapper<U>&& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		nd_move_assign_assert
 		std::move(
@@ -189,8 +200,9 @@ template <>
 struct move_assign_helper<false, false, false>
 {
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
-	move_assign(array_wrapper<T>& dst, array_wrapper<U>&& src)
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		nd_move_assign_assert
 		for_each(src.extents(),
@@ -223,7 +235,8 @@ struct assignment_helper
 	** - Else, copy using a for_each loop over src's range.
 	*/
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
+	CC_ALWAYS_INLINE
+	static void
 	copy_assign(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		using dst_type = array_wrapper<T>;
@@ -232,8 +245,9 @@ struct assignment_helper
 		static constexpr auto use_direct_copy_assign =
 		std::is_assignable<T, const U&>::value;
 
-		static constexpr auto storage_orders_same =
-		dst.storage_order() == src.storage_order();
+		using s1 = decltype(dst.storage_order());
+		using s2 = decltype(src.storage_order());
+		static constexpr auto storage_orders_same = s1{} == s2{};
 
 		using dst_di = typename dst_type::direct_iterator;
 		using src_di = typename src_type::direct_iterator;
@@ -241,13 +255,13 @@ struct assignment_helper
 
 		static constexpr auto use_direct_view_copy =
 		storage_orders_same &&
-		dst_type::supports_direct_view &&
-		src_type::supports_direct_view &&
+		dst_type::provides_direct_view &&
+		src_type::provides_direct_view &&
 		traits::is_copy_assignable;
 
 		static constexpr auto use_flat_view_copy =
 		storage_orders_same &&
-		src_type::supports_fast_flat_view;
+		src_type::provides_fast_flat_view;
 
 		using helper = copy_assign_helper<
 			use_direct_copy_assign,
@@ -258,7 +272,8 @@ struct assignment_helper
 	}
 
 	template <class T, class U>
-	CC_ALWAYS_INLINE void
+	CC_ALWAYS_INLINE
+	static void
 	move_assign(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		using dst_type = array_wrapper<T>;
@@ -267,8 +282,9 @@ struct assignment_helper
 		static constexpr auto use_direct_move_assign =
 		std::is_assignable<T, U&&>::value;
 
-		static constexpr auto storage_orders_same =
-		dst.storage_order() == src.storage_order();
+		using s1 = decltype(dst.storage_order());
+		using s2 = decltype(src.storage_order());
+		static constexpr auto storage_orders_same = s1{} == s2{};
 
 		using dst_di = typename dst_type::direct_iterator;
 		using src_di = typename src_type::direct_iterator;
@@ -276,13 +292,13 @@ struct assignment_helper
 
 		static constexpr auto use_direct_view_move =
 		storage_orders_same &&
-		dst_type::supports_direct_view &&
-		src_type::supports_direct_view &&
+		dst_type::provides_direct_view &&
+		src_type::provides_direct_view &&
 		traits::is_move_assignable;
 
 		static constexpr auto use_flat_view_move =
 		storage_orders_same &&
-		src_type::supports_fast_flat_view;
+		src_type::provides_fast_flat_view;
 
 		using helper = move_assign_helper<
 			use_direct_move_assign,

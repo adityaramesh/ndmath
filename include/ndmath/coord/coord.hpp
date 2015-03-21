@@ -35,8 +35,11 @@ public:
 	static constexpr auto is_constant = true;
 	using integer = std::decay_t<Integer>;
 private:
-	integer n;
+	integer n{};
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit coord() noexcept {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit coord(const integer n)
 	noexcept : n{n} {}

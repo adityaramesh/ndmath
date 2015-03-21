@@ -532,7 +532,7 @@ struct evaluate_loop_helper
 	{
 		using traits = policy_traits<
 			coord, unroll_policy, tile_policy,
-			Range, Range::template allows_static_access<coord>()
+			Range, Range::template dim_allows_static_access<coord>()
 		>;
 
 		using checked_unroll_policy =

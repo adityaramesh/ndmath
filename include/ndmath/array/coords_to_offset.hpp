@@ -35,27 +35,31 @@ struct coords_to_offset_helper
 
 	template <class Array, class T, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	auto apply(
+	static auto apply(
 		const Array& arr,
 		const SizeType prod,
 		const T t,
 		const Ts... ts
 	) noexcept
 	{
-		return next::apply(
-			arr, arr.extents().length(
-				arr.storage_order().at_l(c<CurDim>)
-			) * prod + t, ts...
-		);
+		using tokens::c;
+		return next::apply(arr, arr.extents().length(
+			arr.storage_order().at_l(c<CurDim>)) * prod +
+			t - arr.extents().start(c<CurDim>), ts...);
 	}
+
+	template <class Array>
+	CC_ALWAYS_INLINE constexpr
+	static auto apply(const Array& arr, const SizeType prod)
+	noexcept { return prod; }
 };
 
 template <size_t End, class SizeType>
-struct coords_to_offset_helper
+struct coords_to_offset_helper<End, End, SizeType>
 {
 	template <class Array>
 	CC_ALWAYS_INLINE constexpr
-	auto apply(const Array&, const SizeType prod)
+	static auto apply(const Array&, const SizeType prod)
 	noexcept { return prod; }
 };
 
@@ -65,11 +69,11 @@ struct coords_to_offset
 {
 	template <class Array, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	auto apply(const Array& arr, const Ts... ts) noexcept
+	static auto apply(const Array& arr, const Ts... ts) noexcept
 	{
 		using size_type = typename Array::size_type;
 		using helper = detail::coords_to_offset_helper<
-			1, Array::dims(), size_type>;
+			0, Array::dims() - 1, size_type>;
 		return helper::apply(arr, ts...);
 	}
 };

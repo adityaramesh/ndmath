@@ -16,8 +16,11 @@ class index_t final
 public:
 	static constexpr auto dims = unsigned(sizeof...(Args));
 private:
-	std::tuple<Args...> m_args;
+	std::tuple<Args...> m_args{};
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit index_t() noexcept {}
+
 	template <class... Args_>
 	CC_ALWAYS_INLINE constexpr
 	explicit index_t(Args_&&... args)

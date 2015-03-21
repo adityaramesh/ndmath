@@ -6,6 +6,10 @@
 ** 
 ** Allows one to iterate over an multidimensional array as if it were a 1D
 ** array.
+**
+** Technical note: this header may be used by unwrapped array types, so we
+** cannot assume that the typedefs and functions provided by `array_wrapper` are
+** present.
 */
 
 #ifndef ZC7A16085_DE65_42E8_BBCD_804DD37DAF07
@@ -17,8 +21,7 @@ namespace detail {
 template <class T>
 class flat_iterator_base
 {
-	using array = std::decay_t<T>;
-	using size_type = typename array::size_type;
+	using size_type = typename T::size_type;
 
 	template <class U>
 	friend auto operator-(
@@ -149,28 +152,24 @@ auto operator-(
 struct end_t {};
 static constexpr auto end = end_t{};
 
-namespace detail {
-
-template <class T, class AccessFunc, bool IsConst>
-class basic_flat_iterator final : flat_iterator_base<T>
+template <class T, class AccessFunc>
+class flat_iterator final : detail::flat_iterator_base<T>
 {
-	using array     = std::conditional_t<IsConst, T, const T>;
+	static constexpr auto is_const =
+	std::is_const<T>::value;
+
 	using size_type = typename T::size_type;
-	using base      = flat_iterator_base<T>;
+	using base      = detail::flat_iterator_base<T>;
 public:
 	using difference_type   = size_type;
-	using value_type        = typename array::value_type;
+	using reference         = decltype(AccessFunc{}(size_type{}, std::declval<T&>()));
+	using const_reference   = decltype(AccessFunc{}(size_type{}, std::declval<const T&>()));
+	using value_type        = std::decay_t<reference>;
+	using const_value_type  = std::decay_t<const_reference>;
+	using pointer           = value_type*;
 	using const_pointer     = const value_type*;
-	using const_reference   = typename array::const_reference;
 	using iterator_category = std::random_access_iterator_tag;
 
-	using pointer = std::conditional_t<
-		IsConst, const_pointer, value_type*
-	>;
-	using reference = std::conditional_t<
-		IsConst, const_reference, typename T::reference
-	>;
-private:
 	using base::operator++;
 	using base::operator--;
 	using base::operator+=;
@@ -181,24 +180,32 @@ private:
 	using base::operator<=;
 	using base::operator>;
 	using base::operator<;
+private:
 	using base::m_pos;
-
-	array& m_ref;
+	T& m_ref;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit basic_flat_iterator(array& src)
+	explicit flat_iterator(T& src)
 	noexcept : m_ref{src} {}
 
 	CC_ALWAYS_INLINE constexpr
-	explicit basic_flat_iterator(end_t, array& src)
-	noexcept : base{src.size()}, m_ref{src} {}
+	explicit flat_iterator(end_t, T& src)
+	noexcept : base{src.extents().size()}, m_ref{src} {}
+
+	CC_ALWAYS_INLINE constexpr
+	flat_iterator(const flat_iterator& rhs)
+	noexcept : base{rhs.m_pos}, m_ref{rhs.m_ref} {}
+
+	CC_ALWAYS_INLINE constexpr
+	flat_iterator(flat_iterator&& rhs)
+	noexcept : base{rhs.m_pos}, m_ref{rhs.m_ref} {}
 
 	CC_ALWAYS_INLINE
-	auto& operator=(const basic_flat_iterator& rhs)
+	auto& operator=(const flat_iterator& rhs)
 	noexcept { m_pos = rhs.m_pos; return *this; }
 
 	CC_ALWAYS_INLINE
-	auto& operator=(basic_flat_iterator&& rhs)
+	auto& operator=(flat_iterator&& rhs)
 	noexcept { m_pos = rhs.m_pos; return *this; }
 
 	CC_ALWAYS_INLINE
@@ -226,13 +233,16 @@ public:
 	nd_deduce_noexcept(AccessFunc{}(m_pos + n, m_ref))
 };
 
+template <class AccessFunc, class T>
+CC_ALWAYS_INLINE constexpr
+auto make_flat_view(T& t) noexcept
+{
+	using iterator = flat_iterator<T, AccessFunc>;
+	return boost::make_iterator_range(
+		iterator{t},
+		iterator{end, t}
+	);
 }
-
-template <class T, class AccessFunc>
-using flat_iterator = detail::basic_flat_iterator<T, AccessFunc, false>;
-
-template <class T, class AccessFunc>
-using const_flat_iterator = detail::basic_flat_iterator<T, AccessFunc, true>;
 
 }
 

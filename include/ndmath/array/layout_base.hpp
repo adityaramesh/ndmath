@@ -17,8 +17,8 @@ template <
 >
 class layout_base_impl;
 
-template <class Extents, class StorageOrder, true>
-class layout_base_impl
+template <class Extents, class StorageOrder>
+class layout_base_impl<Extents, StorageOrder, true>
 {
 public:
 	CC_ALWAYS_INLINE explicit
@@ -42,8 +42,8 @@ public:
 	{ return StorageOrder{}; }
 };
 
-template <class Extents, class StorageOrder, false>
-class layout_base_impl
+template <class Extents, class StorageOrder>
+class layout_base_impl<Extents, StorageOrder, false>
 {
 private:
 	Extents m_extents{};
@@ -77,7 +77,7 @@ public:
 
 template <class Extents, class StorageOrder>
 using layout_base = layout_base_impl<
-	Extents, StorageOrder, Extents::allows_static_access()
+	Extents, StorageOrder, Extents::allows_static_access
 >;
 
 }

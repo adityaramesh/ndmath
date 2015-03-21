@@ -25,47 +25,67 @@ namespace detail {
 ** - c_2 = floor(off / e_3 * ... * e_n) % e_2
 ** - c_3 = floor(off / e_4 * ... * e_n) % e_3
 ** - c_n = off % e_n
+**
+** Technical note on return value: we have to deduce the return value beforehand
+** and pass it as a template parameter, because using auto would convert
+** references to values, which is not what we want.
 */
 
-template <size_t CurDim, size_t LastDim, class SizeType>
+template <
+	size_t CurDim,
+	size_t LastDim,
+	class SizeType,
+	class ReturnValue,
+	bool IsNoexceptAccessible
+>
 struct element_from_offset_helper
 {
-	using next = element_from_offset_helper<CurDim + 1, LastDim, SizeType>;
+	using next = element_from_offset_helper<CurDim + 1, LastDim, SizeType,
+		ReturnValue, IsNoexceptAccessible>;
 
-	template <class Integer, class Array, class... Ts>
+	template <class Array, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	static auto apply(
+	static ReturnValue apply(
 		const SizeType off,
 		const SizeType prod,
 		Array& arr,
 		const Ts&... ts
-	) noexcept(Array::is_noexcept_accessible)
+	) noexcept(IsNoexceptAccessible)
 	{
 		using namespace tokens;
-
 		return next::apply(
 			off,
-			prod * arr.extents().at(
+			prod * arr.extents().length(
 				arr.storage_order().at_l(c<LastDim - CurDim>)),
-			(off / prod) % arr.extents().at(
+			arr.extents().start(c<LastDim - CurDim>) +
+			(off / prod) % arr.extents().length(
 				arr.storage_order().at_l(c<LastDim - CurDim>)),
 			ts...
 		);
 	}
 };
 
-template <size_t LastDim, class SizeType>
-struct element_from_offset_helper<LastDim, LastDim, SizeType>
+template <
+	size_t LastDim,
+	class SizeType,
+	class ReturnValue,
+	bool IsNoexceptAccessible
+>
+struct element_from_offset_helper<LastDim, LastDim, SizeType, ReturnValue,
+	IsNoexceptAccessible>
 {
-	template <class Integer, class Array, class... Ts>
+	template <class Array, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	static auto apply(
+	static ReturnValue apply(
 		const SizeType off,
 		const SizeType prod,
 		Array& arr,
 		const Ts&... ts
-	) noexcept(Array::is_noexcept_accessible)
-	{ return arr(off / prod, ts...); }
+	) noexcept(IsNoexceptAccessible)
+	{
+		using namespace tokens;
+		return arr.at(arr.extents().start(c<0>) + off / prod, ts...);
+	}
 };
 
 }
@@ -75,11 +95,23 @@ struct element_from_offset
 	template <class Array>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const typename Array::size_type off, Array& arr) const
-	noexcept(Array::is_noexcept_accessible)
+	noexcept(array_traits<Array>::is_noexcept_accessible) ->
+	std::conditional_t<
+		std::is_const<Array>::value,
+		typename array_traits<Array>::const_reference,
+		typename array_traits<Array>::reference
+	>
 	{
-		using size_type = typename Array::size_type;
+		using traits = array_traits<Array>;
+		using size_type = typename traits::size_type;
+		using return_value = std::conditional_t<
+			std::is_const<Array>::value,
+			typename traits::const_reference,
+			typename traits::reference
+		>;
 		using helper = detail::element_from_offset_helper<
-			0, Array::dims - 1, size_type>;
+			0, traits::dims - 1, size_type, return_value,
+			traits::is_noexcept_accessible>;
 		return helper::apply(off, 1, arr);
 	}
 };

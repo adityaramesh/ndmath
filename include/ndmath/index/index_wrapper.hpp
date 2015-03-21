@@ -73,7 +73,7 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 		typename index_return_type_helper<Index, Ts>::integer_type...
 	>;
 
-	static constexpr auto is_statically_accessible =
+	static constexpr auto allows_static_access =
 	mpl::apply<
 		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
 		mpl::to_types<std::integer_sequence<bool,
@@ -90,10 +90,10 @@ class index_wrapper final
 	using self   = index_wrapper<T>;
 	using seq    = std::make_index_sequence<T::dims>;
 	using traits = detail::index_traits<T, seq>;
-
-	static constexpr auto is_statically_accessible =
-	traits::is_statically_accessible;
 public:
+	static constexpr auto allows_static_access =
+	traits::allows_static_access;
+
 	using integer = typename traits::integer;
 private:
 	T m_wrapped;
@@ -109,7 +109,7 @@ public:
 
 	template <class Integer, nd_enable_if((
 		std::is_integral<Integer>::value &&
-		is_statically_accessible
+		allows_static_access
 	))>
 	CC_ALWAYS_INLINE
 	auto& operator=(const std::initializer_list<Integer> rhs) noexcept
