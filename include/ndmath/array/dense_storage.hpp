@@ -24,13 +24,13 @@ struct dense_storage_helper
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE
-	static auto& at(const SizeType n, T* arr) noexcept
-	{ return arr[n]; }
+	static auto& at(const SizeType off, T* data) noexcept
+	{ return data[off]; }
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE
-	static auto& at(const SizeType n, const T* arr) noexcept
-	{ return arr[n]; }
+	static auto& at(const SizeType off, const T* data) noexcept
+	{ return data[off]; }
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE constexpr
@@ -39,8 +39,8 @@ struct dense_storage_helper
 
 	template <class Array>
 	CC_ALWAYS_INLINE
-	auto& operator()(const typename Array::size_type n, Array& arr)
-	const noexcept { return at(n, arr.data()); }
+	auto& operator()(const typename Array::size_type off, Array& arr)
+	const noexcept { return at(off, arr.data()); }
 };
 
 template <>
@@ -50,31 +50,46 @@ struct dense_storage_helper<bool>
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE
-	static auto at(const SizeType n, underlying_type* arr)
+	static auto at(const SizeType off, underlying_type* data)
 	noexcept
 	{
 		using proxy_type = boolean_proxy<underlying_type, SizeType>;
-		return proxy_type{arr[underlying_size(n)], n};
+		return proxy_type{data[underlying_offset(off)], off};
 	}
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE
-	static auto at(const SizeType n, const underlying_type* arr)
+	static auto at(const SizeType off, const underlying_type* data)
 	noexcept
 	{
 		using proxy_type = boolean_proxy<const underlying_type, SizeType>;
-		return proxy_type{arr[underlying_size(n)], n};
+		return proxy_type{data[underlying_offset(off)], off};
 	}
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE constexpr
-	static auto underlying_size(const SizeType n)
+	static auto underlying_offset(const SizeType n)
 	noexcept { return n / (8 * sizeof(underlying_type)); }
+
+	template <class SizeType>
+	CC_ALWAYS_INLINE constexpr
+	static auto underlying_size(const SizeType n)
+	noexcept
+	{
+		nd_assert(n != 0, "Array must have nonzero size.");
+		return 1 + underlying_offset(n - 1);
+		/*
+		** This could overflow.
+		**
+		** return (n + (8 * sizeof(underlying_type)) - 1) /
+		** 	(8 * sizeof(underlying_type));
+		*/
+	}
 
 	template <class Array>
 	CC_ALWAYS_INLINE
-	auto& operator()(const typename Array::size_type n, Array& arr)
-	const noexcept { return at(n, arr.data()); }
+	auto operator()(const typename Array::size_type off, Array& arr)
+	const noexcept { return at(off, arr.data()); }
 };
 
 }
@@ -219,23 +234,15 @@ public:
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto& at(const Ts... ts) noexcept
-	{
-		return helper::at(
-			coords_to_offset::apply(*this, ts...),
-			m_data
-		);
-	}
+	auto at(const Ts... ts) noexcept
+	nd_deduce_return_type(helper::at(
+		coords_to_offset::apply(*this, ts...), m_data))
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto& at(const Ts... ts) const noexcept
-	{
-		return helper::at(
-			coords_to_offset::apply(*this, ts...),
-			m_data
-		);
-	}
+	auto at(const Ts... ts) const noexcept
+	nd_deduce_return_type(helper::at(
+		coords_to_offset::apply(*this, ts...), m_data))
 
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept

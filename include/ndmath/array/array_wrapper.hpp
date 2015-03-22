@@ -468,20 +468,9 @@ public:
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto operator()(const Ts&... ts)
-	noexcept(noexcept(is_noexcept_accessible))
-	{ return at(ts...); }
-
-	template <class... Ts>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const Ts&... ts) const
-	noexcept(noexcept(is_noexcept_accessible))
-	{ return at(ts...); }
-
-	template <class... Ts>
-	CC_ALWAYS_INLINE
 	auto at(const Ts&... ts)
-	noexcept(noexcept(is_noexcept_accessible))
+	noexcept(noexcept(is_noexcept_accessible)) ->
+	decltype(m_wrapped.at(ts...))
 	{
 		nd_assert(
 			make_index(ts...) >= extents().start() &&
@@ -489,13 +478,14 @@ public:
 			"index out of bounds. Index: $; extents: $",
 			make_index(ts...), extents()
 		);
-		m_wrapped.at(ts...);
+		return m_wrapped.at(ts...);
 	}
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE constexpr
 	auto at(const Ts&... ts) const
-	noexcept(noexcept(is_noexcept_accessible))
+	noexcept(noexcept(is_noexcept_accessible)) ->
+	decltype(m_wrapped.at(ts...))
 	{
 		nd_assert(
 			make_index(ts...) >= extents().start() &&
@@ -503,8 +493,24 @@ public:
 			"index out of bounds. Index: $; extents: $",
 			make_index(ts...), extents()
 		);
-		m_wrapped.at(ts...);
+		return m_wrapped.at(ts...);
 	}
+
+	/*
+	** XXX: Don't move these functions above `at`. `at` needs to be defined
+	** first so that the noexcept specifications can work here. I don't know
+	** why. Clang ICE's if we don't include the `this->`.
+	*/
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE
+	auto operator()(const Ts&... ts)
+	nd_deduce_noexcept_and_return_type(this->at(ts...))
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const Ts&... ts) const
+	nd_deduce_noexcept_and_return_type(this->at(ts...))
 
 	/*
 	** Mutating operations.

@@ -42,13 +42,13 @@ public:
 	CC_ALWAYS_INLINE
 	auto& operator=(const bool val) noexcept
 	{
-		m_ref ^= (m_ref ^ -Storage{val}) & cc::rotl(1, m_off);
+		m_ref ^= (m_ref ^ -Storage{val}) & cc::rotl(Storage{1}, m_off);
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE constexpr
 	operator bool() const noexcept
-	{ return m_ref & cc::rotl(1, m_off); }
+	{ return m_ref & cc::rotl(Storage{1}, m_off); }
 };
 
 }

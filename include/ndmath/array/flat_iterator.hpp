@@ -22,12 +22,6 @@ template <class T>
 class flat_iterator_base
 {
 	using size_type = typename T::size_type;
-
-	template <class U>
-	friend auto operator-(
-		const flat_iterator_base<U>& lhs,
-		const flat_iterator_base<U>& rhs
-	) noexcept;
 protected:
 	size_type m_pos{};
 public:
@@ -78,29 +72,33 @@ public:
 		return *this;
 	}
 
-	CC_ALWAYS_INLINE bool
-	operator==(const flat_iterator_base& rhs) noexcept
-	{ return m_pos == rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator==(const flat_iterator_base& rhs)
+	const noexcept { return m_pos == rhs.m_pos; }
 
-	CC_ALWAYS_INLINE bool
-	operator!=(const flat_iterator_base& rhs) noexcept
-	{ return m_pos != rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator!=(const flat_iterator_base& rhs)
+	const noexcept { return m_pos != rhs.m_pos; }
 
-	CC_ALWAYS_INLINE bool
-	operator>=(const flat_iterator_base& rhs) noexcept
-	{ return m_pos >= rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator>=(const flat_iterator_base& rhs)
+	const noexcept { return m_pos >= rhs.m_pos; }
 
-	CC_ALWAYS_INLINE bool
-	operator<=(const flat_iterator_base& rhs) noexcept
-	{ return m_pos <= rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator<=(const flat_iterator_base& rhs)
+	const noexcept { return m_pos <= rhs.m_pos; }
 
-	CC_ALWAYS_INLINE bool
-	operator>(const flat_iterator_base& rhs) noexcept
-	{ return m_pos > rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator>(const flat_iterator_base& rhs)
+	const noexcept { return m_pos > rhs.m_pos; }
 
-	CC_ALWAYS_INLINE bool
-	operator<(const flat_iterator_base& rhs) noexcept
-	{ return m_pos < rhs.m_pos; }
+	CC_ALWAYS_INLINE constexpr bool
+	operator<(const flat_iterator_base& rhs)
+	const noexcept { return m_pos < rhs.m_pos; }
+
+	CC_ALWAYS_INLINE constexpr auto
+	operator-(const flat_iterator_base& rhs)
+	const noexcept { return m_pos - rhs.m_pos; }
 };
 
 template <class T>
@@ -139,21 +137,13 @@ auto operator-(
 	return t;
 }
 
-template <class T>
-CC_ALWAYS_INLINE constexpr
-auto operator-(
-	const flat_iterator_base<T>& lhs,
-	const flat_iterator_base<T>& rhs
-) noexcept
-{ return lhs.m_pos - rhs.m_pos; }
-
 }
 
 struct end_t {};
 static constexpr auto end = end_t{};
 
 template <class T, class AccessFunc>
-class flat_iterator final : detail::flat_iterator_base<T>
+class flat_iterator final : public detail::flat_iterator_base<T>
 {
 	static constexpr auto is_const =
 	std::is_const<T>::value;
@@ -210,27 +200,31 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto operator*()
-	nd_deduce_noexcept(AccessFunc{}(m_pos, m_ref))
+	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos, m_ref))
 
 	CC_ALWAYS_INLINE constexpr
 	auto operator*() const
-	nd_deduce_noexcept(AccessFunc{}(m_pos, m_ref))
+	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos, m_ref))
 
+	template <nd_enable_if((std::is_same<reference, float&>::value))>
 	CC_ALWAYS_INLINE
-	auto operator->()
-	nd_deduce_noexcept(&AccessFunc{}(m_pos, m_ref))
+	pointer operator->()
+	noexcept(noexcept(AccessFunc{}(m_pos, m_ref)))
+	{ return &AccessFunc{}(m_pos, m_ref); }
 
+	template <nd_enable_if((std::is_same<const_reference, const float&>::value))>
 	CC_ALWAYS_INLINE constexpr
-	auto operator->() const
-	nd_deduce_noexcept(&AccessFunc{}(m_pos, m_ref))
+	const_pointer operator->() const
+	noexcept(noexcept(AccessFunc{}(m_pos, m_ref)))
+	{ return &AccessFunc{}(m_pos, m_ref); }
 
 	CC_ALWAYS_INLINE 
 	auto operator[](const size_type n)
-	nd_deduce_noexcept(AccessFunc{}(m_pos + n, m_ref))
+	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos + n, m_ref))
 
 	CC_ALWAYS_INLINE constexpr
 	auto operator[](const size_type n) const
-	nd_deduce_noexcept(AccessFunc{}(m_pos + n, m_ref))
+	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos + n, m_ref))
 };
 
 template <class AccessFunc, class T>
