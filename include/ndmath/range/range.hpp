@@ -130,13 +130,17 @@ public:
 	{ return m_strides; }
 
 	CC_ALWAYS_INLINE constexpr
-	auto size() const noexcept
+	auto size_l() const noexcept
 	{
 		return prod(
 			(m_finish - m_start) / m_strides +
 			sc_index_n<dims(), 1>
 		);
 	}
+
+	CC_ALWAYS_INLINE constexpr
+	auto size() const noexcept
+	{ return size_l().value(); }
 
 	/*
 	** XXX: the accessors below strip the reference from the inferred return

@@ -78,7 +78,10 @@ struct prod_helper
 	template <class W>
 	CC_ALWAYS_INLINE constexpr
 	static auto apply(const W& w) noexcept
-	{ return w(nd::tokens::c<Cur>) * next::apply(w); }
+	{
+		using tokens::c;
+		return w.at_l(c<Cur>) * next::apply(w);
+	}
 };
 
 template <unsigned Max>
@@ -87,7 +90,10 @@ struct prod_helper<Max, Max>
 	template <class W>
 	CC_ALWAYS_INLINE constexpr
 	static auto apply(const W& w) noexcept
-	{ return w(nd::tokens::c<Max>); }
+	{
+		using tokens::c;
+		return w.at_l(c<Max>);
+	}
 };
 
 }

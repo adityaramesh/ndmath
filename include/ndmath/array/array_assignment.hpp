@@ -62,6 +62,40 @@ struct iterator_assignment_traits<LHSIter, void>
 	static constexpr auto is_move_assignable = false;
 };
 
+template <bool IsResizable>
+struct resize_helper;
+
+template <>
+struct resize_helper<true>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void
+	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	{
+		if (dst.extents() != src.extents())
+			dst.unsafe_resize(src.extents());
+	}
+};
+
+template <>
+struct resize_helper<false>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void
+	apply(const array_wrapper<T>& dst, const array_wrapper<U>& src)
+	{
+		nd_assert(
+			src.extents() == dst.extents(),
+			"destination of assignment has different "
+			"extents from source, but is not resizable. "
+			"Destination extents: $; source extents: $",
+			dst.extents(), src.extents()
+		);
+	}
+};
+
 template <
 	bool UseDirectCopyAssign, 
 	bool UseDirectViewCopy,
@@ -75,30 +109,6 @@ template <
 	bool UseFlatViewMove
 >
 struct move_assign_helper;
-
-#define nd_copy_assign_assert                                           \
-	if (dst.extents() != src.extents()) {                           \
-		nd_assert(                                              \
-			array_wrapper<T>::is_unsafe_resizable,          \
-			"destination of copy assignment has different " \
-			"extents from source, but is not resizable. "   \
-			"Destination extents: $; source extents: $",    \
-			dst.extents(), src.extents()                    \
-		);                                                      \
-		dst.unsafe_resize(src.extents());                       \
-	}
-
-#define nd_move_assign_assert                                           \
-	if (dst.extents() != src.extents()) {                           \
-		nd_assert(                                              \
-			array_wrapper<T>::is_unsafe_resizable,          \
-			"destination of move assignment has different " \
-			"extents from source, but is not resizable. "   \
-			"Destination extents: $; source extents: $",    \
-			dst.extents(), src.extents()                    \
-		);                                                      \
-		dst.unsafe_resize(src.extents());                       \
-	}
 
 template <bool UseDirectViewCopy, bool UseFlatViewCopy>
 struct copy_assign_helper<true, UseDirectViewCopy, UseFlatViewCopy>
@@ -118,7 +128,10 @@ struct copy_assign_helper<false, true, UseFlatViewCopy>
 	static void
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
-		nd_copy_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		boost::copy(src.direct_view(), dst.direct_view());
 	}
 };
@@ -131,7 +144,10 @@ struct copy_assign_helper<false, false, true>
 	static void
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
-		nd_copy_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		boost::copy(src.flat_view(), dst.flat_view());
 	}
 };
@@ -144,7 +160,10 @@ struct copy_assign_helper<false, false, false>
 	static void
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
-		nd_copy_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst[i] = src[i];
@@ -170,7 +189,10 @@ struct move_assign_helper<false, true, UseFlatViewMove>
 	static void
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
-		nd_move_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		std::move(
 			src.direct_view().begin(),
 			src.direct_view().end(),
@@ -187,7 +209,10 @@ struct move_assign_helper<false, false, true>
 	static void
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
-		nd_move_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		std::move(
 			src.flat_view().begin(),
 			src.flat_view().end(),
@@ -204,16 +229,16 @@ struct move_assign_helper<false, false, false>
 	static void
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
-		nd_move_assign_assert
+		using src_type = array_wrapper<T>;
+		using helper = resize_helper<src_type::is_unsafe_resizable>;
+
+		helper::apply(dst, src);
 		for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst[i] = std::move(src[i]);
 			});
 	}
 };
-
-#undef nd_copy_assign_assert
-#undef nd_move_assign_assert
 
 struct assignment_helper
 {

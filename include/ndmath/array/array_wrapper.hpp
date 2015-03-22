@@ -438,7 +438,7 @@ public:
 	{ return m_wrapped.flat_view(); }
 
 	template <nd_enable_if(provides_fast_flat_view)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
 	{ return m_wrapped.flat_view(); }
 
@@ -448,7 +448,7 @@ public:
 	{ return make_flat_view<element_from_offset>(*this); }
 
 	template <nd_enable_if(!provides_fast_flat_view)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
 	{ return make_flat_view<element_from_offset>(*this); }
 
@@ -458,7 +458,7 @@ public:
 	{ return m_wrapped.direct_view(); }
 
 	template <nd_enable_if(provides_direct_view)>
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE
 	auto direct_view() const noexcept
 	{ return m_wrapped.direct_view(); }
 

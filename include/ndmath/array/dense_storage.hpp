@@ -76,7 +76,7 @@ struct dense_storage_helper<bool>
 	static auto underlying_size(const SizeType n)
 	noexcept
 	{
-		nd_assert(n != 0, "Array must have nonzero size.");
+		nd_assert(n != 0, "array must have nonzero size");
 		return 1 + underlying_offset(n - 1);
 		/*
 		** This could overflow.
@@ -94,12 +94,142 @@ struct dense_storage_helper<bool>
 
 }
 
-/*
-** TODO specialization with Allocator = void for static storage
-**
-** Technical note: Alloc is a metafunction class. Example use:
-** `mpl::quote<std::allocator>`.
-*/
+template <class T, class Extents, class StorageOrder, class Alloc>
+class dense_storage;
+
+template <class T, class Extents, class StorageOrder>
+class dense_storage<T, Extents, StorageOrder, void> final :
+layout_base<Extents, StorageOrder>
+{
+public:
+	CC_ALWAYS_INLINE constexpr
+	static auto dims() noexcept
+	{ return Extents::dims(); }
+private:
+	using base   = layout_base<Extents, StorageOrder>;
+	using helper = detail::dense_storage_helper<T>;
+
+	friend struct detail::dense_storage_helper<T>;
+
+	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
+	using strides = std::decay_t<decltype(std::declval<Extents>().strides())>;
+
+	static_assert(
+		Extents::allows_static_access,
+		"extents of static array must be statically accessible"
+	);
+	static_assert(
+		start{} == sc_index_n<dims(), 0>,
+		"start of range must be the zero index"
+	);
+	static_assert(
+		strides{} == sc_index_n<dims(), 1>,
+		"range must have unit stride"
+	);
+public:
+	using size_type       = unsigned;
+	using value_type      = std::decay_t<T>;
+	using underlying_type = typename helper::underlying_type;
+	static constexpr auto is_view = false;
+
+	using base::extents;
+	using base::storage_order;
+private:
+	using size_c = decltype(std::declval<Extents>().size_l());
+	static constexpr auto m_size = std::decay_t<size_c>::value();
+	std::array<underlying_type, m_size> m_data;
+public:
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage()
+	noexcept(noexcept(
+		std::is_nothrow_default_constructible<underlying_type>::value))
+	{
+		/*
+		** XXX: See comment regarding allocator::construct above.
+		*/
+		if (!std::is_trivially_constructible<underlying_type>::value) {
+			for (auto i = size_t{0}; i != underlying_size(); ++i) {
+				::new (&m_data[i]) underlying_type{};
+			}
+		}
+	}
+
+	CC_ALWAYS_INLINE
+	~dense_storage()
+	{
+		/*
+		** XXX: See comment regarding allocator::construct above.
+		*/
+		if (!std::is_trivially_destructible<underlying_type>::value) {
+			for (auto i = size_t{0}; i != underlying_size(); ++i) {
+				m_data[i].~underlying_type();
+			}
+		}
+	}
+
+	/*
+	** The generic copy and move constructors and assignment operators
+	** implemented for us by array_wrapper are already efficient.
+	*/
+	dense_storage(const dense_storage&)   = delete;
+	dense_storage(dense_storage&&)        = delete;
+	auto& operator=(const dense_storage&) = delete;
+	auto& operator=(dense_storage&& rhs)  = delete;
+
+	CC_ALWAYS_INLINE constexpr
+	auto memory_size() const noexcept
+	{ return sizeof(underlying_type) * underlying_size(); }
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE
+	auto at(const Ts... ts) noexcept
+	nd_deduce_return_type(helper::at(
+		coords_to_offset::apply(*this, ts...), m_data.data()))
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE constexpr
+	auto at(const Ts... ts) const noexcept
+	nd_deduce_return_type(helper::at(
+		coords_to_offset::apply(*this, ts...), m_data.data()))
+
+	CC_ALWAYS_INLINE
+	auto flat_view() noexcept
+	{ return make_flat_view<helper>(*this); }
+
+	CC_ALWAYS_INLINE
+	auto flat_view() const noexcept
+	{ return make_flat_view<helper>(*this); }
+
+	CC_ALWAYS_INLINE
+	auto direct_view() noexcept
+	{
+		return boost::make_iterator_range(m_data.begin(),
+			m_data.end());
+	}
+
+	CC_ALWAYS_INLINE
+	auto direct_view() const noexcept
+	{
+		return boost::make_iterator_range(m_data.begin(),
+			m_data.end());
+	}
+private:
+	CC_ALWAYS_INLINE
+	auto data() noexcept
+	{ return m_data.data(); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto data() const noexcept
+	{ return m_data.data(); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto size() const noexcept
+	{ return extents().size(); }
+
+	CC_ALWAYS_INLINE constexpr
+	auto underlying_size() const noexcept
+	{ return helper::underlying_size(size()); }
+};
 
 template <class T, class Extents, class StorageOrder, class Alloc>
 class dense_storage final : layout_base<Extents, StorageOrder>
@@ -119,26 +249,25 @@ private:
 
 	static_assert(
 		start::allows_static_access,
-		"Start of range must be statically accessible."
+		"start of range must be statically accessible"
 	);
 	static_assert(
 		strides::allows_static_access,
-		"Strides of range must be statically accessible."
+		"strides of range must be statically accessible"
 	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
-		"Start of range must be the zero index."
+		"start of range must be the zero index"
 	);
 	static_assert(
 		strides{} == sc_index_n<dims(), 1>,
-		"Range must have unit stride."
+		"range must have unit stride"
 	);
 public:
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
 	using allocator_type  = mpl::apply<Alloc, underlying_type>;
-
 	static constexpr auto is_view = false;
 
 	using base::extents;
@@ -156,6 +285,7 @@ public:
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
+		nd_assert(e.size() > 0, "Cannot allocate array of size zero.");
 		m_data = m_alloc.allocate(underlying_size());
 
 		/*
@@ -271,6 +401,8 @@ public:
 	CC_ALWAYS_INLINE
 	void unsafe_resize(const Extents_& e)
 	{
+		nd_assert(e.size() > 0, "cannot change array size to zero");
+
 		if (e.size() < extents().size()) {
 			/*
 			** XXX: Technically, this branch should always be
@@ -353,6 +485,47 @@ nd_enable_if((
 		>>
 	>::value
 ))>
+CC_ALWAYS_INLINE constexpr
+auto make_sarray(const Ts... ts)
+noexcept(noexcept(
+	std::is_nothrow_default_constructible<underlying_type<T>>::value))
+{
+	using extents       = decltype(extents(ts...));
+	using storage_order = decltype(default_storage_order<sizeof...(Ts)>);
+	using storage_type  = dense_storage<T, extents, storage_order, void>;
+	using array_type    = array_wrapper<storage_type>;
+	return array_type{};
+}
+
+template <
+	class T,
+	class Extents,
+	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	// Prevent the previous overload from being used in the wrong situation.
+	nd_enable_if((Extents::dims() == Extents::dims()))
+>
+CC_ALWAYS_INLINE constexpr
+auto make_sarray(
+	const Extents& e,
+	StorageOrder = default_storage_order<Extents::dims()>
+)
+noexcept(noexcept(
+	std::is_nothrow_default_constructible<underlying_type<T>>::value))
+{
+	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
+	using array_type = array_wrapper<storage_type>;
+	return array_type{};
+}
+
+template <class T, class... Ts,
+nd_enable_if((
+	mpl::apply<
+		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
+		mpl::to_types<std::integer_sequence<bool,
+			detail::is_integer_or_coord<Ts>::value...
+		>>
+	>::value
+))>
 CC_ALWAYS_INLINE
 auto make_darray(const Ts... ts)
 {
@@ -380,7 +553,7 @@ auto make_darray(
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
 	using array_type = array_wrapper<storage_type>;
-	return array_type{e};
+	return array_type{e, alloc};
 }
 
 }

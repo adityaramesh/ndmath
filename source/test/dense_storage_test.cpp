@@ -8,7 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/array/dense_storage.hpp>
 
-module("test construction")
+module("test dynamic construction")
 {
 	using namespace nd::tokens;
 
@@ -21,6 +21,18 @@ module("test construction")
 	auto order = nd::default_storage_order<2>;
 	auto a3 = nd::make_darray<float>(nd::extents(20, 20), alloc, order);
 	auto a4 = nd::make_darray<float>(nd::cextents<20, 20>, alloc, order);
+}
+
+module("test static construction")
+{
+	using namespace nd::tokens;
+
+	// Extents only:
+	auto a1 = nd::make_sarray<float>(c<20>, c<20>);
+
+	// Extents with storage order:
+	auto order = nd::default_storage_order<2>;
+	auto a2 = nd::make_sarray<float>(nd::extents(c<20>, c<20>), order);
 }
 
 module("test accessors")
@@ -63,5 +75,7 @@ module("test bool indexing")
 	require(arr.flat_view()[2]);
 	require(arr.flat_view()[3]);
 }
+
+// TODO test copy construction and resizing.
 
 suite("dense storage test")
