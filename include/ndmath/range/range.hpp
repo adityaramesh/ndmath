@@ -308,7 +308,7 @@ auto& operator<<(
 	const range<Start, Finish, Stride, Attribs>& r
 ) noexcept
 {
-	cc::writeln(os, "Range (start: $ • finish: $ • strides: $).",
+	cc::write(os, "(start: $ • finish: $ • strides: $)",
 		r.start(), r.finish(), r.strides());
 	return os;
 }

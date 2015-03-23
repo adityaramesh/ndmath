@@ -78,12 +78,6 @@ struct dense_storage_helper<bool>
 	{
 		nd_assert(n != 0, "array must have nonzero size");
 		return 1 + underlying_offset(n - 1);
-		/*
-		** This could overflow.
-		**
-		** return (n + (8 * sizeof(underlying_type)) - 1) /
-		** 	(8 * sizeof(underlying_type));
-		*/
 	}
 
 	template <class Array>
