@@ -70,16 +70,10 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 	** index.
 	*/
 	using integer = std::common_type_t<
-		typename index_return_type_helper<Index, Ts>::integer_type...
-	>;
+		typename index_return_type_helper<Index, Ts>::integer_type...>;
 
-	static constexpr auto allows_static_access =
-	mpl::apply<
-		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
-		mpl::to_types<std::integer_sequence<bool,
-			index_return_type_helper<Index, Ts>::allows_static_access...
-		>>
-	>::value;
+	static constexpr auto allows_static_access = mpl::all_true<
+		index_return_type_helper<Index, Ts>::allows_static_access...>;
 };
 
 }

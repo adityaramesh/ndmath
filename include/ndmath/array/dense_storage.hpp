@@ -484,14 +484,7 @@ struct is_integer_or_coord<coord_wrapper<Coord>>
 }
 
 template <class T, class... Ts,
-nd_enable_if((
-	mpl::apply<
-		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
-		mpl::to_types<std::integer_sequence<bool,
-			detail::is_integer_or_coord<Ts>::value...
-		>>
-	>::value
-))>
+nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
 CC_ALWAYS_INLINE constexpr
 auto make_sarray(const Ts... ts)
 noexcept(noexcept(
@@ -552,14 +545,7 @@ noexcept(noexcept(
 }
 
 template <class T, class... Ts,
-nd_enable_if((
-	mpl::apply<
-		mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
-		mpl::to_types<std::integer_sequence<bool,
-			detail::is_integer_or_coord<Ts>::value...
-		>>
-	>::value
-))>
+nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
 CC_ALWAYS_INLINE
 auto make_darray(const Ts... ts)
 {
