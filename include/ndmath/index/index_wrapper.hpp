@@ -116,8 +116,8 @@ public:
 	{
 		nd_assert(
 			rhs.size() == dims(),
-			"Cannot assign initializer list to index of unequal "
-			"size. Size of index: $; size of initializer list: $.",
+			"cannot assign initializer list to index of unequal "
+			"size. Size of index: $; size of initializer list: $",
 			dims(), rhs.size()
 		);
 		fusion::copy(rhs.begin(), rhs.end(), *this);

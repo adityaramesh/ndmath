@@ -21,6 +21,10 @@ module("test dynamic construction")
 	auto order = nd::default_storage_order<2>;
 	auto a3 = nd::make_darray<float>(nd::extents(20, 20), alloc, order);
 	auto a4 = nd::make_darray<float>(nd::cextents<20, 20>, alloc, order);
+
+	// Extents with initial value:
+	auto a5 = nd::make_darray<float>(nd::cextents<20, 20>, 0);
+	auto a6 = nd::make_darray<float>(nd::extents(20, 20), alloc, order);
 }
 
 module("test static construction")
@@ -33,6 +37,9 @@ module("test static construction")
 	// Extents with storage order:
 	auto order = nd::default_storage_order<2>;
 	auto a2 = nd::make_sarray<float>(nd::extents(c<20>, c<20>), order);
+
+	// Extents with initial value:
+	auto a3 = nd::make_sarray<float>(nd::cextents<20, 20>, 0);
 }
 
 module("test accessors")
@@ -54,10 +61,10 @@ module("test regular indexing")
 	arr(1, 1) = 4;
 
 	require(arr.memory_size() == 4 * sizeof(float));
-	require(arr.flat_view()[0] == 1);
-	require(arr.flat_view()[1] == 2);
-	require(arr.flat_view()[2] == 3);
-	require(arr.flat_view()[3] == 4);
+	require(arr(0, 0) == 1);
+	require(arr(0, 1) == 2);
+	require(arr(1, 0) == 3);
+	require(arr(1, 1) == 4);
 }
 
 module("test bool indexing")
@@ -65,17 +72,78 @@ module("test bool indexing")
 	using namespace nd::tokens;
 	auto arr = nd::make_darray<bool>(c<2>, c<2>);
 	arr(0, 0) = true;
-	arr(0, 1) = true;
+	arr(0, 1) = false;
 	arr(1, 0) = true;
-	arr(1, 1) = true;
+	arr(1, 1) = false;
 
 	require(arr.memory_size() == sizeof(unsigned));
-	require(arr.flat_view()[0]);
-	require(arr.flat_view()[1]);
-	require(arr.flat_view()[2]);
-	require(arr.flat_view()[3]);
+	require(arr(0, 0));
+	require(!arr(0, 1));
+	require(arr(1, 0));
+	require(!arr(1, 1));
 }
 
-// TODO test copy construction and resizing.
+module("test copy assignment")
+{
+	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_darray<float>(nd::cextents<20, 20>);
+	b = a;
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = nd::make_darray<bool>(nd::cextents<20, 20>);
+	c(0, 0) = true;
+	c(0, 1) = false;
+	c(1, 0) = true;
+	c(1, 1) = false;
+
+	auto d = nd::make_darray<bool>(nd::cextents<20, 20>);
+	d = c;
+	require(d(0, 0));
+	require(!d(0, 1));
+	require(d(1, 0));
+	require(!d(1, 1));
+}
+
+module("test move assignment")
+{
+	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_darray<float>(nd::cextents<20, 20>);
+	b = std::move(a);
+	require(a.direct_view().begin() == nullptr);
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = nd::make_darray<bool>(nd::cextents<20, 20>);
+	c(0, 0) = true;
+	c(0, 1) = false;
+	c(1, 0) = true;
+	c(1, 1) = false;
+
+	auto d = nd::make_darray<bool>(nd::cextents<20, 20>);
+	d = std::move(c);
+	require(c.direct_view().begin() == nullptr);
+	require(d(0, 0));
+	require(!d(0, 1));
+	require(d(1, 0));
+	require(!d(1, 1));
+}
+
+// TODO test copy construction
+// TODO test move construction
 
 suite("dense storage test")

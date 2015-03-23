@@ -442,17 +442,17 @@ private:
 		nd_assert(
 			(!unroll_rem &&
 			(r.length(n) / (r.stride(n) * tile_fac)) % unroll_fac != 0),
-			"Unrolling requires remainder loop, but remainder option "
+			"unrolling requires remainder loop, but remainder option "
 			"is set to false. Number of tiles is $; unroll factor is $; "
-			"but $1 % $2 != 0.",
+			"but $1 % $2 != 0",
 			r.length(n) / (r.stride(n) * tile_fac), unroll_fac
 		);
 
 		nd_assert(
 			(!tile_rem && r.length(n) % (r.stride(n) * tile_fac) != 0),
-			"Tiling requires remainder loop, but remainder option "
+			"tiling requires remainder loop, but remainder option "
 			"is set to false. Length of range is $ - $ + $ = $; "
-			"length of tile is $ * $ = $; but $4 % $7 != 0.",
+			"length of tile is $ * $ = $; but $4 % $7 != 0",
 			r.finish(n), r.start(n), r.stride(n), r.length(n),
 			r.stride(n), tile_fac, r.stride(n) * r.tile_fac
 		);

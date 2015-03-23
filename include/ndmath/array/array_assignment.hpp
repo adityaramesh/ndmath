@@ -132,7 +132,7 @@ struct copy_assign_helper<false, true, UseFlatViewCopy>
 		using helper = resize_helper<src_type::is_unsafe_resizable>;
 
 		helper::apply(dst, src);
-		boost::copy(src.direct_view(), dst.direct_view());
+		boost::copy(src.direct_view(), dst.direct_view().begin());
 	}
 };
 
@@ -148,7 +148,7 @@ struct copy_assign_helper<false, false, true>
 		using helper = resize_helper<src_type::is_unsafe_resizable>;
 
 		helper::apply(dst, src);
-		boost::copy(src.flat_view(), dst.flat_view());
+		boost::copy(src.flat_view(), dst.flat_view().begin());
 	}
 };
 

@@ -145,25 +145,31 @@ public:
 		std::is_nothrow_default_constructible<underlying_type>::value))
 	{
 		/*
-		** XXX: See comment regarding allocator::construct above.
+		** See comments regarding construction in the other
+		** specialization of `dense_storage`.
 		*/
-		if (!std::is_trivially_constructible<underlying_type>::value) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_t{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
 		}
 	}
 
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const underlying_type& init)
+	noexcept(noexcept(
+		std::is_nothrow_default_constructible<underlying_type>::value))
+	{
+		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			::new (&m_data[i]) underlying_type{init};
+		}
+	}
+
 	CC_ALWAYS_INLINE
 	~dense_storage()
 	{
-		/*
-		** XXX: See comment regarding allocator::construct above.
-		*/
-		if (!std::is_trivially_destructible<underlying_type>::value) {
-			for (auto i = size_t{0}; i != underlying_size(); ++i) {
-				m_data[i].~underlying_type();
-			}
+		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			m_data[i].~underlying_type();
 		}
 	}
 
@@ -291,13 +297,32 @@ public:
 		/*
 		** XXX: Calling allocator::construct is technically required in
 		** all cases, but in practice, I don't think that omitting it
-		** when T is trivially constructible does any harm. I don't want
-		** to default-construct elements unnecessarily.
+		** when `T` is trivially constructible does any harm. I don't
+		** want to default-construct elements unnecessarily.
+		**
+		** Note that we need to check `is_trivially_constructible` as
+		** well as `is_trivially_copyable`; this is equivalent to
+		** checking `is_trivial`.
 		*/
-		if (!std::is_trivially_constructible<underlying_type>::value) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_t{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
+		}
+	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(
+		const Extents& e,
+		const underlying_type& init,
+		allocator_type alloc = allocator_type{}
+	) : base{e}, m_alloc{alloc}
+	{
+		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+
+		m_data = m_alloc.allocate(underlying_size());
+		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			m_alloc.construct(&m_data[i], init);
 		}
 	}
 
@@ -306,13 +331,8 @@ public:
 	{
 		if (m_data == nullptr) return;
 
-		/*
-		** XXX: See comment regarding allocator::construct above.
-		*/
-		if (!std::is_trivially_destructible<underlying_type>::value) {
-			for (auto i = size_t{0}; i != underlying_size(); ++i) {
-				m_alloc.destroy(&m_data[i]);
-			}
+		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			m_alloc.destroy(&m_data[i]);
 		}
 		m_alloc.deallocate(m_data, underlying_size());
 	}
@@ -404,20 +424,13 @@ public:
 		nd_assert(e.size() > 0, "cannot change array size to zero");
 
 		if (e.size() < extents().size()) {
-			/*
-			** XXX: Technically, this branch should always be
-			** taken, for reasons discussed earlier.
-			*/
-			if (!std::is_trivially_destructible<underlying_type>::value) {
-				auto off = helper::underlying_size(e.size());
-				for (auto i = off; i != underlying_size(); ++i) {
-					m_alloc.destroy(&m_data[i]);
-				}
+			auto off = helper::underlying_size(e.size());
+			for (auto i = off; i != underlying_size(); ++i) {
+				m_alloc.destroy(&m_data[i]);
 			}
 		}
 		else if (e.size() > extents().size()) {
 			this->~dense_storage();
-
 			auto new_size = helper::underlying_size(e.size());
 			m_data = m_alloc.allocate(new_size, m_data);
 
@@ -425,7 +438,7 @@ public:
 			** XXX: Technically, this branch should always be
 			** taken, for reasons discussed earlier.
 			*/
-			if (!std::is_trivially_constructible<underlying_type>::value) {
+			if (!std::is_trivial<underlying_type>::value) {
 				for (auto i = size_t{0}; i != new_size; ++i) {
 					m_alloc.construct(&m_data[i]);
 				}
@@ -501,12 +514,15 @@ template <
 	class T,
 	class Extents,
 	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
-	// Prevent the previous overload from being used in the wrong situation.
-	nd_enable_if((Extents::dims() == Extents::dims()))
+	// Prevents the wrong overload from being chosen.
+	nd_enable_if((
+		Extents::dims() == Extents::dims() &&
+		StorageOrder::dims() == StorageOrder::dims()
+	))
 >
 CC_ALWAYS_INLINE constexpr
 auto make_sarray(
-	const Extents& e,
+	const Extents&,
 	StorageOrder = default_storage_order<Extents::dims()>
 )
 noexcept(noexcept(
@@ -515,6 +531,30 @@ noexcept(noexcept(
 	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{};
+}
+
+template <
+	class T,
+	class Extents,
+	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	// Prevents the wrong overload from being chosen.
+	nd_enable_if((
+		Extents::dims() == Extents::dims() &&
+		StorageOrder::dims() == StorageOrder::dims()
+	))
+>
+CC_ALWAYS_INLINE constexpr
+auto make_sarray(
+	const Extents&,
+	const underlying_type<T>& init,
+	StorageOrder = default_storage_order<Extents::dims()>
+)
+noexcept(noexcept(
+	std::is_nothrow_default_constructible<underlying_type<T>>::value))
+{
+	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
+	using array_type = array_wrapper<storage_type>;
+	return array_type{init};
 }
 
 template <class T, class... Ts,
@@ -541,7 +581,12 @@ template <
 	class T,
 	class Alloc = mpl::quote<std::allocator>,
 	class Extents,
-	class StorageOrder = decltype(default_storage_order<Extents::dims()>)
+	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	// Prevents the wrong overload from being chosen.
+	nd_enable_if((
+		Extents::dims() == Extents::dims() &&
+		StorageOrder::dims() == StorageOrder::dims()
+	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
@@ -554,6 +599,31 @@ auto make_darray(
 	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{e, alloc};
+}
+
+template <
+	class T,
+	class Alloc = mpl::quote<std::allocator>,
+	class Extents,
+	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	// Prevents the wrong overload from being chosen.
+	nd_enable_if((
+		Extents::dims() == Extents::dims() &&
+		StorageOrder::dims() == StorageOrder::dims()
+	))
+>
+CC_ALWAYS_INLINE
+auto make_darray(
+	const Extents& e,
+	const underlying_type<T>& init,
+	const mpl::apply<Alloc, underlying_type<T>>& alloc =
+		mpl::apply<Alloc, underlying_type<T>>{},
+	StorageOrder = default_storage_order<Extents::dims()>
+)
+{
+	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
+	using array_type = array_wrapper<storage_type>;
+	return array_type{e, init, alloc};
 }
 
 }

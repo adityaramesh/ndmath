@@ -117,6 +117,17 @@ public:
 		);
 	}
 
+	template <class Start_, class Finish_, class Stride_, class Attribs_>
+	CC_ALWAYS_INLINE
+	auto& operator=(const range<Start_, Finish_, Stride_, Attribs_>& rhs)
+	noexcept
+	{
+		m_start = rhs.start();
+		m_finish = rhs.finish();
+		m_strides = rhs.strides();
+		return *this;
+	}
+
 	CC_ALWAYS_INLINE constexpr
 	const auto& start() const noexcept
 	{ return m_start; }

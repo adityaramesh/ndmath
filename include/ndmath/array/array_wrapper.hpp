@@ -353,12 +353,18 @@ public:
 		return *this;
 	}
 
-	template <class U, nd_enable_if((
+	/*
+	** XXX: Using the enable_if here results in bad codegen in clang-3.5.
+	** An invalid assignment that should have never compiled due to the
+	** enable_if ends up working anyway, and running the program results in
+	** a segfault. I don't have the time to make an MWE.
+	*/
+	template <class U/*, nd_enable_if((
 		std::is_assignable<
 			reference,
 			typename array_wrapper<U>::reference
 		>::value
-	))>
+	))*/>
 	CC_ALWAYS_INLINE auto&
 	operator=(const array_wrapper<U>& rhs)
 	noexcept(noexcept(detail::assignment_helper::copy_assign(*this, rhs)))
