@@ -24,7 +24,7 @@ module("test dynamic construction")
 
 	// Extents with initial value:
 	auto a5 = nd::make_darray<float>(nd::cextents<20, 20>, 0);
-	auto a6 = nd::make_darray<float>(nd::extents(20, 20), alloc, order);
+	auto a6 = nd::make_darray<float>(nd::extents(20, 20), 0, alloc, order);
 }
 
 module("test static construction")

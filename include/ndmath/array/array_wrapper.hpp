@@ -472,7 +472,15 @@ public:
 	** Element accessors.
 	*/
 
-	template <class... Ts>
+	template <class... Ts, nd_enable_if((
+		sizeof...(Ts) == dims() &&
+		mpl::apply<
+			mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
+			mpl::to_types<std::integer_sequence<bool,
+				std::is_integral<Ts>::value...
+			>>
+		>::value
+	))>
 	CC_ALWAYS_INLINE
 	auto at(const Ts&... ts)
 	noexcept(noexcept(is_noexcept_accessible)) ->
@@ -487,7 +495,15 @@ public:
 		return m_wrapped.at(ts...);
 	}
 
-	template <class... Ts>
+	template <class... Ts, nd_enable_if((
+		sizeof...(Ts) == dims() &&
+		mpl::apply<
+			mpl::uncurry<mpl::make_nary<mpl::quote<mpl::logical_and>>>,
+			mpl::to_types<std::integer_sequence<bool,
+				std::is_integral<Ts>::value...
+			>>
+		>::value
+	))>
 	CC_ALWAYS_INLINE constexpr
 	auto at(const Ts&... ts) const
 	noexcept(noexcept(is_noexcept_accessible)) ->
