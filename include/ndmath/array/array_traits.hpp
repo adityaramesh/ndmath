@@ -14,9 +14,6 @@
 
 namespace nd {
 
-template <class T, class AccessFunc>
-class flat_iterator;
-
 namespace detail {
 
 template <class T, class Seq>
