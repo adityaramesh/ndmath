@@ -50,7 +50,7 @@ struct coords_to_offset_helper
 
 	template <class Array>
 	CC_ALWAYS_INLINE constexpr
-	static auto apply(const Array& arr, const SizeType prod)
+	static auto apply(const Array&, const SizeType prod)
 	noexcept { return prod; }
 };
 

@@ -89,8 +89,8 @@ struct resize_helper<false>
 		nd_assert(
 			src.extents() == dst.extents(),
 			"destination of assignment has different "
-			"extents from source, but is not resizable. "
-			"Destination extents: $; source extents: $",
+			"extents from source, but is not resizable.\n"
+			"▶ Destination extents: $; source extents: $",
 			dst.extents(), src.extents()
 		);
 	}

@@ -288,7 +288,7 @@ public:
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
-		nd_assert(e.size() > 0, "Cannot allocate array of size zero.");
+		nd_assert(e.size() > 0, "cannot allocate array of size zero");
 		m_data = m_alloc.allocate(underlying_size());
 
 		/*

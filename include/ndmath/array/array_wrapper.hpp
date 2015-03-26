@@ -484,7 +484,7 @@ public:
 		nd_assert(
 			make_index(ts...) >= extents().start() &&
 			make_index(ts...) <= extents().finish(),
-			"index out of bounds. Index: $; extents: $",
+			"index out of bounds.\n▶ $ ∉ range $",
 			make_index(ts...), extents()
 		);
 		return m_wrapped.at(ts...);
@@ -502,7 +502,7 @@ public:
 		nd_assert(
 			make_index(ts...) >= extents().start() &&
 			make_index(ts...) <= extents().finish(),
-			"index out of bounds. Index: $; extents: $",
+			"index out of bounds.\n▶ $ ∉ range $",
 			make_index(ts...), extents()
 		);
 		return m_wrapped.at(ts...);
