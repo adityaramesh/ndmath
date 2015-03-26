@@ -13,7 +13,6 @@
 #include <ndmath/range.hpp>
 
 namespace nd {
-
 namespace detail {
 
 template <class T, class Seq>
