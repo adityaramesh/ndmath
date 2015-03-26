@@ -334,8 +334,8 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				uf_loc * (r.length_l(n) / (r.stride_l(n) * tf_loc * uf_loc)),
-				r.length_l(n) / (r.stride_l(n) * tf_loc),
+				uf_loc * (r.length_c(n) / (r.stride_c(n) * tf_loc * uf_loc)),
+				r.length_c(n) / (r.stride_c(n) * tf_loc),
 				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
@@ -354,9 +354,9 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				r.start_l(n) + r.stride_l(n) * tf_loc *
-				(r.length_l(n) / (r.stride_l(n) * tf_loc)),
-				r.finish_l(n), r.stride_l(n), f
+				r.start_c(n) + r.stride_c(n) * tf_loc *
+				(r.length_c(n) / (r.stride_c(n) * tf_loc)),
+				r.finish_c(n), r.stride_c(n), f
 			);
 		}
 	}
@@ -408,7 +408,7 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				r.length_l(n) / (r.stride_l(n) * tf_loc * uf_loc),
+				r.length_c(n) / (r.stride_c(n) * tf_loc * uf_loc),
 				basic_sc_coord<integer, integer(-1)>,
 				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
@@ -429,8 +429,8 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				r.start_l(n) + r.length_l(n) % (r.stride_l(n) * tf_loc),
-				r.start_l(n) - r.stride_l(n), r.stride_l(n), f
+				r.start_c(n) + r.length_c(n) % (r.stride_c(n) * tf_loc),
+				r.start_c(n) - r.stride_c(n), r.stride_c(n), f
 			);
 		}
 	}

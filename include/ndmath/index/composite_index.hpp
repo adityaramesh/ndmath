@@ -24,11 +24,11 @@ struct composite_index_traits;
 
 template <unsigned N, unsigned Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, true>
-{ using type = decltype(std::declval<I1>().at_l(nd::tokens::c<N>)); };
+{ using type = decltype(std::declval<I1>().at_c(nd::tokens::c<N>)); };
 
 template <unsigned N, unsigned Dims1, class I1, class I2>
 struct composite_index_traits<N, Dims1, I1, I2, false>
-{ using type = decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>)); };
+{ using type = decltype(std::declval<I2>().at_c(nd::tokens::c<N - Dims1>)); };
 
 template <unsigned N, unsigned Dims1, bool First>
 struct composite_index_helper;
@@ -39,19 +39,19 @@ struct composite_index_helper<N, Dims1, true>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static auto get(I1& i1, I2) noexcept ->
-	decltype(std::declval<I1>().at_l(nd::tokens::c<N>))
+	decltype(std::declval<I1>().at_c(nd::tokens::c<N>))
 	{
 		using tokens::c;
-		return i1.at_l(c<N>);
+		return i1.at_c(c<N>);
 	}
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static auto get_const(I1& i1, I2) noexcept ->
-	const decltype(std::declval<I1>().at_l(nd::tokens::c<N>))
+	const decltype(std::declval<I1>().at_c(nd::tokens::c<N>))
 	{
 		using tokens::c;
-		return i1.at_l(c<N>);
+		return i1.at_c(c<N>);
 	}
 };
 
@@ -61,19 +61,19 @@ struct composite_index_helper<N, Dims1, false>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static auto get(I1, I2& i2) noexcept ->
-	decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>))
+	decltype(std::declval<I2>().at_c(nd::tokens::c<N - Dims1>))
 	{
 		using tokens::c;
-		return i2.at_l(c<N - Dims1>);
+		return i2.at_c(c<N - Dims1>);
 	}
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static auto get_const(I1, I2& i2) noexcept ->
-	const decltype(std::declval<I2>().at_l(nd::tokens::c<N - Dims1>))
+	const decltype(std::declval<I2>().at_c(nd::tokens::c<N - Dims1>))
 	{
 		using tokens::c;
-		return i2.at_l(c<N - Dims1>);
+		return i2.at_c(c<N - Dims1>);
 	}
 };
 

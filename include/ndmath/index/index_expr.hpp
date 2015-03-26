@@ -31,7 +31,7 @@ public:
 	const auto get() const noexcept
 	{
 		using tokens::c;
-		return Op::apply(m_i1.at_l(c<N>), m_i2.at_l(c<N>));
+		return Op::apply(m_i1.at_c(c<N>), m_i2.at_c(c<N>));
 	}
 };
 

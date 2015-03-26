@@ -44,7 +44,7 @@ struct coords_to_offset_helper
 	{
 		using tokens::c;
 		return next::apply(arr, arr.extents().length(
-			arr.storage_order().at_l(c<CurDim>)) * prod +
+			arr.storage_order().at_c(c<CurDim>)) * prod +
 			t - arr.extents().start(c<CurDim>), ts...);
 	}
 

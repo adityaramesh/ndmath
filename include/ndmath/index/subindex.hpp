@@ -36,19 +36,19 @@ public:
 	template <unsigned N, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE
 	auto get() noexcept ->
-	decltype(std::declval<Index>().at_l(tokens::c<N + A>))
+	decltype(std::declval<Index>().at_c(tokens::c<N + A>))
 	{
 		using tokens::c;
-		return m_index.at_l(c<N + A>);
+		return m_index.at_c(c<N + A>);
 	}
 
 	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	auto get() const noexcept ->
-	const decltype(std::declval<const Index>().at_l(tokens::c<N + A>))
+	const decltype(std::declval<const Index>().at_c(tokens::c<N + A>))
 	{
 		using tokens::c;
-		return m_index.at_l(c<N + A>);
+		return m_index.at_c(c<N + A>);
 	}
 };
 

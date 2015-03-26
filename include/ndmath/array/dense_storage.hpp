@@ -129,7 +129,7 @@ public:
 	using base::extents;
 	using base::storage_order;
 private:
-	using size_c = decltype(std::declval<Extents>().size_l());
+	using size_c = decltype(std::declval<Extents>().size_c());
 	static constexpr auto m_size = std::decay_t<size_c>::value();
 	std::array<underlying_type, m_size> m_data;
 public:

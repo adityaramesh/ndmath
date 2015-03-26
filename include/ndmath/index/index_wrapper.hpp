@@ -4,7 +4,8 @@
 ** Date:      01/13/2015
 ** Contact:   _@adityaramesh.com
 **
-** # A technical note regarding the use of const qualifiers in return types:
+** # A very technical note regarding the use of const qualifiers in return
+** types.
 **
 ** Note that the const qualifiers added to the return types in the index module
 ** serve an important purpose. To see why, suppose that we did not add the const
@@ -151,14 +152,14 @@ public:
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at_l(const coord_wrapper<Coord> c) noexcept
+	auto at_c(const coord_wrapper<Coord> c) noexcept
 	nd_deduce_return_type(
 		m_wrapped.template get<c.value(dims() - 1)>()
 	)
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto at_l(const coord_wrapper<Coord> c) const noexcept
+	auto at_c(const coord_wrapper<Coord> c) const noexcept
 	nd_deduce_const_return_type(
 		m_wrapped.template get<c.value(dims() - 1)>()
 	)
@@ -190,20 +191,20 @@ public:
 	{ return at(c); }
 
 	CC_ALWAYS_INLINE constexpr
-	auto first_l() noexcept
-	nd_deduce_return_type(at_l(tokens::c<0>))
+	auto first_c() noexcept
+	nd_deduce_return_type(at_c(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto first_l() const noexcept
-	nd_deduce_const_return_type(at_l(tokens::c<0>))
+	auto first_c() const noexcept
+	nd_deduce_const_return_type(at_c(tokens::c<0>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last_l() noexcept
-	nd_deduce_return_type(at_l(tokens::c<dims() - 1>))
+	auto last_c() noexcept
+	nd_deduce_return_type(at_c(tokens::c<dims() - 1>))
 
 	CC_ALWAYS_INLINE constexpr
-	auto last_l() const noexcept
-	nd_deduce_const_return_type(at_l(tokens::c<dims() - 1>))
+	auto last_c() const noexcept
+	nd_deduce_const_return_type(at_c(tokens::c<dims() - 1>))
 
 	CC_ALWAYS_INLINE constexpr
 	auto first() noexcept

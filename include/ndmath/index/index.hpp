@@ -197,7 +197,7 @@ struct index_eval_helper<std::index_sequence<Ts...>>
 	static auto apply(const Index& i) noexcept
 	{
 		using tokens::c;
-		return make_index(i.at_l(c<Ts>)...);
+		return make_index(i.at_c(c<Ts>)...);
 	}
 };
 

@@ -80,7 +80,7 @@ struct prod_helper
 	static auto apply(const W& w) noexcept
 	{
 		using tokens::c;
-		return w.at_l(c<Cur>) * next::apply(w);
+		return w.at_c(c<Cur>) * next::apply(w);
 	}
 };
 
@@ -92,7 +92,7 @@ struct prod_helper<Max, Max>
 	static auto apply(const W& w) noexcept
 	{
 		using tokens::c;
-		return w.at_l(c<Max>);
+		return w.at_c(c<Max>);
 	}
 };
 
@@ -155,7 +155,7 @@ struct iter_to_index_copy_helper
 	{
 		using tokens::c;
 		if (f == l) return;
-		w.at_l(c<Cur>) = *f;
+		w.at_c(c<Cur>) = *f;
 		next::apply(f + 1, l, w);
 	}
 };
@@ -184,15 +184,15 @@ struct index_to_index_copy_helper<Cur, Last, true, true>
 	static void apply(const W1& w1, W2& w2) noexcept
 	{
 		using tokens::c;
-		using c1 = std::decay_t<decltype(w1.at_l(c<Cur>))>;
-		using c2 = std::decay_t<decltype(w2.at_l(c<Cur>))>;
+		using c1 = std::decay_t<decltype(w1.at_c(c<Cur>))>;
+		using c2 = std::decay_t<decltype(w2.at_c(c<Cur>))>;
 		static_assert(
 			c1::value() == c2::value(),
 			"Attempt to change a constant extent of an index."
 		);
 
-		using n1 = std::decay_t<decltype(w1.at_l(c<Cur + 1>))>;
-		using n2 = std::decay_t<decltype(w2.at_l(c<Cur + 1>))>;
+		using n1 = std::decay_t<decltype(w1.at_c(c<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_c(c<Cur + 1>))>;
 		using next = index_to_index_copy_helper<
 			Cur + 1, Last,
 			n1::allows_static_access,
@@ -210,10 +210,10 @@ struct index_to_index_copy_helper<Cur, Last, SrcStaticallyAccessible, false>
 	static void apply(const W1& w1, W2& w2) noexcept
 	{
 		using tokens::c;
-		w2.at_l(c<Cur>) = w1.at_l(c<Cur>);
+		w2.at_c(c<Cur>) = w1.at_c(c<Cur>);
 
-		using n1 = std::decay_t<decltype(w1.at_l(c<Cur + 1>))>;
-		using n2 = std::decay_t<decltype(w2.at_l(c<Cur + 1>))>;
+		using n1 = std::decay_t<decltype(w1.at_c(c<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_c(c<Cur + 1>))>;
 		using next = index_to_index_copy_helper<
 			Cur + 1, Last,
 			n1::allows_static_access,
@@ -245,8 +245,8 @@ struct index_to_index_copy_helper<Last, Last, true, true>
 	static void apply(const W1& w1, const W2& w2) noexcept
 	{
 		using tokens::c;
-		using c1 = std::decay_t<decltype(w1.at_l(c<Last>))>;
-		using c2 = std::decay_t<decltype(w2.at_l(c<Last>))>;
+		using c1 = std::decay_t<decltype(w1.at_c(c<Last>))>;
+		using c2 = std::decay_t<decltype(w2.at_c(c<Last>))>;
 		static_assert(
 			c1::value() == c2::value(),
 			"Attempt to change a constant extent of an index."
@@ -262,7 +262,7 @@ struct index_to_index_copy_helper<Last, Last, SrcStaticallyAccessible, false>
 	static void apply(const W1& w1, W2& w2) noexcept
 	{
 		using tokens::c;
-		w2.at_l(c<Last>) = w1.at_l(c<Last>);
+		w2.at_c(c<Last>) = w1.at_c(c<Last>);
 	}
 };
 
@@ -281,8 +281,8 @@ CC_ALWAYS_INLINE
 auto copy(const W1& w1, W2& w2) noexcept
 {
 	using tokens::c;
-	using t1 = std::decay_t<decltype(w1.at_l(c<0>))>;
-	using t2 = std::decay_t<decltype(w2.at_l(c<0>))>;
+	using t1 = std::decay_t<decltype(w1.at_c(c<0>))>;
+	using t2 = std::decay_t<decltype(w2.at_c(c<0>))>;
 	using helper = detail::index_to_index_copy_helper<
 		0, W1::dims() - 1,
 		t1::allows_static_access,

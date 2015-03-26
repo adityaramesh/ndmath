@@ -32,19 +32,19 @@ namespace detail {
 template <size_t Coord, class Range>
 static constexpr auto start =
 std::decay_t<decltype(
-	std::declval<Range>().start().at_l(tokens::c<Coord>)
+	std::declval<Range>().start().at_c(tokens::c<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
 static constexpr auto finish =
 std::decay_t<decltype(
-	std::declval<Range>().finish().at_l(tokens::c<Coord>)
+	std::declval<Range>().finish().at_c(tokens::c<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
 static constexpr auto stride =
 std::decay_t<decltype(
-	std::declval<Range>().strides().at_l(tokens::c<Coord>)
+	std::declval<Range>().strides().at_c(tokens::c<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
@@ -68,9 +68,9 @@ public:
 	static auto dim_allows_static_access() noexcept
 	{
 		using tokens::c;
-		using a = std::decay_t<decltype(std::declval<Start>().at_l(c<N>))>;
-		using b = std::decay_t<decltype(std::declval<Finish>().at_l(c<N>))>;
-		using s = std::decay_t<decltype(std::declval<Stride>().at_l(c<N>))>;
+		using a = std::decay_t<decltype(std::declval<Start>().at_c(c<N>))>;
+		using b = std::decay_t<decltype(std::declval<Finish>().at_c(c<N>))>;
+		using s = std::decay_t<decltype(std::declval<Stride>().at_c(c<N>))>;
 		return a::allows_static_access &&
 		       b::allows_static_access &&
 		       s::allows_static_access;
@@ -141,7 +141,7 @@ public:
 	{ return m_strides; }
 
 	CC_ALWAYS_INLINE constexpr
-	auto size_l() const noexcept
+	auto size_c() const noexcept
 	{
 		return prod(
 			(m_finish - m_start) / m_strides +
@@ -151,7 +151,7 @@ public:
 
 	CC_ALWAYS_INLINE constexpr
 	auto size() const noexcept
-	{ return size_l().value(); }
+	{ return size_c().value(); }
 
 	/*
 	** XXX: the accessors below strip the reference from the inferred return
@@ -163,43 +163,43 @@ public:
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	start_l(const coord_wrapper<Coord>& c) const noexcept
-	{ return m_start.at_l(c); }
+	start_c(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_start.at_c(c); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	finish_l(const coord_wrapper<Coord>& c) const noexcept
-	{ return m_finish.at_l(c); }
+	finish_c(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_finish.at_c(c); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
-	stride_l(const coord_wrapper<Coord>& c) const noexcept
-	{ return m_strides.at_l(c); }
+	stride_c(const coord_wrapper<Coord>& c) const noexcept
+	{ return m_strides.at_c(c); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
-	auto length_l(const coord_wrapper<Coord>& c) const noexcept
-	{ return finish_l(c) - start_l(c) + stride_l(c); }
+	auto length_c(const coord_wrapper<Coord>& c) const noexcept
+	{ return finish_c(c) - start_c(c) + stride_c(c); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
 	start(const coord_wrapper<Coord>& c) const noexcept
-	{ return start_l(c).value(); }
+	{ return start_c(c).value(); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
 	finish(const coord_wrapper<Coord>& c) const noexcept
-	{ return finish_l(c).value(); }
+	{ return finish_c(c).value(); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr auto
 	stride(const coord_wrapper<Coord>& c) const noexcept
-	{ return stride_l(c).value(); }
+	{ return stride_c(c).value(); }
 
 	template <class Coord>
 	CC_ALWAYS_INLINE constexpr
 	auto length(const coord_wrapper<Coord>& c) const noexcept
-	{ return length_l(c).value(); }
+	{ return length_c(c).value(); }
 
 	template <size_t... Loops>
 	CC_ALWAYS_INLINE constexpr
