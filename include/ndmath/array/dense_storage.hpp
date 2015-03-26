@@ -18,7 +18,7 @@ namespace nd {
 namespace detail {
 
 template <class T>
-struct dense_storage_helper
+struct dense_storage_access
 {
 	using underlying_type = T;
 
@@ -44,7 +44,7 @@ struct dense_storage_helper
 };
 
 template <>
-struct dense_storage_helper<bool>
+struct dense_storage_access<bool>
 {
 	using underlying_type = unsigned;
 
@@ -101,24 +101,24 @@ public:
 	{ return Extents::dims(); }
 private:
 	using base   = layout_base<Extents, StorageOrder>;
-	using helper = detail::dense_storage_helper<T>;
+	using helper = detail::dense_storage_access<T>;
 
-	friend struct detail::dense_storage_helper<T>;
+	friend struct detail::dense_storage_access<T>;
 
 	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
 	using strides = std::decay_t<decltype(std::declval<Extents>().strides())>;
 
 	static_assert(
 		Extents::allows_static_access,
-		"extents of static array must be statically accessible"
+		"extents of static dense storage must be statically accessible"
 	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
-		"start of range must be the zero index"
+		"start of range of dense storage must be the zero index"
 	);
 	static_assert(
 		strides{} == sc_index_n<dims(), 1>,
-		"range must have unit stride"
+		"range of dense storage must have unit stride"
 	);
 public:
 	using size_type       = unsigned;
@@ -131,6 +131,7 @@ public:
 private:
 	using size_c = decltype(std::declval<Extents>().size_c());
 	static constexpr auto m_size = std::decay_t<size_c>::value();
+
 	std::array<underlying_type, m_size> m_data;
 public:
 	CC_ALWAYS_INLINE constexpr
@@ -240,28 +241,30 @@ public:
 	{ return Extents::dims(); }
 private:
 	using base   = layout_base<Extents, StorageOrder>;
-	using helper = detail::dense_storage_helper<T>;
+	using helper = detail::dense_storage_access<T>;
 
-	friend struct detail::dense_storage_helper<T>;
+	friend struct detail::dense_storage_access<T>;
 
 	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
 	using strides = std::decay_t<decltype(std::declval<Extents>().strides())>;
 
 	static_assert(
 		start::allows_static_access,
-		"start of range must be statically accessible"
+		"start of range of dense storage must be statically "
+		"accessible"
 	);
 	static_assert(
 		strides::allows_static_access,
-		"strides of range must be statically accessible"
+		"strides of range of dense storage must be statically "
+		"accessible"
 	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
-		"start of range must be the zero index"
+		"start of range of dense storage must be the zero index"
 	);
 	static_assert(
 		strides{} == sc_index_n<dims(), 1>,
-		"range must have unit stride"
+		"range of dense storage must have unit stride"
 	);
 public:
 	using size_type       = unsigned;
@@ -464,7 +467,7 @@ private:
 
 template <class T>
 using underlying_type =
-typename detail::dense_storage_helper<T>::underlying_type;
+typename detail::dense_storage_access<T>::underlying_type;
 
 namespace detail {
 

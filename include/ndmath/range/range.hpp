@@ -288,15 +288,15 @@ auto operator!=(
 /*
 ** TODO: uncomment once implemented.
 **
-template <class Start, class Finish, class Stride, class Attribs>
-CC_ALWAYS_INLINE constexpr
-auto begin(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return r.begin(); }
-
-template <class Start, class Finish, class Stride, class Attribs>
-CC_ALWAYS_INLINE constexpr
-auto end(const range<Start, Finish, Stride, Attribs>& r)
-noexcept { return r.end(); }
+** template <class Start, class Finish, class Stride, class Attribs>
+** CC_ALWAYS_INLINE constexpr
+** auto begin(const range<Start, Finish, Stride, Attribs>& r)
+** noexcept { return r.begin(); }
+** 
+** template <class Start, class Finish, class Stride, class Attribs>
+** CC_ALWAYS_INLINE constexpr
+** auto end(const range<Start, Finish, Stride, Attribs>& r)
+** noexcept { return r.end(); }
 */
 
 template <

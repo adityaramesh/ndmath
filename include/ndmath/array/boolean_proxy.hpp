@@ -26,9 +26,13 @@ class boolean_proxy final
 
 	/*
 	** The offset stores the position of the bit in m_ref mod (8 *
-	** sizeof(Storage)). The modulus doesn't matter, because the rotate left
-	** instruction effectively ignores it. Using the rotate instruction
-	** allows us to avoid using a redundant AND operation.
+	** sizeof(Storage)). Previously, I attempted to use the rotate left
+	** instruction (rol), which allows us to take the modulus of m_off by 8
+	** * sizeof(Storage) for free. However, there is a bug in clang which
+	** causes incorrect code to be generated if this instruction is used in
+	** inline assembly. I wasn't able to produce a quick MWE, so it has not
+	** yet been reported. Hopefully, the compiler recognizes that the AND is
+	** redundant and decides to use rol anyway.
 	*/
 	Integer m_off;
 public:
@@ -36,9 +40,7 @@ public:
 	explicit boolean_proxy(Storage& src, Integer off)
 	noexcept : m_ref{src}, m_off{off} {}
 
-	template <nd_enable_if((
-		!std::is_const<Storage>::value
-	))>
+	template <nd_enable_if((!std::is_const<Storage>::value))>
 	CC_ALWAYS_INLINE
 	auto& operator=(const bool val) noexcept
 	{
