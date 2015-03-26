@@ -413,7 +413,7 @@ public:
 	template <class Extents_, nd_enable_if((
 		std::is_assignable<Extents, Extents_>::value))>
 	CC_ALWAYS_INLINE
-	void unsafe_resize(const Extents_& e)
+	void destructive_resize(const Extents_& e)
 	{
 		nd_assert(e.size() > 0, "cannot change array size to zero");
 

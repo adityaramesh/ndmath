@@ -74,7 +74,7 @@ struct resize_helper<true>
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		if (dst.extents() != src.extents())
-			dst.unsafe_resize(src.extents());
+			dst.destructive_resize(src.extents());
 	}
 };
 
@@ -129,7 +129,7 @@ struct copy_assign_helper<false, true, UseFlatViewCopy>
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		boost::copy(src.direct_view(), dst.direct_view().begin());
@@ -145,7 +145,7 @@ struct copy_assign_helper<false, false, true>
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		boost::copy(src.flat_view(), dst.flat_view().begin());
@@ -161,7 +161,7 @@ struct copy_assign_helper<false, false, false>
 	apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		for_each(src.extents(),
@@ -190,7 +190,7 @@ struct move_assign_helper<false, true, UseFlatViewMove>
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		std::move(
@@ -210,7 +210,7 @@ struct move_assign_helper<false, false, true>
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		std::move(
@@ -230,7 +230,7 @@ struct move_assign_helper<false, false, false>
 	apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		using src_type = array_wrapper<T>;
-		using helper = resize_helper<src_type::is_unsafe_resizable>;
+		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
 		for_each(src.extents(),

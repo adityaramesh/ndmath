@@ -221,13 +221,13 @@ public:
 	using const_direct_iterator = typename traits::const_direct_iterator;
 	using underlying_type       = typename traits::underlying_type;
 
-	static constexpr auto is_view                 = traits::is_view;
-	static constexpr auto is_safe_resizable       = traits::is_safe_resizable;
-	static constexpr auto is_unsafe_resizable     = traits::is_unsafe_resizable;
-	static constexpr auto is_noexcept_accessible  = traits::is_noexcept_accessible;
-	static constexpr auto provides_direct_view    = traits::provides_direct_view;
-	static constexpr auto provides_fast_flat_view = traits::provides_fast_flat_view;
-	static constexpr auto provides_memory_size    = traits::provides_memory_size;
+	static constexpr auto is_view                     = traits::is_view;
+	static constexpr auto is_conservatively_resizable = traits::is_conservatively_resizable;
+	static constexpr auto is_destructively_resizable  = traits::is_destructively_resizable;
+	static constexpr auto is_noexcept_accessible      = traits::is_noexcept_accessible;
+	static constexpr auto provides_direct_view        = traits::provides_direct_view;
+	static constexpr auto provides_fast_flat_view     = traits::provides_fast_flat_view;
+	static constexpr auto provides_memory_size        = traits::provides_memory_size;
 
 	using flat_iterator = std::conditional_t<
 		std::is_same<typename traits::flat_iterator, void>::value,
@@ -528,15 +528,15 @@ public:
 	** Mutating operations.
 	*/
 
-	template <class Range, nd_enable_if(is_safe_resizable)>
+	template <class Range, nd_enable_if(is_conservatively_resizable)>
 	CC_ALWAYS_INLINE
-	void safe_resize(const Range& r)
-	nd_deduce_noexcept(m_wrapped.safe_resize(r))
+	void conservative_resize(const Range& r)
+	nd_deduce_noexcept(m_wrapped.conservative_resize(r))
 
-	template <class Range, nd_enable_if(is_unsafe_resizable)>
+	template <class Range, nd_enable_if(is_destructively_resizable)>
 	CC_ALWAYS_INLINE
-	void unsafe_resize(const Range& r)
-	nd_deduce_noexcept(m_wrapped.unsafe_resize(r))
+	void destructive_resize(const Range& r)
+	nd_deduce_noexcept(m_wrapped.destructive_resize(r))
 };
 
 }

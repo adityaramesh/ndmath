@@ -33,8 +33,8 @@ module("test dummy_array")
 {
 	using traits = nd::array_traits<dummy_array>;
 	static_assert(traits::is_view, "");
-	static_assert(!traits::is_safe_resizable, "");
-	static_assert(!traits::is_unsafe_resizable, "");
+	static_assert(!traits::is_conservatively_resizable, "");
+	static_assert(!traits::is_destructively_resizable, "");
 	static_assert(!traits::supports_direct_view, "");
 	static_assert(!traits::supports_fast_flat_view, "");
 	static_assert(!traits::provides_memory_size, "");
@@ -50,8 +50,8 @@ module("test dense_storage")
 	using traits        = nd::array_traits<array_type>;
 
 	static_assert(!traits::is_view, "");
-	static_assert(!traits::is_safe_resizable, "");
-	static_assert(traits::is_unsafe_resizable, "");
+	static_assert(!traits::is_conservatively_resizable, "");
+	static_assert(traits::is_destructively_resizable, "");
 	static_assert(traits::supports_direct_view, "");
 	static_assert(traits::supports_fast_flat_view, "");
 	static_assert(traits::provides_memory_size, "");
