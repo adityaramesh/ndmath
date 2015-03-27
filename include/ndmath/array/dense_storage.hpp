@@ -110,15 +110,15 @@ private:
 
 	static_assert(
 		Extents::allows_static_access,
-		"extents of static dense storage must be statically accessible"
+		"Extents of static dense storage must be statically accessible."
 	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
-		"start of range of dense storage must be the zero index"
+		"Start of range of dense storage must be the zero index."
 	);
 	static_assert(
 		strides{} == sc_index_n<dims(), 1>,
-		"range of dense storage must have unit stride"
+		"Range of dense storage must have unit stride."
 	);
 public:
 	using size_type       = unsigned;
@@ -250,21 +250,21 @@ private:
 
 	static_assert(
 		start::allows_static_access,
-		"start of range of dense storage must be statically "
-		"accessible"
+		"Start of range of dense storage must be statically "
+		"accessible."
 	);
 	static_assert(
 		strides::allows_static_access,
-		"strides of range of dense storage must be statically "
-		"accessible"
+		"Strides of range of dense storage must be statically "
+		"accessible."
 	);
 	static_assert(
 		start{} == sc_index_n<dims(), 0>,
-		"start of range of dense storage must be the zero index"
+		"Start of range of dense storage must be the zero index."
 	);
 	static_assert(
 		strides{} == sc_index_n<dims(), 1>,
-		"range of dense storage must have unit stride"
+		"Range of dense storage must have unit stride."
 	);
 public:
 	using size_type       = unsigned;

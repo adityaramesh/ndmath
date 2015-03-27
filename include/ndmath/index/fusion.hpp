@@ -18,7 +18,7 @@ class index_wrapper;
                                                                          \
 namespace detail {                                                       \
                                                                          \
-template <unsigned Cur, unsigned Max>                          \
+template <unsigned Cur, unsigned Max>                                    \
 struct name ## _range_helper                                             \
 {                                                                        \
 	using next = name ## _range_helper<Cur + 1, Max>;                \
@@ -35,7 +35,7 @@ struct name ## _range_helper                                             \
 	}                                                                \
 };                                                                       \
                                                                          \
-template <unsigned Max>                                             \
+template <unsigned Max>                                                  \
 struct name ## _range_helper<Max, Max>                                   \
 {                                                                        \
 	template <class W1, class W2>                                    \
