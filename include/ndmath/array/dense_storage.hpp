@@ -124,7 +124,7 @@ public:
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
-	static constexpr auto is_view = false;
+	static constexpr auto is_lazy = false;
 
 	using base::extents;
 	using base::storage_order;
@@ -271,7 +271,7 @@ public:
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
 	using allocator_type  = mpl::apply<Alloc, underlying_type>;
-	static constexpr auto is_view = false;
+	static constexpr auto is_lazy = false;
 
 	using base::extents;
 	using base::storage_order;

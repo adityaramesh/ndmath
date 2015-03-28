@@ -176,7 +176,7 @@ struct array_traits
 	static constexpr auto check_memory_size(...)
 	{ return false; }
 
-	static constexpr auto is_view                     = T::is_view;
+	static constexpr auto is_lazy                     = T::is_lazy;
 	static constexpr auto is_conservatively_resizable = check_conservative_resize<T>(0);
 	static constexpr auto is_destructively_resizable  = check_destructive_resize<T>(0);
 	static constexpr auto provides_direct_view        = check_direct_view<T>(0);

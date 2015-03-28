@@ -5,8 +5,11 @@
 ** Contact:   _@adityaramesh.com
 **
 ** The wrapped type must define the following types:
-** - is_view
-** - size_type
+** - is_lazy: Indicates whether the array type performs lazy computation when
+** accessing elements. This influences how assignment and copy construction is
+** performed.
+** - size_type: The integral type used by the array to store information related
+** to memory.
 **
 ** The wrapped type must also define the following member functions:
 ** - extents()
@@ -211,6 +214,7 @@ detail::array_wrapper_base<
 		is_move_constructible>;
 	using base::m_wrapped;
 public:
+	using wrapped_type     = T;
 	using size_type        = typename traits::size_type;
 	using reference        = typename traits::reference;
 	using const_reference  = typename traits::const_reference;
@@ -221,7 +225,7 @@ public:
 	using const_direct_iterator = typename traits::const_direct_iterator;
 	using underlying_type       = typename traits::underlying_type;
 
-	static constexpr auto is_view                     = traits::is_view;
+	static constexpr auto is_lazy                     = traits::is_lazy;
 	static constexpr auto is_conservatively_resizable = traits::is_conservatively_resizable;
 	static constexpr auto is_destructively_resizable  = traits::is_destructively_resizable;
 	static constexpr auto is_noexcept_accessible      = traits::is_noexcept_accessible;
