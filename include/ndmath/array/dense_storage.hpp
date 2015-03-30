@@ -198,13 +198,14 @@ public:
 		}
 	}
 
+	template <class U>
 	CC_ALWAYS_INLINE constexpr
-	explicit dense_storage(const underlying_type& init)
+	explicit dense_storage(const U& init)
 	noexcept(noexcept(
-		std::is_nothrow_default_constructible<underlying_type>::value))
+		std::is_nothrow_constructible<underlying_type, const U&>::value))
 	{
 		for (auto i = size_t{0}; i != underlying_size(); ++i) {
-			::new (&m_data[i]) underlying_type{init};
+			::new (&m_data[i]) underlying_type(init);
 		}
 	}
 
@@ -391,10 +392,11 @@ public:
 		}
 	}
 
+	template <class U>
 	CC_ALWAYS_INLINE
 	explicit dense_storage(
+		const U& init,
 		const Extents& e,
-		const underlying_type& init,
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
@@ -651,22 +653,24 @@ noexcept(noexcept(
 
 template <
 	class T,
+	class U,
 	class Extents,
 	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
+		std::is_constructible<underlying_type<T>, const U&>::value &&
 		Extents::dims() == Extents::dims() &&
 		StorageOrder::dims() == StorageOrder::dims()
 	))
 >
 CC_ALWAYS_INLINE constexpr
 auto make_sarray(
+	const U& init,
 	const Extents&,
-	const underlying_type<T>& init,
 	StorageOrder = default_storage_order<Extents::dims()>
 )
 noexcept(noexcept(
-	std::is_nothrow_default_constructible<underlying_type<T>>::value))
+	std::is_nothrow_constructible<underlying_type<T>, const U&>::value))
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
 	using array_type = array_wrapper<storage_type>;
@@ -712,19 +716,21 @@ auto make_darray(
 
 template <
 	class T,
+	class U,
 	class Alloc = mpl::quote<std::allocator>,
 	class Extents,
 	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
+		std::is_constructible<underlying_type<T>, const U&>::value &&
 		Extents::dims() == Extents::dims() &&
 		StorageOrder::dims() == StorageOrder::dims()
 	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
+	const U& init,
 	const Extents& e,
-	const underlying_type<T>& init,
 	const mpl::apply<Alloc, underlying_type<T>>& alloc =
 		mpl::apply<Alloc, underlying_type<T>>{},
 	StorageOrder = default_storage_order<Extents::dims()>
@@ -732,19 +738,19 @@ auto make_darray(
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
 	using array_type = array_wrapper<storage_type>;
-	return array_type{e, init, alloc};
+	return array_type{init, e, alloc};
 }
 
 template <
-	class T,
 	class W,
+	class T,
 	class Extents,
 	class StorageOrder = decltype(std::declval<W>().storage_order())
 >
 CC_ALWAYS_INLINE
 auto make_darray(
-	const Extents& e,
 	const array_wrapper<W>& arr,
+	const Extents& e,
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
