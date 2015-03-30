@@ -85,10 +85,7 @@ auto eval(const coord_wrapper<Coord>&) noexcept
 template <class Coord, nd_enable_if(!Coord::allows_static_access)>
 CC_ALWAYS_INLINE constexpr
 auto eval(const Coord& c) noexcept
-{
-	using wrapper = coord_wrapper<Coord>;
-	return make_coord(c.value());
-}
+{ return make_coord(c.value()); }
 
 namespace tokens {
 
