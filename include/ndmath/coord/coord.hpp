@@ -87,7 +87,6 @@ CC_ALWAYS_INLINE constexpr
 auto eval(const Coord& c) noexcept
 {
 	using wrapper = coord_wrapper<Coord>;
-	using integer = typename wrapper::integer;
 	return make_coord(c.value());
 }
 
