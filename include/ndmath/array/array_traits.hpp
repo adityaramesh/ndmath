@@ -185,12 +185,22 @@ struct array_traits
 	static constexpr auto check_memory_size(...)
 	{ return false; }
 
+	template <class U>
+	static constexpr auto check_allocator(U*) ->
+	decltype(std::declval<U>().allocator(), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check_allocator(...)
+	{ return false; }
+
 	static constexpr auto is_lazy                      = T::is_lazy;
 	static constexpr auto is_conservatively_resizable  = check_conservative_resize<T>(0);
 	static constexpr auto is_destructively_resizable   = check_destructive_resize<T>(0);
 	static constexpr auto provides_direct_view         = check_direct_view<T>(0);
 	static constexpr auto provides_fast_flat_view      = check_flat_view<T>(0);
 	static constexpr auto provides_memory_size         = check_memory_size<T>(0);
+	static constexpr auto provides_allocator           = check_allocator<T>(0);
 	static constexpr auto supports_late_initialization = check_construction_view<T>(0);
 
 	using et = detail::element_access_traits<T, dims>;

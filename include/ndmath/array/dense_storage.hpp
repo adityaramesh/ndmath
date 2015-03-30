@@ -180,9 +180,6 @@ private:
 	std::array<underlying_type, m_size> m_data;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit dense_storage(uninitialized_t) noexcept {}
-
-	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage()
 	noexcept(noexcept(
 		std::is_nothrow_default_constructible<underlying_type>::value))
@@ -192,11 +189,19 @@ public:
 		** specialization of `dense_storage`.
 		*/
 		if (!std::is_trivial<underlying_type>::value) {
-			for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
 		}
 	}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t)
+	noexcept {}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t, const dense_storage&)
+	noexcept {}
 
 	template <class U>
 	CC_ALWAYS_INLINE constexpr
@@ -204,7 +209,7 @@ public:
 	noexcept(noexcept(
 		std::is_nothrow_constructible<underlying_type, const U&>::value))
 	{
-		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+		for (auto i = size_type{0}; i != underlying_size(); ++i) {
 			::new (&m_data[i]) underlying_type(init);
 		}
 	}
@@ -212,7 +217,7 @@ public:
 	CC_ALWAYS_INLINE
 	~dense_storage()
 	{
-		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+		for (auto i = size_type{0}; i != underlying_size(); ++i) {
 			m_data[i].~underlying_type();
 		}
 	}
@@ -269,17 +274,6 @@ public:
 	CC_ALWAYS_INLINE
 	auto construction_view() noexcept
 	{
-		/*
-		** XXX: Using this results in a linker error. I feel like this
-		** is a compiler bug.
-		**
-		** auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
-		** nd_deduce_noexcept_and_return_type(
-		** 	helper::uninitialized_at(off, arr));
-		**
-		** return make_construction_view<decltype(func)>(*this,
-		** 	underlying_size());
-		*/
 		using access = detail::construction_view_access;
 		return make_construction_view<access>(*this, underlying_size());
 	}
@@ -386,11 +380,27 @@ public:
 		** checking `is_trivial`.
 		*/
 		if (!std::is_trivial<underlying_type>::value) {
-			for (auto i = size_t{0}; i != underlying_size(); ++i) {
+			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
 		}
 	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(
+		uninitialized_t,
+		const Extents& e,
+		allocator_type alloc = allocator_type{}
+	) : base{e}, m_alloc{alloc}
+	{
+		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+		m_data = m_alloc.allocate(underlying_size());
+	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(uninitialized_t, const dense_storage& rhs)
+	: base{rhs.extents()}, m_alloc{rhs.allocator()}
+	{ m_data = m_alloc.allocate(underlying_size()); }
 
 	template <class U>
 	CC_ALWAYS_INLINE
@@ -403,7 +413,7 @@ public:
 		nd_assert(e.size() > 0, "cannot allocate array of size zero");
 
 		m_data = m_alloc.allocate(underlying_size());
-		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+		for (auto i = size_type{0}; i != underlying_size(); ++i) {
 			m_alloc.construct(&m_data[i], init);
 		}
 	}
@@ -413,7 +423,7 @@ public:
 	{
 		if (m_data == nullptr) return;
 
-		for (auto i = size_t{0}; i != underlying_size(); ++i) {
+		for (auto i = size_type{0}; i != underlying_size(); ++i) {
 			m_alloc.destroy(&m_data[i]);
 		}
 		m_alloc.deallocate(m_data, underlying_size());
@@ -503,17 +513,6 @@ public:
 	CC_ALWAYS_INLINE
 	auto construction_view() noexcept
 	{
-		/*
-		** XXX: Using this results in a linker error. I feel like this
-		** is a compiler bug.
-		**
-		** auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
-		** nd_deduce_noexcept_and_return_type(
-		** 	helper::uninitialized_at(off, arr));
-		**
-		** return make_construction_view<decltype(func)>(*this,
-		** 	underlying_size());
-		*/
 		using access = detail::construction_view_access;
 		return make_construction_view<access>(*this, underlying_size());
 	}
@@ -555,7 +554,7 @@ public:
 			** taken, for reasons discussed earlier.
 			*/
 			if (!std::is_trivial<underlying_type>::value) {
-				for (auto i = size_t{0}; i != new_size; ++i) {
+				for (auto i = size_type{0}; i != new_size; ++i) {
 					m_alloc.construct(&m_data[i]);
 				}
 			}
@@ -608,8 +607,44 @@ struct is_integer_or_coord
 
 template <class Coord>
 struct is_integer_or_coord<coord_wrapper<Coord>>
+{ static constexpr auto value = true; };
+
+template <class T>
+struct is_index
+{ static constexpr auto value = false; };
+
+template <class Index>
+struct is_index<index_wrapper<Index>>
+{ static constexpr auto value = true; };
+
+template <class T>
+struct is_range
+{ static constexpr auto value = false; };
+
+template <class Start, class Finish, class Stride, class Attribs>
+struct is_range<range<Start, Finish, Stride, Attribs>>
+{ static constexpr auto value = true; };
+
+template <class T>
+struct deduce_storage_order
+{ using type = void; };
+
+template <class T>
+struct deduce_storage_order<array_wrapper<T>>
 {
-	static constexpr auto value = true;
+	using type = std::decay_t<decltype(
+		std::declval<array_wrapper<T>>().storage_order())>;
+};
+
+template <class Alloc>
+struct quote_allocator
+{
+private:
+	template <class T>
+	using helper = typename Alloc::template rebind<T>;
+public:
+	template <class T>
+	using apply = typename helper<T>::other;
 };
 
 }
@@ -631,11 +666,11 @@ noexcept(noexcept(
 template <
 	class T,
 	class Extents,
-	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
-		Extents::dims() == Extents::dims() &&
-		StorageOrder::dims() == StorageOrder::dims()
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE constexpr
@@ -655,12 +690,12 @@ template <
 	class T,
 	class U,
 	class Extents,
-	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
-		Extents::dims() == Extents::dims() &&
-		StorageOrder::dims() == StorageOrder::dims()
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE constexpr
@@ -692,24 +727,24 @@ auto make_darray(const Ts... ts)
 
 template <
 	class T,
-	class Alloc = mpl::quote<std::allocator>,
 	class Extents,
-	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	class Alloc = std::allocator<underlying_type<T>>,
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
-		Extents::dims() == Extents::dims() &&
-		StorageOrder::dims() == StorageOrder::dims()
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
 	const Extents& e,
-	const mpl::apply<Alloc, underlying_type<T>>& alloc =
-		mpl::apply<Alloc, underlying_type<T>>{},
+	const Alloc& alloc = Alloc{},
 	StorageOrder = default_storage_order<Extents::dims()>
 )
 {
-	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
+	using storage_type = dense_storage<T, Extents, StorageOrder,
+	      detail::quote_allocator<Alloc>>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{e, alloc};
 }
@@ -717,51 +752,115 @@ auto make_darray(
 template <
 	class T,
 	class U,
-	class Alloc = mpl::quote<std::allocator>,
 	class Extents,
-	class StorageOrder = decltype(default_storage_order<Extents::dims()>),
+	class Alloc = std::allocator<underlying_type<T>>,
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
-		Extents::dims() == Extents::dims() &&
-		StorageOrder::dims() == StorageOrder::dims()
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
 	const U& init,
 	const Extents& e,
-	const mpl::apply<Alloc, underlying_type<T>>& alloc =
-		mpl::apply<Alloc, underlying_type<T>>{},
+	const Alloc& alloc = Alloc{},
 	StorageOrder = default_storage_order<Extents::dims()>
 )
 {
-	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
+	using storage_type = dense_storage<T, Extents, StorageOrder,
+		detail::quote_allocator<Alloc>>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{init, e, alloc};
 }
 
+template <class Array, nd_enable_if((Array::provides_allocator))>
+CC_ALWAYS_INLINE
+auto make_darray(const Array& arr)
+{
+	return make_darray(arr, arr.extents(), arr.allocator(),
+		arr.storage_order());
+}
+
+template <class Array, nd_enable_if((!Array::provides_allocator))>
+CC_ALWAYS_INLINE
+auto make_darray(const Array& arr)
+{
+	return make_darray(arr, arr.extents(), arr.storage_order());
+}
+
 template <
-	class W,
-	class T,
-	class Extents,
-	class StorageOrder = decltype(std::declval<W>().storage_order())
+	class Array,
+	class Extents, 
+	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	nd_enable_if((
+		Array::provides_allocator &&
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
+	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
-	const array_wrapper<W>& arr,
+	const Array& arr,
+	const Extents& e,
+	const StorageOrder& o = decltype(arr.storage_order()){}
+)
+{
+	return make_darray(arr, e, arr.allocator(), o);
+}
+
+template <
+	class Array,
+	class Extents, 
+	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	nd_enable_if((
+		!Array::provides_allocator &&
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
+	))
+>
+CC_ALWAYS_INLINE
+auto make_darray(
+	const Array& arr,
 	const Extents& e,
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	/*
-	using array_type = array_wrapper<T>;
-	using value_type = typename array_type::value_type;
-	using extents = decltype(arr.extents());
-	using storage_order = decltype(arr.storage_order());
+	using value_type    = typename Array::value_type;
+	using extents       = decltype(arr.extents());
+	using storage_order = StorageOrder;
+	using allocator     = mpl::quote<std::allocator>;
+	using storage_type  = dense_storage<value_type, extents,
+	      			storage_order, allocator>;
+	using array_type    = array_wrapper<storage_type>;
+	return array_type{arr, e};
+}
 
-	using storage_type = dense_storage<
-	*/
+template <
+	class Array,
+	class Extents,
+	class Alloc,
+	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	nd_enable_if((
+		detail::is_range<Extents>::value &&
+		detail::is_index<StorageOrder>::value
+	))
+>
+CC_ALWAYS_INLINE
+auto make_darray(
+	const Array& arr,
+	const Extents& e,
+	const Alloc& alloc,
+	StorageOrder = decltype(arr.storage_order()){}
+)
+{
+	using value_type   = typename Array::value_type;
+	using storage_type = dense_storage<value_type, Extents,
+	      			StorageOrder, detail::quote_allocator<Alloc>>;
+	using array_type   = array_wrapper<storage_type>;
+	return array_type{arr, e, alloc};
 }
 
 }

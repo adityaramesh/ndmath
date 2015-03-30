@@ -143,18 +143,26 @@ module("test move assignment")
 	require(!d(1, 1));
 }
 
-/*
 module("test copy construction")
 {
-	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
+	auto a = nd::make_darray<float>(nd::cextents<2, 2>);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
 	a(1, 1) = 4;
 
-	nd::make_darray<int>(a, a.extents());
+	auto b = nd::make_darray(a);
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = a;
+	require(c(0, 0) == 1);
+	require(c(0, 1) == 2);
+	require(c(1, 0) == 3);
+	require(c(1, 1) == 4);
 }
-*/
 
 // TODO test move construction
 
