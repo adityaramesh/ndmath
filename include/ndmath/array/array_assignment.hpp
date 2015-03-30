@@ -11,7 +11,7 @@
 #ifndef Z9A5D0442_8832_4E17_ADF8_1BA2DC724D52
 #define Z9A5D0442_8832_4E17_ADF8_1BA2DC724D52
 
-#include <ndmath/array/array_memory_traits.hpp>
+#include <ndmath/array/array_assignment_traits.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
 namespace nd {
@@ -56,7 +56,7 @@ struct resize_helper<false>
 };
 
 template <
-	bool CopyAssignmentFeasible, 
+	bool DirectAssignmentFeasible, 
 	bool DirectViewFeasible,
 	bool FlatViewFeasible
 >
@@ -125,7 +125,7 @@ struct copy_assign_helper<false, false, false>
 		helper::apply(dst, src);
 		for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
-				dst[i] = src[i];
+				dst(i) = src(i);
 			});
 	}
 };
@@ -194,7 +194,7 @@ struct move_assign_helper<false, false, false>
 		helper::apply(dst, src);
 		for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
-				dst[i] = std::move(src[i]);
+				dst(i) = std::move(src(i));
 			});
 	}
 };
@@ -210,8 +210,8 @@ struct assignment_helper
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = copy_assign_helper<
 			traits::direct_assignment_feasible,
-			traits::direct_view_feasible,
-			traits::flat_view_feasible>;
+			traits::assignment_to_direct_view_feasible,
+			traits::assignment_to_flat_view_feasible>;
 		helper::apply(dst, src);
 	}
 
@@ -224,8 +224,8 @@ struct assignment_helper
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = move_assign_helper<
 			traits::direct_assignment_feasible,
-			traits::direct_view_feasible,
-			traits::flat_view_feasible>;
+			traits::assignment_to_direct_view_feasible,
+			traits::assignment_to_flat_view_feasible>;
 		helper::apply(dst, std::move(src));
 	}
 };

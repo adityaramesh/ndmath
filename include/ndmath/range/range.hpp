@@ -107,7 +107,7 @@ public:
 	{
 		nd_assert(
 			finish >= start,
-			"end points not larger than starting points: $ ≱ $",
+			"endpoints not greater than starting points: $ ≱ $",
 			finish, start
 		);
 		nd_assert(

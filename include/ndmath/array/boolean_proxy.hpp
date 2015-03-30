@@ -40,6 +40,22 @@ public:
 	explicit boolean_proxy(Storage& src, Integer off)
 	noexcept : m_ref{src}, m_off{off} {}
 
+	CC_ALWAYS_INLINE
+	auto& operator=(const boolean_proxy& rhs) noexcept
+	{
+		*this = static_cast<bool>(rhs);
+		return *this;
+	}
+
+	template <nd_enable_if((!std::is_const<Storage>::value))>
+	CC_ALWAYS_INLINE
+	auto& operator=(const boolean_proxy<const Storage, Integer>& rhs)
+	noexcept
+	{
+		*this = static_cast<bool>(rhs);
+		return *this;
+	}
+
 	template <nd_enable_if((!std::is_const<Storage>::value))>
 	CC_ALWAYS_INLINE
 	auto& operator=(const bool val) noexcept

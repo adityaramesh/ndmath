@@ -139,21 +139,17 @@ auto operator-(
 
 }
 
-struct end_t {};
-static constexpr auto end = end_t{};
-
 template <class T, class AccessFunc>
 class flat_iterator final : public detail::flat_iterator_base<T>
 {
-	static constexpr auto is_const =
-	std::is_const<T>::value;
-
 	using size_type = typename T::size_type;
 	using base      = detail::flat_iterator_base<T>;
 public:
 	using difference_type   = size_type;
-	using reference         = decltype(AccessFunc{}(size_type{}, std::declval<T&>()));
-	using const_reference   = decltype(AccessFunc{}(size_type{}, std::declval<const T&>()));
+	using reference         = decltype(std::declval<AccessFunc>()
+					(size_type{}, std::declval<T&>()));
+	using const_reference   = decltype(std::declval<AccessFunc>()
+					(size_type{}, std::declval<const T&>()));
 	using value_type        = std::decay_t<reference>;
 	using const_value_type  = std::decay_t<const_reference>;
 	using pointer           = value_type*;
@@ -179,8 +175,8 @@ public:
 	noexcept : m_ref{src} {}
 
 	CC_ALWAYS_INLINE constexpr
-	explicit flat_iterator(end_t, T& src)
-	noexcept : base{src.extents().size()}, m_ref{src} {}
+	explicit flat_iterator(T& src, const size_type size)
+	noexcept : base{size}, m_ref{src} {}
 
 	CC_ALWAYS_INLINE constexpr
 	flat_iterator(const flat_iterator& rhs)
@@ -200,41 +196,117 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto operator*()
-	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos, m_ref))
+	nd_deduce_noexcept_and_return_type(std::declval<AccessFunc>()(m_pos, m_ref))
 
 	CC_ALWAYS_INLINE constexpr
 	auto operator*() const
-	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos, m_ref))
+	nd_deduce_noexcept_and_return_type(std::declval<AccessFunc>()(m_pos, m_ref))
 
-	template <nd_enable_if((std::is_same<reference, float&>::value))>
 	CC_ALWAYS_INLINE
 	pointer operator->()
-	noexcept(noexcept(AccessFunc{}(m_pos, m_ref)))
-	{ return &AccessFunc{}(m_pos, m_ref); }
+	noexcept(noexcept(std::declval<AccessFunc>()(m_pos, m_ref)))
+	{ return &std::declval<AccessFunc>()(m_pos, m_ref); }
 
-	template <nd_enable_if((std::is_same<const_reference, const float&>::value))>
 	CC_ALWAYS_INLINE constexpr
 	const_pointer operator->() const
+	noexcept(noexcept(std::declval<AccessFunc>()(m_pos, m_ref)))
+	{ return &std::declval<AccessFunc>()(m_pos, m_ref); }
+
+	CC_ALWAYS_INLINE 
+	auto operator[](const size_type n)
+	nd_deduce_noexcept_and_return_type(std::declval<AccessFunc>()(m_pos + n, m_ref))
+
+	CC_ALWAYS_INLINE constexpr
+	auto operator[](const size_type n) const
+	nd_deduce_noexcept_and_return_type(std::declval<AccessFunc>()(m_pos + n, m_ref))
+};
+
+template <class T, class AccessFunc>
+class construction_iterator final : public detail::flat_iterator_base<T>
+{
+	using size_type = typename T::size_type;
+	using base      = detail::flat_iterator_base<T>;
+public:
+	using difference_type   = size_type;
+	using reference         = decltype(AccessFunc{}(size_type{}, std::declval<T&>()));
+	using const_reference   = reference;
+	using value_type        = std::decay_t<reference>;
+	using const_value_type  = value_type;
+	using pointer           = value_type*;
+	using const_pointer     = pointer;
+	using iterator_category = std::random_access_iterator_tag;
+
+	using base::operator++;
+	using base::operator--;
+	using base::operator+=;
+	using base::operator-=;
+	using base::operator==;
+	using base::operator!=;
+	using base::operator>=;
+	using base::operator<=;
+	using base::operator>;
+	using base::operator<;
+private:
+	using base::m_pos;
+	T& m_ref;
+public:
+	CC_ALWAYS_INLINE constexpr
+	explicit construction_iterator(T& src)
+	noexcept : m_ref{src} {}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit construction_iterator(T& src, const size_type size)
+	noexcept : base{size}, m_ref{src} {}
+
+	CC_ALWAYS_INLINE constexpr
+	construction_iterator(const construction_iterator& rhs)
+	noexcept : base{rhs.m_pos}, m_ref{rhs.m_ref} {}
+
+	CC_ALWAYS_INLINE constexpr
+	construction_iterator(construction_iterator&& rhs)
+	noexcept : base{rhs.m_pos}, m_ref{rhs.m_ref} {}
+
+	CC_ALWAYS_INLINE
+	auto& operator=(const construction_iterator& rhs)
+	noexcept { m_pos = rhs.m_pos; return *this; }
+
+	CC_ALWAYS_INLINE
+	auto& operator=(construction_iterator&& rhs)
+	noexcept { m_pos = rhs.m_pos; return *this; }
+
+	CC_ALWAYS_INLINE
+	auto operator*()
+	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos, m_ref))
+
+	CC_ALWAYS_INLINE
+	pointer operator->()
 	noexcept(noexcept(AccessFunc{}(m_pos, m_ref)))
 	{ return &AccessFunc{}(m_pos, m_ref); }
 
 	CC_ALWAYS_INLINE 
 	auto operator[](const size_type n)
 	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos + n, m_ref))
-
-	CC_ALWAYS_INLINE constexpr
-	auto operator[](const size_type n) const
-	nd_deduce_noexcept_and_return_type(AccessFunc{}(m_pos + n, m_ref))
 };
 
-template <class AccessFunc, class T>
+template <class AccessFunc, class T, class SizeType>
 CC_ALWAYS_INLINE constexpr
-auto make_flat_view(T& t) noexcept
+auto make_flat_view(T& t, const SizeType size) noexcept
 {
 	using iterator = flat_iterator<T, AccessFunc>;
 	return boost::make_iterator_range(
 		iterator{t},
-		iterator{end, t}
+		iterator{t, size}
+	);
+}
+
+template <class AccessFunc, class T, class SizeType>
+CC_ALWAYS_INLINE constexpr
+auto make_construction_view(T& t, const SizeType size) noexcept
+{
+	using iterator = construction_iterator<T, AccessFunc>;
+	return boost::make_iterator_range(
+		iterator{t},
+		iterator{t, size}
 	);
 }
 

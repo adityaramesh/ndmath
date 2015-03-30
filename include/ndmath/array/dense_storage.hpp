@@ -12,9 +12,14 @@
 #include <ndmath/array/layout_base.hpp>
 #include <ndmath/array/coords_to_offset.hpp>
 #include <ndmath/array/boolean_proxy.hpp>
+#include <ndmath/array/construction_proxy.hpp>
 #include <ndmath/array/storage_order.hpp>
 
 namespace nd {
+
+template <class T, class Extents, class StorageOrder, class Alloc>
+class dense_storage;
+
 namespace detail {
 
 template <class T>
@@ -22,25 +27,39 @@ struct dense_storage_access
 {
 	using underlying_type = T;
 
-	template <class SizeType>
+	template <class SizeType, class Array>
 	CC_ALWAYS_INLINE
-	static auto& at(const SizeType off, T* data) noexcept
-	{ return data[off]; }
+	static auto& at(const SizeType off, Array& arr) noexcept
+	{ return arr.data()[off]; }
 
-	template <class SizeType>
+	template <class SizeType, class Extents, class StorageOrder>
 	CC_ALWAYS_INLINE
-	static auto& at(const SizeType off, const T* data) noexcept
-	{ return data[off]; }
+	static auto uninitialized_at(
+		const SizeType off,
+		dense_storage<T, Extents, StorageOrder, void>& arr
+	) noexcept
+	{
+		using proxy_type = construction_proxy<underlying_type, void>;
+		return proxy_type{at(off, arr)};
+	}
+
+	template <class SizeType, class Extents, class StorageOrder, class Alloc>
+	CC_ALWAYS_INLINE
+	static auto uninitialized_at(
+		const SizeType off,
+		dense_storage<T, Extents, StorageOrder, Alloc>& arr
+	) noexcept
+	{
+		using array_type      = std::decay_t<decltype(arr)>;
+		using allocator_type  = typename array_type::allocator_type;
+		using proxy_type      = construction_proxy<underlying_type, allocator_type>;
+		return proxy_type{at(off, arr), arr.allocator()};
+	}
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE constexpr
 	static auto underlying_size(const SizeType n) noexcept
 	{ return n; }
-
-	template <class Array>
-	CC_ALWAYS_INLINE
-	auto& operator()(const typename Array::size_type off, Array& arr)
-	const noexcept { return at(off, arr.data()); }
 };
 
 template <>
@@ -48,28 +67,46 @@ struct dense_storage_access<bool>
 {
 	using underlying_type = unsigned;
 
-	template <class SizeType>
+	template <class SizeType, class Array>
 	CC_ALWAYS_INLINE
-	static auto at(const SizeType off, underlying_type* data)
+	static auto at(const SizeType off, Array& arr)
 	noexcept
 	{
-		using proxy_type = boolean_proxy<underlying_type, SizeType>;
-		return proxy_type{data[underlying_offset(off)], off};
+		using value_type = std::conditional_t<
+			std::is_const<Array>::value,
+			const underlying_type, underlying_type>;
+		using proxy_type = boolean_proxy<value_type, SizeType>;
+		return proxy_type{arr.data()[underlying_offset(off)], off};
 	}
 
-	template <class SizeType>
+	template <class SizeType, class Extents, class StorageOrder>
 	CC_ALWAYS_INLINE
-	static auto at(const SizeType off, const underlying_type* data)
-	noexcept
+	static auto uninitialized_at(
+		const SizeType off,
+		dense_storage<bool, Extents, StorageOrder, void>& arr
+	) noexcept
 	{
-		using proxy_type = boolean_proxy<const underlying_type, SizeType>;
-		return proxy_type{data[underlying_offset(off)], off};
+		using proxy_type = construction_proxy<underlying_type, void>;
+		return proxy_type{arr.data()[underlying_offset(off)]};
+	}
+
+	template <class SizeType, class Extents, class StorageOrder, class Alloc>
+	CC_ALWAYS_INLINE
+	static auto uninitialized_at(
+		const SizeType off,
+		dense_storage<bool, Extents, StorageOrder, Alloc>& arr
+	) noexcept
+	{
+		using array_type     = std::decay_t<decltype(arr)>;
+		using allocator_type = typename array_type::allocator_type;
+		using proxy_type     = construction_proxy<underlying_type, allocator_type>;
+		return proxy_type{arr.data()[underlying_offset(off)], arr.allocator()};
 	}
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE constexpr
 	static auto underlying_offset(const SizeType n)
-	noexcept { return n / (8 * sizeof(underlying_type)); }
+	noexcept { return n / SizeType(8 * sizeof(underlying_type)); }
 
 	template <class SizeType>
 	CC_ALWAYS_INLINE constexpr
@@ -77,13 +114,20 @@ struct dense_storage_access<bool>
 	noexcept
 	{
 		nd_assert(n != 0, "array must have nonzero size");
-		return 1 + underlying_offset(n - 1);
+		return SizeType{1} + underlying_offset(n - 1);
 	}
+};
 
-	template <class Array>
-	CC_ALWAYS_INLINE
-	auto operator()(const typename Array::size_type off, Array& arr)
-	const noexcept { return at(off, arr.data()); }
+struct construction_view_access
+{
+	template <class SizeType, class Array>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const SizeType off, Array& arr)
+	const noexcept
+	{
+		using helper = typename Array::helper;
+		return helper::uninitialized_at(off, arr);
+	}
 };
 
 }
@@ -103,6 +147,7 @@ private:
 	using base   = layout_base<Extents, StorageOrder>;
 	using helper = detail::dense_storage_access<T>;
 
+	friend struct detail::construction_view_access;
 	friend struct detail::dense_storage_access<T>;
 
 	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
@@ -134,6 +179,9 @@ private:
 
 	std::array<underlying_type, m_size> m_data;
 public:
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t) noexcept {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage()
 	noexcept(noexcept(
@@ -185,21 +233,55 @@ public:
 	CC_ALWAYS_INLINE
 	auto at(const Ts... ts) noexcept
 	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), m_data.data()))
+		coords_to_offset::apply(*this, ts...), *this))
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE constexpr
 	auto at(const Ts... ts) const noexcept
 	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), m_data.data()))
+		coords_to_offset::apply(*this, ts...), *this))
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE
+	auto uninitialized_at(const Ts... ts) noexcept
+	nd_deduce_return_type(helper::uninitialized_at(
+		coords_to_offset::apply(*this, ts...), *this))
 
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept
-	{ return make_flat_view<helper>(*this); }
+	{
+		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
+
+		return make_flat_view<decltype(func)>(*this, size());
+	}
 
 	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
-	{ return make_flat_view<helper>(*this); }
+	{
+		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
+
+		return make_flat_view<decltype(func)>(*this, size());
+	}
+
+	CC_ALWAYS_INLINE
+	auto construction_view() noexcept
+	{
+		/*
+		** XXX: Using this results in a linker error. I feel like this
+		** is a compiler bug.
+		**
+		** auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		** nd_deduce_noexcept_and_return_type(
+		** 	helper::uninitialized_at(off, arr));
+		**
+		** return make_construction_view<decltype(func)>(*this,
+		** 	underlying_size());
+		*/
+		using access = detail::construction_view_access;
+		return make_construction_view<access>(*this, underlying_size());
+	}
 
 	CC_ALWAYS_INLINE
 	auto direct_view() noexcept
@@ -225,7 +307,7 @@ private:
 
 	CC_ALWAYS_INLINE constexpr
 	auto size() const noexcept
-	{ return extents().size(); }
+	{ return size_type{extents().size()}; }
 
 	CC_ALWAYS_INLINE constexpr
 	auto underlying_size() const noexcept
@@ -243,6 +325,7 @@ private:
 	using base   = layout_base<Extents, StorageOrder>;
 	using helper = detail::dense_storage_access<T>;
 
+	friend struct detail::construction_view_access;
 	friend struct detail::dense_storage_access<T>;
 
 	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
@@ -383,21 +466,55 @@ public:
 	CC_ALWAYS_INLINE
 	auto at(const Ts... ts) noexcept
 	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), m_data))
+		coords_to_offset::apply(*this, ts...), *this))
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
 	auto at(const Ts... ts) const noexcept
 	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), m_data))
+		coords_to_offset::apply(*this, ts...), *this))
+
+	template <class... Ts>
+	CC_ALWAYS_INLINE
+	auto uninitialized_at(const Ts... ts) noexcept
+	nd_deduce_return_type(helper::uninitialized_at(
+		coords_to_offset::apply(*this, ts...), *this))
 
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept
-	{ return make_flat_view<helper>(*this); }
+	{
+		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
+
+		return make_flat_view<decltype(func)>(*this, size());
+	}
 
 	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
-	{ return make_flat_view<helper>(*this); }
+	{
+		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
+
+		return make_flat_view<decltype(func)>(*this, size());
+	}
+
+	CC_ALWAYS_INLINE
+	auto construction_view() noexcept
+	{
+		/*
+		** XXX: Using this results in a linker error. I feel like this
+		** is a compiler bug.
+		**
+		** auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		** nd_deduce_noexcept_and_return_type(
+		** 	helper::uninitialized_at(off, arr));
+		**
+		** return make_construction_view<decltype(func)>(*this,
+		** 	underlying_size());
+		*/
+		using access = detail::construction_view_access;
+		return make_construction_view<access>(*this, underlying_size());
+	}
 
 	CC_ALWAYS_INLINE
 	auto direct_view() noexcept
@@ -455,10 +572,19 @@ private:
 	CC_ALWAYS_INLINE constexpr
 	auto data() const noexcept
 	{ return m_data; }
+	//XXX
+public:
+	CC_ALWAYS_INLINE
+	auto& allocator() noexcept
+	{ return m_alloc; }
+
+	CC_ALWAYS_INLINE constexpr
+	auto& allocator() const noexcept
+	{ return m_alloc; }
 
 	CC_ALWAYS_INLINE constexpr
 	auto size() const noexcept
-	{ return extents().size(); }
+	{ return size_type{extents().size()}; }
 
 	CC_ALWAYS_INLINE constexpr
 	auto underlying_size() const noexcept
@@ -607,6 +733,29 @@ auto make_darray(
 	using storage_type = dense_storage<T, Extents, StorageOrder, Alloc>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{e, init, alloc};
+}
+
+template <
+	class T,
+	class W,
+	class Extents,
+	class StorageOrder = decltype(std::declval<W>().storage_order())
+>
+CC_ALWAYS_INLINE
+auto make_darray(
+	const Extents& e,
+	const array_wrapper<W>& arr,
+	StorageOrder = decltype(arr.storage_order()){}
+)
+{
+	/*
+	using array_type = array_wrapper<T>;
+	using value_type = typename array_type::value_type;
+	using extents = decltype(arr.extents());
+	using storage_order = decltype(arr.storage_order());
+
+	using storage_type = dense_storage<
+	*/
 }
 
 }

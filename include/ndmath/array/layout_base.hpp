@@ -3,6 +3,11 @@
 ** Author:    Aditya Ramesh
 ** Date:      03/16/2015
 ** Contact:   _@adityaramesh.com
+**
+** If the extents are statically accessible, then there is no need to waste a
+** byte of memory by storing a dummy object. To avoid doing this, we delegate
+** the responsibility of providing access to the extents and storage order to
+** `layout_base`.
 */
 
 #ifndef ZD22085D9_6F37_4A10_B685_9D0CCE06A44B

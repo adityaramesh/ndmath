@@ -143,7 +143,17 @@ module("test move assignment")
 	require(!d(1, 1));
 }
 
-// TODO test copy construction
+module("test copy construction")
+{
+	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	nd::make_darray<int>(a, a.extents());
+}
+
 // TODO test move construction
 
 suite("dense storage test")
