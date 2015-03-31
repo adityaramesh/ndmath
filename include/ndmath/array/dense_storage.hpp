@@ -716,7 +716,7 @@ template <
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
-		mpl::is_specialization_of<range, Extents>::value &&
+		mpl::is_specialization_of<range, Extents>::value           &&
 		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
@@ -822,7 +822,7 @@ template <
 	class T,
 	class U,
 	class Extents,
-	class Alloc = std::allocator<underlying_type<T>>,
+	class Alloc        = std::allocator<underlying_type<T>>,
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
