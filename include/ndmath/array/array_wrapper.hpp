@@ -106,14 +106,6 @@ static constexpr auto uninitialized = uninitialized_t{};
 
 namespace detail {
 
-template <class T>
-struct is_array
-{ static constexpr auto value = false; };
-
-template <class T>
-struct is_array<array_wrapper<T>>
-{ static constexpr auto value = true; };
-
 /*
 ** The purpose of the base class is to conditionally call constructors of the
 ** wrapped type in contexts where they could not be disabled by the derived
@@ -335,9 +327,10 @@ public:
 	noexcept(std::is_nothrow_default_constructible<base>::value) {}
 
 	template <class... Args, nd_enable_if((
-		!detail::is_array<std::decay_t<
-			mpl::at_c<0, mpl::list<Args...>>
-		>>::value
+		!mpl::is_specialization_of<
+			nd::array_wrapper,
+			std::decay_t<mpl::at_c<0, mpl::list<Args...>>>
+		>::value
 	))>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper(Args&&... args)

@@ -428,7 +428,7 @@ public:
 	: dense_storage{uninitialized, rhs.extents(), rhs.allocator()} {}
 
 	template <class Array, nd_enable_if((
-		detail::is_array<Array>::value &&
+		mpl::is_specialization_of<array_wrapper, Array>::value &&
 		Array::provides_allocator
 	))>
 	CC_ALWAYS_INLINE
@@ -436,7 +436,7 @@ public:
 	: dense_storage{uninitialized, rhs.extents(), rhs.allocator()} {}
 
 	template <class Array, nd_enable_if((
-		detail::is_array<Array>::value &&
+		mpl::is_specialization_of<array_wrapper, Array>::value &&
 		!Array::provides_allocator
 	))>
 	CC_ALWAYS_INLINE
@@ -626,28 +626,9 @@ template <class T>
 struct is_integer_or_coord
 {
 	static constexpr auto value =
-	std::is_integral<T>::value;
+	std::is_integral<T>::value ||
+	mpl::is_specialization_of<coord_wrapper, T>::value;
 };
-
-template <class Coord>
-struct is_integer_or_coord<coord_wrapper<Coord>>
-{ static constexpr auto value = true; };
-
-template <class T>
-struct is_index
-{ static constexpr auto value = false; };
-
-template <class Index>
-struct is_index<index_wrapper<Index>>
-{ static constexpr auto value = true; };
-
-template <class T>
-struct is_range
-{ static constexpr auto value = false; };
-
-template <class Start, class Finish, class Stride, class Attribs>
-struct is_range<range<Start, Finish, Stride, Attribs>>
-{ static constexpr auto value = true; };
 
 template <class T>
 struct deduce_storage_order
@@ -710,10 +691,9 @@ template <
 	class T,
 	class Extents,
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
-	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
-		detail::is_range<Extents>::value &&
-		detail::is_index<StorageOrder>::value
+		mpl::is_specialization_of<range, Extents>::value &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE constexpr
@@ -734,11 +714,10 @@ template <
 	class U,
 	class Extents,
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
-	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
-		detail::is_range<Extents>::value &&
-		detail::is_index<StorageOrder>::value
+		mpl::is_specialization_of<range, Extents>::value &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE constexpr
@@ -759,7 +738,8 @@ noexcept(noexcept(
 ** TODO: Noexcept specification.
 */
 template <class Array, nd_enable_if((
-	detail::is_array<std::decay_t<Array>>::value))>
+	mpl::is_specialization_of<array_wrapper, std::decay_t<Array>>::value
+))>
 CC_ALWAYS_INLINE
 auto make_sarray(Array&& arr)
 {
@@ -775,9 +755,9 @@ template <
 	class Extents,
 	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
 	nd_enable_if((
-		detail::is_array<std::decay_t<Array>>::value &&
-		detail::is_range<Extents>::value             &&
-		detail::is_index<StorageOrder>::value        &&
+		mpl::is_specialization_of<array_wrapper, std::decay_t<Array>>::value &&
+		mpl::is_specialization_of<range, Extents>::value                     &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value        &&
 		Extents::allows_static_access
 	))
 >
@@ -816,12 +796,13 @@ auto make_darray(const Ts... ts)
 template <
 	class T,
 	class Extents,
-	class Alloc = std::allocator<underlying_type<T>>,
+	class Alloc        = std::allocator<underlying_type<T>>,
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
-	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
-		detail::is_range<Extents>::value &&
-		detail::is_index<StorageOrder>::value
+		mpl::is_specialization_of<range, Extents>::value &&
+		detail::is_allocator<Alloc>::value               &&
+		detail::is_allocator<Alloc>::value               &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
@@ -843,11 +824,11 @@ template <
 	class Extents,
 	class Alloc = std::allocator<underlying_type<T>>,
 	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
-	// Prevents the wrong overload from being chosen.
 	nd_enable_if((
 		std::is_constructible<underlying_type<T>, const U&>::value &&
-		detail::is_range<Extents>::value &&
-		detail::is_index<StorageOrder>::value
+		mpl::is_specialization_of<range, Extents>::value           &&
+		detail::is_allocator<Alloc>::value                         &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
@@ -865,7 +846,8 @@ auto make_darray(
 }
 
 template <class Array, nd_enable_if((
-	std::decay_t<Array>::provides_allocator))>
+	std::decay_t<Array>::provides_allocator
+))>
 CC_ALWAYS_INLINE
 auto make_darray(Array&& arr)
 {
@@ -874,7 +856,8 @@ auto make_darray(Array&& arr)
 }
 
 template <class Array, nd_enable_if((
-	!std::decay_t<Array>::provides_allocator))>
+	!std::decay_t<Array>::provides_allocator
+))>
 CC_ALWAYS_INLINE
 auto make_darray(Array&& arr)
 {
@@ -887,9 +870,9 @@ template <
 	class Extents, 
 	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
 	nd_enable_if((
-		std::decay_t<Array>::provides_allocator &&
-		detail::is_range<Extents>::value        &&
-		detail::is_index<StorageOrder>::value
+		std::decay_t<Array>::provides_allocator          &&
+		mpl::is_specialization_of<range, Extents>::value &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
@@ -908,9 +891,9 @@ template <
 	class StorageOrder = typename detail::deduce_storage_order<
 				std::decay_t<Array>>::type,
 	nd_enable_if((
-		!std::decay_t<Array>::provides_allocator &&
-		detail::is_range<Extents>::value         &&
-		detail::is_index<StorageOrder>::value
+		!std::decay_t<Array>::provides_allocator         &&
+		mpl::is_specialization_of<range, Extents>::value &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
@@ -938,9 +921,10 @@ template <
 	class StorageOrder = typename detail::deduce_storage_order<
 				std::decay_t<Array>>::type,
 	nd_enable_if((
-		detail::is_range<Extents>::value   &&
-		detail::is_allocator<Alloc>::value &&
-		detail::is_index<StorageOrder>::value
+		mpl::is_specialization_of<array_wrapper, std::decay_t<Array>>::value &&
+		mpl::is_specialization_of<range, Extents>::value                     &&
+		detail::is_allocator<Alloc>::value                                   &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
