@@ -176,7 +176,8 @@ public:
 	using base::storage_order;
 private:
 	using size_c = decltype(std::declval<Extents>().size_c());
-	static constexpr auto m_size = std::decay_t<size_c>::value();
+	static constexpr auto m_size = helper::underlying_size(
+		std::decay_t<size_c>::value());
 
 	std::array<underlying_type, m_size> m_data;
 public:
@@ -196,7 +197,8 @@ public:
 		}
 	}
 
-	template <class U>
+	template <class U, nd_enable_if((
+		std::is_constructible<underlying_type, const U&>::value))>
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(const U& init)
 	noexcept(noexcept(
@@ -388,7 +390,8 @@ public:
 		}
 	}
 
-	template <class U>
+	template <class U, nd_enable_if((
+		std::is_constructible<underlying_type, const U&>::value))>
 	CC_ALWAYS_INLINE
 	explicit dense_storage(
 		const U& init,
@@ -638,6 +641,21 @@ struct deduce_storage_order<array_wrapper<T>>
 };
 
 template <class Alloc>
+struct is_allocator
+{
+	template <class U>
+	static constexpr auto check(U*) ->
+	decltype(std::declval<U>().allocate(0), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check(...)
+	{ return false; }
+
+	static constexpr auto value = check<Alloc>(0);
+};
+
+template <class Alloc>
 struct quote_allocator
 {
 private:
@@ -715,6 +733,44 @@ noexcept(noexcept(
 	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{init};
+}
+
+/*
+** TODO: Noexcept specification.
+*/
+template <class Array, nd_enable_if((detail::is_array<Array>::value))>
+CC_ALWAYS_INLINE
+auto make_sarray(const Array& arr)
+{
+	return make_sarray(arr, arr.extents(), arr.storage_order());
+}
+
+/*
+** TODO: Noexcept specification.
+*/
+template <
+	class Array,
+	class Extents,
+	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	nd_enable_if((
+		detail::is_array<Array>::value        &&
+		detail::is_range<Extents>::value      &&
+		detail::is_index<StorageOrder>::value &&
+		Extents::allows_static_access
+	))
+>
+CC_ALWAYS_INLINE
+auto make_sarray(
+	const Array& arr,
+	Extents,
+	StorageOrder = decltype(arr.storage_order()){}
+)
+{
+	using exterior_type = typename Array::exterior_type;
+	using storage_type  = dense_storage<exterior_type, Extents,
+	      			StorageOrder, void>;
+	using array_type    = array_wrapper<storage_type>;
+	return array_type{arr};
 }
 
 /*
@@ -837,11 +893,11 @@ auto make_darray(
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	using value_type    = typename Array::value_type;
+	using exterior_type = typename Array::exterior_type;
 	using extents       = decltype(arr.extents());
 	using storage_order = StorageOrder;
 	using allocator     = mpl::quote<std::allocator>;
-	using storage_type  = dense_storage<value_type, extents,
+	using storage_type  = dense_storage<exterior_type, extents,
 	      			storage_order, allocator>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{arr, e};
@@ -853,7 +909,8 @@ template <
 	class Alloc,
 	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
 	nd_enable_if((
-		detail::is_range<Extents>::value &&
+		detail::is_range<Extents>::value   &&
+		detail::is_allocator<Alloc>::value &&
 		detail::is_index<StorageOrder>::value
 	))
 >

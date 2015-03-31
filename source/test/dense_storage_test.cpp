@@ -112,6 +112,35 @@ module("test copy assignment dynamic dynamic")
 	require(!d(1, 1));
 }
 
+module("test copy assignment mixed")
+{
+	auto a = nd::make_sarray<float>(nd::cextents<20, 20>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_darray<double>(nd::cextents<20, 20>);
+	b = a;
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = nd::make_darray<float>(nd::cextents<20, 20>);
+	c(0, 0) = 1;
+	c(0, 1) = 2;
+	c(1, 0) = 3;
+	c(1, 1) = 4;
+
+	auto d = nd::make_sarray<double>(nd::cextents<20, 20>);
+	d = c;
+	require(d(0, 0) == 1);
+	require(d(0, 1) == 2);
+	require(d(1, 0) == 3);
+	require(d(1, 1) == 4);
+}
+
 module("test move assignment dynamic dynamic")
 {
 	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
@@ -182,8 +211,73 @@ module("test copy construction dynamic dynamic")
 	require(!f(1, 1));
 }
 
-// TODO: copy construction static static
-// TODO: copy construction dynamic static
+module("test copy construction static static")
+{
+	auto a = nd::make_sarray<float>(nd::cextents<2, 2>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_sarray(a);
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = a;
+	require(c(0, 0) == 1);
+	require(c(0, 1) == 2);
+	require(c(1, 0) == 3);
+	require(c(1, 1) == 4);
+
+	auto d = nd::make_sarray<bool>(nd::cextents<2, 2>);
+	d(0, 0) = true;
+	d(0, 1) = false;
+	d(1, 0) = true;
+	d(1, 1) = false;
+
+	auto e = nd::make_sarray(d);
+	require(e(0, 0));
+	require(!e(0, 1));
+	require(e(1, 0));
+	require(!e(1, 1));
+
+	auto f = d;
+	require(f(0, 0));
+	require(!f(0, 1));
+	require(f(1, 0));
+	require(!f(1, 1));
+}
+
+module("test copy construction mixed")
+{
+	auto a = nd::make_sarray<float>(nd::cextents<2, 2>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_darray(a);
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = nd::make_darray<float>(nd::cextents<2, 2>);
+	c(0, 0) = 1;
+	c(0, 1) = 2;
+	c(1, 0) = 3;
+	c(1, 1) = 4;
+
+	auto d = nd::make_sarray(c);
+	require(d(0, 0) == 1);
+	require(d(0, 1) == 2);
+	require(d(1, 0) == 3);
+	require(d(1, 1) == 4);
+
+	// TODO: test generic assignment using decltype(foo) b = a;
+}
 
 /*
 module("test move construction")
@@ -210,7 +304,5 @@ module("test move construction")
 	//require(c(1, 1) == 4);
 }
 */
-
-// TODO copy assignment dynamic static
 
 suite("dense storage test")
