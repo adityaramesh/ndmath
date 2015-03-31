@@ -1,5 +1,5 @@
 /*
-** File Name: array_assignment_traits.hpp
+** File Name: array_memory_traits.hpp
 ** Author:    Aditya Ramesh
 ** Date:      03/27/2015
 ** Contact:   _@adityaramesh.com
@@ -181,9 +181,9 @@ struct copy_construction_traits
 	using src_type = typename Src::underlying_type;
 	using dst_type = typename Dst::underlying_type;
 
-	static constexpr auto indirect_copy_construction_feasible =
+	static constexpr auto indirect_construction_feasible =
 	Src::supports_late_initialization &&
-	std::is_constructible<dst_type, src_type>::value;
+	std::is_constructible<dst_type, const src_type&>::value;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
 	using dst_order = decltype(std::declval<Dst>().storage_order());
@@ -192,15 +192,44 @@ struct copy_construction_traits
 	src_order{} == dst_order{};
 
 	static constexpr auto construction_from_direct_view_feasible =
-	indirect_copy_construction_feasible &&
-	storage_orders_same                 &&
+	indirect_construction_feasible &&
+	storage_orders_same            &&
 	Dst::provides_direct_view;
 
 	static constexpr auto construction_from_loop_feasible =
-	indirect_copy_construction_feasible;
+	indirect_construction_feasible;
 };
 
-// TODO: move construction traits
+template <class Src, class Dst>
+struct move_construction_traits
+{
+	using src_wrapped = typename Src::wrapped_type;
+	using dst_wrapped = typename Dst::wrapped_type;
+
+	static constexpr auto direct_construction_feasible =
+	std::is_constructible<dst_wrapped, src_wrapped&&>::value;
+
+	using src_type = typename Src::underlying_type;
+	using dst_type = typename Dst::underlying_type;
+
+	static constexpr auto indirect_construction_feasible =
+	Src::supports_late_initialization &&
+	std::is_constructible<dst_type, src_type&&>::value;
+
+	using src_order = decltype(std::declval<Src>().storage_order());
+	using dst_order = decltype(std::declval<Dst>().storage_order());
+
+	static constexpr auto storage_orders_same =
+	src_order{} == dst_order{};
+
+	static constexpr auto construction_from_direct_view_feasible =
+	indirect_construction_feasible &&
+	storage_orders_same            &&
+	Dst::provides_direct_view;
+
+	static constexpr auto construction_from_loop_feasible =
+	indirect_construction_feasible;
+};
 
 }}
 

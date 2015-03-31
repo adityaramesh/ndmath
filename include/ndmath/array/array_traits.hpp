@@ -23,15 +23,6 @@ struct element_access_helper<T, std::index_sequence<Ts...>>
 {
 	using reference       = decltype(std::declval<T>().at(Ts...));
 	using const_reference = decltype(std::declval<const T>().at(Ts...));
-	using value_type      = std::decay_t<reference>;
-
-	/*
-	** We need a distinct type alias for const_value_type, because `at()`
-	** may return a proxy rvalue (e.g. in the case of the bool
-	** specialization). This proxy rvalue may have different type depending
-	** on whether the access was const or non-const.
-	*/
-	using const_value_type = std::decay_t<const_reference>;
 
 	static constexpr auto is_noexcept_accessible =
 	noexcept(std::declval<T>().at(Ts...));
@@ -47,8 +38,6 @@ struct element_access_traits
 	using traits           = element_access_helper<T, seq>;
 	using reference        = typename traits::reference;
 	using const_reference  = typename traits::const_reference;
-	using value_type       = typename traits::value_type;
-	using const_value_type = typename traits::const_value_type;
 
 	static constexpr auto is_noexcept_accessible =
 	traits::is_noexcept_accessible;
@@ -205,11 +194,10 @@ struct array_traits
 
 	using et = detail::element_access_traits<T, dims>;
 
+	using exterior_type    = typename T::exterior_type;
 	using size_type        = typename T::size_type;
 	using reference        = typename et::reference;
 	using const_reference  = typename et::const_reference;
-	using value_type       = typename et::value_type;
-	using const_value_type = typename et::const_value_type;
 
 	static constexpr auto is_noexcept_accessible =
 	et::is_noexcept_accessible;
@@ -220,8 +208,8 @@ struct array_traits
 	using flat_iterator       = typename fvt::iterator;
 	using const_flat_iterator = typename fvt::const_iterator;
 
-	using dvt = detail::direct_view_traits<
-		T, value_type, provides_direct_view>;
+	using dvt = detail::direct_view_traits<T, std::decay_t<reference>,
+	      provides_direct_view>;
 
 	using direct_iterator       = typename dvt::iterator;
 	using const_direct_iterator = typename dvt::const_iterator;

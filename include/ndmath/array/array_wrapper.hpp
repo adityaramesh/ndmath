@@ -12,6 +12,11 @@
 ** - is_lazy: Indicates whether the array type performs lazy computation when
 ** accessing elements. This influences how assignment and copy construction is
 ** performed.
+** - exterior_type: The type of the storage underlying the array originally
+** requested by the user. Why do we need this? Consider a dense_storage of
+** booleans. The underlying_type is unsigned, and the actual return type is
+** boolean_proxy, but there's no way for us to query the original type requested
+** by the user. This type is necesssary for copy construction.
 ** - size_type: The integral type used by the array to store information related
 ** to memory.
 **
@@ -298,11 +303,10 @@ detail::array_wrapper_base<
 	using construction_helper = detail::construction_helper;
 public:
 	using wrapped_type     = T;
+	using exterior_type    = typename traits::exterior_type;
 	using size_type        = typename traits::size_type;
 	using reference        = typename traits::reference;
 	using const_reference  = typename traits::const_reference;
-	using value_type       = typename traits::value_type;
-	using const_value_type = typename traits::value_type;
 
 	using direct_iterator       = typename traits::direct_iterator;
 	using const_direct_iterator = typename traits::const_direct_iterator;
@@ -386,15 +390,10 @@ public:
 		(
 			!is_move_constructible &&
 			std::is_nothrow_constructible<base, T&&>::value &&
-			// TODO change below to use assignment helper
-			noexcept(*this = std::move(rhs))
+			noexcept(construction_helper::move_construct(*this, std::move(rhs)))
 		)
 	) : base{std::move(rhs.wrapped())}
-	{
-		// TODO: replace with construction_helper
-		if (!is_move_constructible)
-			*this = std::move(rhs);
-	}
+	{ construction_helper::move_construct(*this, std::move(rhs)); }
 
 	/*
 	** If the wrapped type has a copy constructor for U, then there is no
@@ -447,11 +446,9 @@ public:
 	array_wrapper(array_wrapper<U>&& rhs, Args&&... args)
 	noexcept(
 		std::is_nothrow_constructible<T, uninitialized_t, Args...>::value &&
-		// TODO replace below with construction helper
-		noexcept(*this = std::move(rhs))
+		noexcept(construction_helper::move_construct(*this, std::move(rhs)))
 	) : base{uninitialized, std::forward<Args>(args)...}
-	// TODO: replace with construction_helper
-	{ *this = std::move(rhs); }
+	{ construction_helper::move_construct(*this, std::move(rhs)); }
 
 	/*
 	** Assignment operators.

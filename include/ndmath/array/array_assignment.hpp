@@ -11,7 +11,7 @@
 #ifndef Z9A5D0442_8832_4E17_ADF8_1BA2DC724D52
 #define Z9A5D0442_8832_4E17_ADF8_1BA2DC724D52
 
-#include <ndmath/array/array_assignment_traits.hpp>
+#include <ndmath/array/array_memory_traits.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
 namespace nd {

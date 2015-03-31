@@ -83,7 +83,7 @@ module("test bool indexing")
 	require(!arr(1, 1));
 }
 
-module("test copy assignment")
+module("test copy assignment dynamic dynamic")
 {
 	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
 	a(0, 0) = 1;
@@ -112,7 +112,7 @@ module("test copy assignment")
 	require(!d(1, 1));
 }
 
-module("test move assignment")
+module("test move assignment dynamic dynamic")
 {
 	auto a = nd::make_darray<float>(nd::cextents<20, 20>);
 	a(0, 0) = 1;
@@ -143,7 +143,7 @@ module("test move assignment")
 	require(!d(1, 1));
 }
 
-module("test copy construction")
+module("test copy construction dynamic dynamic")
 {
 	auto a = nd::make_darray<float>(nd::cextents<2, 2>);
 	a(0, 0) = 1;
@@ -162,8 +162,55 @@ module("test copy construction")
 	require(c(0, 1) == 2);
 	require(c(1, 0) == 3);
 	require(c(1, 1) == 4);
+
+	auto d = nd::make_darray<bool>(nd::cextents<2, 2>);
+	d(0, 0) = true;
+	d(0, 1) = false;
+	d(1, 0) = true;
+	d(1, 1) = false;
+
+	auto e = nd::make_darray(d);
+	require(e(0, 0));
+	require(!e(0, 1));
+	require(e(1, 0));
+	require(!e(1, 1));
+
+	auto f = d;
+	require(f(0, 0));
+	require(!f(0, 1));
+	require(f(1, 0));
+	require(!f(1, 1));
 }
 
-// TODO test move construction
+// TODO: copy construction static static
+// TODO: copy construction dynamic static
+
+/*
+module("test move construction")
+{
+	auto a = nd::make_darray<float>(nd::cextents<2, 2>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	// This won't work with our strategy because b will already be default
+	// initialized before assignment to a.
+	auto b = std::move(nd::make_darray(a));
+	require(a.direct_view().begin() == nullptr);
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	//auto c = a;
+	//require(c(0, 0) == 1);
+	//require(c(0, 1) == 2);
+	//require(c(1, 0) == 3);
+	//require(c(1, 1) == 4);
+}
+*/
+
+// TODO copy assignment dynamic static
 
 suite("dense storage test")

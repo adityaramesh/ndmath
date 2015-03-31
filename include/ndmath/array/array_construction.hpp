@@ -70,6 +70,53 @@ struct copy_construct_helper<false, false, false>
 	{ dst = src; }
 };
 
+template <bool DirectViewFeasible, bool LoopFeasible>
+struct move_construct_helper<true, DirectViewFeasible, LoopFeasible>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE constexpr
+	static void apply(const array_wrapper<T>&, const array_wrapper<U>&)
+	noexcept {}
+};
+
+template <bool LoopFeasible>
+struct move_construct_helper<false, true, LoopFeasible>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	{
+		std::move(
+			src.direct_view().begin(),
+			src.direct_view().end(),
+			dst.construction_view().begin()
+		);
+	}
+};
+
+template <>
+struct move_construct_helper<false, false, true>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	{
+		for_each(src.extents(),
+			[&] (const auto& i) CC_ALWAYS_INLINE {
+				dst.uninitialized_at(i) = std::move(src(i));
+			});
+	}
+};
+
+template <>
+struct move_construct_helper<false, false, false>
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
+	{ dst = std::move(src); }
+};
+
 struct construction_helper
 {
 	template <class T, class U>
@@ -86,7 +133,19 @@ struct construction_helper
 		helper::apply(dst, src);
 	}
 
-	// TODO move construct
+	template <class T, class U>
+	CC_ALWAYS_INLINE
+	static void
+	move_construct(array_wrapper<T>& dst, array_wrapper<U>&& src)
+	{
+		using traits = move_construction_traits<
+			array_wrapper<U>, array_wrapper<T>>;
+		using helper = move_construct_helper<
+			traits::direct_construction_feasible,
+			traits::construction_from_direct_view_feasible,
+			traits::construction_from_loop_feasible>;
+		helper::apply(dst, std::move(src));
+	}
 };
 
 }}

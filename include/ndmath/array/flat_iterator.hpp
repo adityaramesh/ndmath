@@ -151,7 +151,6 @@ public:
 	using const_reference   = decltype(std::declval<AccessFunc>()
 					(size_type{}, std::declval<const T&>()));
 	using value_type        = std::decay_t<reference>;
-	using const_value_type  = std::decay_t<const_reference>;
 	using pointer           = value_type*;
 	using const_pointer     = const value_type*;
 	using iterator_category = std::random_access_iterator_tag;
@@ -231,7 +230,6 @@ public:
 	using reference         = decltype(AccessFunc{}(size_type{}, std::declval<T&>()));
 	using const_reference   = reference;
 	using value_type        = std::decay_t<reference>;
-	using const_value_type  = value_type;
 	using pointer           = value_type*;
 	using const_pointer     = pointer;
 	using iterator_category = std::random_access_iterator_tag;

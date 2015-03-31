@@ -166,6 +166,7 @@ private:
 		"Range of dense storage must have unit stride."
 	);
 public:
+	using exterior_type   = T;
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
@@ -195,14 +196,6 @@ public:
 		}
 	}
 
-	CC_ALWAYS_INLINE constexpr
-	explicit dense_storage(uninitialized_t)
-	noexcept {}
-
-	CC_ALWAYS_INLINE constexpr
-	explicit dense_storage(uninitialized_t, const dense_storage&)
-	noexcept {}
-
 	template <class U>
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(const U& init)
@@ -213,6 +206,14 @@ public:
 			::new (&m_data[i]) underlying_type(init);
 		}
 	}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t)
+	noexcept {}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t, const dense_storage&)
+	noexcept {}
 
 	CC_ALWAYS_INLINE
 	~dense_storage()
@@ -345,6 +346,7 @@ private:
 		"Range of dense storage must have unit stride."
 	);
 public:
+	using exterior_type   = T;
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
@@ -386,22 +388,6 @@ public:
 		}
 	}
 
-	CC_ALWAYS_INLINE
-	explicit dense_storage(
-		uninitialized_t,
-		const Extents& e,
-		allocator_type alloc = allocator_type{}
-	) : base{e}, m_alloc{alloc}
-	{
-		nd_assert(e.size() > 0, "cannot allocate array of size zero");
-		m_data = m_alloc.allocate(underlying_size());
-	}
-
-	CC_ALWAYS_INLINE
-	explicit dense_storage(uninitialized_t, const dense_storage& rhs)
-	: base{rhs.extents()}, m_alloc{rhs.allocator()}
-	{ m_data = m_alloc.allocate(underlying_size()); }
-
 	template <class U>
 	CC_ALWAYS_INLINE
 	explicit dense_storage(
@@ -417,6 +403,22 @@ public:
 			m_alloc.construct(&m_data[i], init);
 		}
 	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(
+		uninitialized_t,
+		const Extents& e,
+		allocator_type alloc = allocator_type{}
+	) : base{e}, m_alloc{alloc}
+	{
+		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+		m_data = m_alloc.allocate(underlying_size());
+	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(uninitialized_t, const dense_storage& rhs)
+	: base{rhs.extents()}, m_alloc{rhs.allocator()}
+	{ m_data = m_alloc.allocate(underlying_size()); }
 
 	CC_ALWAYS_INLINE
 	~dense_storage()
@@ -473,6 +475,14 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	auto memory_size() const noexcept
 	{ return sizeof(underlying_type) * underlying_size(); }
+
+	CC_ALWAYS_INLINE
+	auto& allocator() noexcept
+	{ return m_alloc; }
+
+	CC_ALWAYS_INLINE constexpr
+	auto& allocator() const noexcept
+	{ return m_alloc; }
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
@@ -573,15 +583,6 @@ private:
 	CC_ALWAYS_INLINE constexpr
 	auto data() const noexcept
 	{ return m_data; }
-	//XXX
-public:
-	CC_ALWAYS_INLINE
-	auto& allocator() noexcept
-	{ return m_alloc; }
-
-	CC_ALWAYS_INLINE constexpr
-	auto& allocator() const noexcept
-	{ return m_alloc; }
 
 	CC_ALWAYS_INLINE constexpr
 	auto size() const noexcept
@@ -649,6 +650,10 @@ public:
 
 }
 
+/*
+** Factory functions for static arrays.
+*/
+
 template <class T, class... Ts,
 nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
 CC_ALWAYS_INLINE constexpr
@@ -711,6 +716,10 @@ noexcept(noexcept(
 	using array_type = array_wrapper<storage_type>;
 	return array_type{init};
 }
+
+/*
+** Factory functions for dynamic arrays.
+*/
 
 template <class T, class... Ts,
 nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
@@ -856,10 +865,10 @@ auto make_darray(
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	using value_type   = typename Array::value_type;
-	using storage_type = dense_storage<value_type, Extents,
+	using exterior_type = typename Array::exterior_type;
+	using storage_type  = dense_storage<exterior_type, Extents,
 	      			StorageOrder, detail::quote_allocator<Alloc>>;
-	using array_type   = array_wrapper<storage_type>;
+	using array_type    = array_wrapper<storage_type>;
 	return array_type{arr, e, alloc};
 }
 
