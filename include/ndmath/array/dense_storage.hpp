@@ -217,6 +217,11 @@ public:
 	explicit dense_storage(uninitialized_t, const dense_storage&)
 	noexcept {}
 
+	template <class U>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(uninitialized_t, const array_wrapper<U>&)
+	noexcept {}
+
 	CC_ALWAYS_INLINE
 	~dense_storage()
 	{
@@ -420,8 +425,23 @@ public:
 
 	CC_ALWAYS_INLINE
 	explicit dense_storage(uninitialized_t, const dense_storage& rhs)
-	: base{rhs.extents()}, m_alloc{rhs.allocator()}
-	{ m_data = m_alloc.allocate(underlying_size()); }
+	: dense_storage{uninitialized, rhs.extents(), rhs.allocator()} {}
+
+	template <class Array, nd_enable_if((
+		detail::is_array<Array>::value &&
+		Array::provides_allocator
+	))>
+	CC_ALWAYS_INLINE
+	explicit dense_storage(uninitialized_t, const Array& rhs)
+	: dense_storage{uninitialized, rhs.extents(), rhs.allocator()} {}
+
+	template <class Array, nd_enable_if((
+		detail::is_array<Array>::value &&
+		!Array::provides_allocator
+	))>
+	CC_ALWAYS_INLINE
+	explicit dense_storage(uninitialized_t, const Array& rhs)
+	: dense_storage{uninitialized, rhs.extents()} {}
 
 	CC_ALWAYS_INLINE
 	~dense_storage()

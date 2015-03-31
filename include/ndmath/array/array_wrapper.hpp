@@ -26,7 +26,7 @@
 ** and move construction and assignment both from itself and all other array
 ** types in the library. Then implementations of the storage classes would be
 ** unmanageably complex. The `array_wrapper` class cuts down on this complexity
-** by providing _generic_ versions of these operations if the wrapped type does
+** by providing generic versions of these operations if the wrapped type does
 ** not implement them explicitly. This process is described in more detail in
 ** `array_assignment_traits.hpp`.
 **
@@ -39,13 +39,10 @@
 ** const wrapped_type&)` will be invoked prior to performing the generic
 ** implementation of move construction.
 **
-** These statements *do not* apply to generic copy and move constructors. This
-** is because copy assignment of the form `auto b = a` cannot be used to copy
-** construct an array wrapper `b` of a different type from `a`. Instead, the
-** factory functions `nd::make_` are used. These factory functions extract the
-** necessary information from the source array and forward it to wrapped type.
-** So the wrapped type does not need to implement uninitialized variants of the
-** copy or move constructors.
+** Similarly, if the wrapped type does not support generic copy construction
+** from types `array_wrapper<U>`, then it should provide a constructor of the
+** form `wrapped_type(uninitialized_t, const array_wrapper<U>&)`. Analogous
+** comments apply for generic move construction.
 **
 ** ## Requirement 3: Mandatory and Optional Member Functions
 **
@@ -428,6 +425,20 @@ public:
 	{ construction_helper::copy_construct(*this, rhs); }
 
 	/*
+	** This overload allows copy construction of the form `some_type b = a`,
+	** where `some_type != decltype(a)`.
+	*/
+	template <class U, nd_enable_if((
+		!std::is_constructible<T, const U&>::value))>
+	CC_ALWAYS_INLINE constexpr
+	array_wrapper(const array_wrapper<U>& rhs)
+	noexcept(
+		std::is_nothrow_constructible<T, uninitialized_t, decltype(rhs)>::value &&
+		noexcept(construction_helper::copy_construct(*this, rhs))
+	) : base{uninitialized, rhs}
+	{ construction_helper::copy_construct(*this, rhs); }
+
+	/*
 	** See comments for generic copy assignment.
 	*/
 	template <class U, class... Args, nd_enable_if((
@@ -462,18 +473,7 @@ public:
 		return *this;
 	}
 
-	/*
-	** XXX: Using the enable_if here results in bad codegen in clang-3.5.
-	** An invalid assignment that should have never compiled due to the
-	** enable_if ends up working anyway, and running the program results in
-	** a segfault. I don't have the time to make an MWE.
-	*/
-	template <class U/*, nd_enable_if((
-		std::is_assignable<
-			reference,
-			typename array_wrapper<U>::reference
-		>::value
-	))*/>
+	template <class U>
 	CC_ALWAYS_INLINE auto&
 	operator=(const array_wrapper<U>& rhs)
 	noexcept(noexcept(assignment_helper::copy_assign(*this, rhs)))
@@ -492,18 +492,7 @@ public:
 		return *this;
 	}
 
-	/*
-	** XXX: The enable_if here is commented out for the same reason that the
-	** one for the generic copy assignment operator above is commented out.
-	*/
-	template <class U/*, nd_enable_if((
-		std::is_assignable<
-			reference,
-			std::remove_reference_t<
-				typename array_wrapper<U>::reference
-			>&&
-		>::value
-	))*/>
+	template <class U>
 	CC_ALWAYS_INLINE auto&
 	operator=(array_wrapper<U>&& rhs)
 	noexcept(noexcept(

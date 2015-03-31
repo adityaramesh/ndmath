@@ -276,7 +276,17 @@ module("test copy construction mixed")
 	require(d(1, 0) == 3);
 	require(d(1, 1) == 4);
 
-	// TODO: test generic assignment using decltype(foo) b = a;
+	decltype(b) e = a;
+	require(e(0, 0) == 1);
+	require(e(0, 1) == 2);
+	require(e(1, 0) == 3);
+	require(e(1, 1) == 4);
+
+	decltype(a) f = b;
+	require(f(0, 0) == 1);
+	require(f(0, 1) == 2);
+	require(f(1, 0) == 3);
+	require(f(1, 1) == 4);
 }
 
 /*
