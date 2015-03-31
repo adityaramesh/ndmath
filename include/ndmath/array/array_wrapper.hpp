@@ -439,7 +439,7 @@ public:
 	{ construction_helper::copy_construct(*this, rhs); }
 
 	/*
-	** See comments for generic copy assignment.
+	** See comments for generic copy construction.
 	*/
 	template <class U, class... Args, nd_enable_if((
 		std::is_constructible<T, U&&>::value))>
@@ -449,7 +449,7 @@ public:
 	: base{std::move(rhs.wrapped()), std::forward<Args>(args)...} {}
 
 	/*
-	** See comments for generic copy assignment.
+	** See comments for generic copy construction.
 	*/
 	template <class U, class... Args, nd_enable_if((
 		!std::is_constructible<T, U&&>::value))>
@@ -459,6 +459,19 @@ public:
 		std::is_nothrow_constructible<T, uninitialized_t, Args...>::value &&
 		noexcept(construction_helper::move_construct(*this, std::move(rhs)))
 	) : base{uninitialized, std::forward<Args>(args)...}
+	{ construction_helper::move_construct(*this, std::move(rhs)); }
+
+	/*
+	** See comments for generic copy construction.
+	*/
+	template <class U, nd_enable_if((
+		!std::is_constructible<T, U&&>::value))>
+	CC_ALWAYS_INLINE constexpr
+	array_wrapper(array_wrapper<U>&& rhs)
+	noexcept(
+		std::is_nothrow_constructible<T, uninitialized_t, decltype(rhs)>::value &&
+		noexcept(construction_helper::move_construct(*this, std::move(rhs)))
+	) : base{uninitialized, std::move(rhs)}
 	{ construction_helper::move_construct(*this, std::move(rhs)); }
 
 	/*

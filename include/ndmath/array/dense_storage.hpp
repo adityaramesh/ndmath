@@ -758,11 +758,13 @@ noexcept(noexcept(
 /*
 ** TODO: Noexcept specification.
 */
-template <class Array, nd_enable_if((detail::is_array<Array>::value))>
+template <class Array, nd_enable_if((
+	detail::is_array<std::decay_t<Array>>::value))>
 CC_ALWAYS_INLINE
-auto make_sarray(const Array& arr)
+auto make_sarray(Array&& arr)
 {
-	return make_sarray(arr, arr.extents(), arr.storage_order());
+	return make_sarray(std::forward<Array>(arr), arr.extents(),
+		arr.storage_order());
 }
 
 /*
@@ -773,24 +775,25 @@ template <
 	class Extents,
 	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
 	nd_enable_if((
-		detail::is_array<Array>::value        &&
-		detail::is_range<Extents>::value      &&
-		detail::is_index<StorageOrder>::value &&
+		detail::is_array<std::decay_t<Array>>::value &&
+		detail::is_range<Extents>::value             &&
+		detail::is_index<StorageOrder>::value        &&
 		Extents::allows_static_access
 	))
 >
 CC_ALWAYS_INLINE
 auto make_sarray(
-	const Array& arr,
+	Array&& arr,
 	Extents,
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	using exterior_type = typename Array::exterior_type;
+	using source_type   = std::decay_t<Array>;
+	using exterior_type = typename source_type::exterior_type;
 	using storage_type  = dense_storage<exterior_type, Extents,
 	      			StorageOrder, void>;
 	using array_type    = array_wrapper<storage_type>;
-	return array_type{arr};
+	return array_type{std::forward<Array>(arr)};
 }
 
 /*
@@ -861,19 +864,22 @@ auto make_darray(
 	return array_type{init, e, alloc};
 }
 
-template <class Array, nd_enable_if((Array::provides_allocator))>
+template <class Array, nd_enable_if((
+	std::decay_t<Array>::provides_allocator))>
 CC_ALWAYS_INLINE
-auto make_darray(const Array& arr)
+auto make_darray(Array&& arr)
 {
-	return make_darray(arr, arr.extents(), arr.allocator(),
-		arr.storage_order());
+	return make_darray(std::forward<Array>(arr), arr.extents(),
+		arr.allocator(), arr.storage_order());
 }
 
-template <class Array, nd_enable_if((!Array::provides_allocator))>
+template <class Array, nd_enable_if((
+	!std::decay_t<Array>::provides_allocator))>
 CC_ALWAYS_INLINE
-auto make_darray(const Array& arr)
+auto make_darray(Array&& arr)
 {
-	return make_darray(arr, arr.extents(), arr.storage_order());
+	return make_darray(std::forward<Array>(arr), arr.extents(),
+		arr.storage_order());
 }
 
 template <
@@ -881,53 +887,56 @@ template <
 	class Extents, 
 	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
 	nd_enable_if((
-		Array::provides_allocator &&
-		detail::is_range<Extents>::value &&
+		std::decay_t<Array>::provides_allocator &&
+		detail::is_range<Extents>::value        &&
 		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
-	const Array& arr,
+	Array&& arr,
 	const Extents& e,
 	const StorageOrder& o = decltype(arr.storage_order()){}
 )
 {
-	return make_darray(arr, e, arr.allocator(), o);
+	return make_darray(std::forward<Array>(arr), e, arr.allocator(), o);
 }
 
 template <
 	class Array,
 	class Extents, 
-	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	class StorageOrder = typename detail::deduce_storage_order<
+				std::decay_t<Array>>::type,
 	nd_enable_if((
-		!Array::provides_allocator &&
-		detail::is_range<Extents>::value &&
+		!std::decay_t<Array>::provides_allocator &&
+		detail::is_range<Extents>::value         &&
 		detail::is_index<StorageOrder>::value
 	))
 >
 CC_ALWAYS_INLINE
 auto make_darray(
-	const Array& arr,
+	Array&& arr,
 	const Extents& e,
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	using exterior_type = typename Array::exterior_type;
+	using source_type   = std::decay_t<Array>;
+	using exterior_type = typename source_type::exterior_type;
 	using extents       = decltype(arr.extents());
 	using storage_order = StorageOrder;
 	using allocator     = mpl::quote<std::allocator>;
 	using storage_type  = dense_storage<exterior_type, extents,
 	      			storage_order, allocator>;
 	using array_type    = array_wrapper<storage_type>;
-	return array_type{arr, e};
+	return array_type{std::forward<Array>(arr), e};
 }
 
 template <
 	class Array,
 	class Extents,
 	class Alloc,
-	class StorageOrder = typename detail::deduce_storage_order<Array>::type,
+	class StorageOrder = typename detail::deduce_storage_order<
+				std::decay_t<Array>>::type,
 	nd_enable_if((
 		detail::is_range<Extents>::value   &&
 		detail::is_allocator<Alloc>::value &&
@@ -936,17 +945,18 @@ template <
 >
 CC_ALWAYS_INLINE
 auto make_darray(
-	const Array& arr,
+	Array&& arr,
 	const Extents& e,
 	const Alloc& alloc,
 	StorageOrder = decltype(arr.storage_order()){}
 )
 {
-	using exterior_type = typename Array::exterior_type;
+	using source_type   = std::decay_t<Array>;
+	using exterior_type = typename source_type::exterior_type;
 	using storage_type  = dense_storage<exterior_type, Extents,
 	      			StorageOrder, detail::quote_allocator<Alloc>>;
 	using array_type    = array_wrapper<storage_type>;
-	return array_type{arr, e, alloc};
+	return array_type{std::forward<Array>(arr), e, alloc};
 }
 
 }
