@@ -77,25 +77,6 @@ module("test range iterator")
 	}
 	require(j == 50 * 50 * 50);
 }
-
-module("test range literal")
-{
-	constexpr auto r1 = "0 0 0; 50 50 50; 1 1 1"_range;
-	constexpr auto r2 = "0 0 0; 50 50 50"_range;
-	constexpr auto r3 = "50 50 50"_range;
-	constexpr auto r4 = "; 50 50 50; "_range;
-	constexpr auto r5 = "; 50 50 50; 1 1 1"_range;
-	constexpr auto r6 = "; 50 50 50;"_range;
-
-	static_assert(r1 == r2, "");
-	static_assert(r1 == r3, "");
-	static_assert(r1 == r4, "");
-	static_assert(r1 == r5, "");
-	static_assert(r1 == r6, "");
-	static_assert(r1.bases() == nd::cindex<0, 0, 0>, "");
-	static_assert(r1.extents() == nd::cindex<50, 50, 50>, "");
-	static_assert(r1.strides() == nd::cindex<1, 1, 1>, "");
-}
 */
 
 suite("range test")
