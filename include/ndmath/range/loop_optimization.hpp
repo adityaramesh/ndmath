@@ -293,8 +293,8 @@ struct tile_helper
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		static constexpr auto tf_loc = basic_sc_coord<integer, tile_fac>;
-		static constexpr auto uf_loc = basic_sc_coord<integer, unroll_fac>;
+		static constexpr auto tf_coord = basic_sc_coord<integer, tile_fac>;
+		static constexpr auto uf_coord = basic_sc_coord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -303,7 +303,7 @@ struct tile_helper
 		*/
 		for (
 			auto i = integer{0};
-			i != r.length(n) / (r.stride(n) * tf_loc() * uf_loc());
+			i != r.length(n) / (r.stride(n) * tf_coord() * uf_coord());
 			++i
 		)
 		{
@@ -312,7 +312,7 @@ struct tile_helper
 			*/
 			tile_count_unroller::apply(
 				0, i,
-				r.length(n) / (r.stride(n) * tf_loc() * uf_loc()), 1,
+				r.length(n) / (r.stride(n) * tf_coord() * uf_coord()), 1,
 				/*
 				** Unroll the loop over each tile.
 				*/
@@ -331,8 +331,8 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				uf_loc * (r.length_c(n) / (r.stride_c(n) * tf_loc * uf_loc)),
-				r.length_c(n) / (r.stride_c(n) * tf_loc),
+				uf_coord * (r.length_c(n) / (r.stride_c(n) * tf_coord * uf_coord)),
+				r.length_c(n) / (r.stride_c(n) * tf_coord),
 				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
@@ -351,8 +351,8 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				r.start_c(n) + r.stride_c(n) * tf_loc *
-				(r.length_c(n) / (r.stride_c(n) * tf_loc)),
+				r.start_c(n) + r.stride_c(n) * tf_coord *
+				(r.length_c(n) / (r.stride_c(n) * tf_coord)),
 				r.finish_c(n), r.stride_c(n), f
 			);
 		}
@@ -367,8 +367,8 @@ struct tile_helper
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
-		static constexpr auto tf_loc = basic_sc_coord<integer, tile_fac>;
-		static constexpr auto uf_loc = basic_sc_coord<integer, unroll_fac>;
+		static constexpr auto tf_coord = basic_sc_coord<integer, tile_fac>;
+		static constexpr auto uf_coord = basic_sc_coord<integer, unroll_fac>;
 
 		validate(r);
 
@@ -377,7 +377,7 @@ struct tile_helper
 		*/
 		for (
 			auto i = r.length(n) / (r.stride(n) * tile_fac) - 1;
-			i != r.length(n) / (r.stride(n) * tf_loc() * uf_loc());
+			i != r.length(n) / (r.stride(n) * tf_coord() * uf_coord());
 			--i
 		)
 		{
@@ -385,14 +385,14 @@ struct tile_helper
 			** Unroll the loop over the chunk of `unroll_fac` tiles.
 			*/
 			tile_count_unroller::apply(
-				0, i, r.length(n) / (tf_loc() * uf_loc()), 1,
+				0, i, r.length(n) / (tf_coord() * uf_coord()), 1,
 				/*
 				** Unroll the loop over each tile.
 				*/
 				[&] (const auto& j) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
 						r.start(n) + r.length(n) %
-						(r.stride(n) * tf_loc()), j,
+						(r.stride(n) * tf_coord()), j,
 						r.stride(n), r.stride(n), f
 					);
 				}
@@ -405,13 +405,13 @@ struct tile_helper
 			** unroll.
 			*/
 			rem_loop_h::try_unroll(
-				r.length_c(n) / (r.stride_c(n) * tf_loc * uf_loc),
+				r.length_c(n) / (r.stride_c(n) * tf_coord * uf_coord),
 				basic_sc_coord<integer, integer(-1)>,
 				basic_sc_coord<integer, 1>,
 				[&] (const auto& i) CC_ALWAYS_INLINE noexcept(Noexcept) {
 					tile_unroller::apply(
 						r.start(n) + r.length(n) %
-						(r.stride(n) * tf_loc()),
+						(r.stride(n) * tf_coord()),
 						i, r.stride(n), r.stride(n), f
 					);
 				}
@@ -426,7 +426,7 @@ struct tile_helper
 			** units.
 			*/
 			rem_loop_h::try_unroll(
-				r.start_c(n) + r.length_c(n) % (r.stride_c(n) * tf_loc),
+				r.start_c(n) + r.length_c(n) % (r.stride_c(n) * tf_coord),
 				r.start_c(n) - r.stride_c(n), r.stride_c(n), f
 			);
 		}
