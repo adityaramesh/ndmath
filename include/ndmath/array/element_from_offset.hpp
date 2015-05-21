@@ -35,17 +35,16 @@ template <
 	size_t CurDim,
 	size_t LastDim,
 	class SizeType,
-	class ReturnValue,
 	bool IsNoexceptAccessible
 >
 struct element_from_offset_helper
 {
 	using next = element_from_offset_helper<CurDim + 1, LastDim, SizeType,
-		ReturnValue, IsNoexceptAccessible>;
+		IsNoexceptAccessible>;
 
 	template <class Array, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	static ReturnValue apply(
+	static decltype(auto) apply(
 		const SizeType off,
 		const SizeType prod,
 		Array& arr,
@@ -68,15 +67,13 @@ struct element_from_offset_helper
 template <
 	size_t LastDim,
 	class SizeType,
-	class ReturnValue,
 	bool IsNoexceptAccessible
 >
-struct element_from_offset_helper<LastDim, LastDim, SizeType, ReturnValue,
-	IsNoexceptAccessible>
+struct element_from_offset_helper<LastDim, LastDim, SizeType, IsNoexceptAccessible>
 {
 	template <class Array, class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	static ReturnValue apply(
+	static decltype(auto) apply(
 		const SizeType off,
 		const SizeType prod,
 		Array& arr,
@@ -94,23 +91,13 @@ struct element_from_offset
 {
 	template <class Array>
 	CC_ALWAYS_INLINE constexpr
-	auto operator()(const typename Array::size_type off, Array& arr) const
-	noexcept(array_traits<Array>::is_noexcept_accessible) ->
-	std::conditional_t<
-		std::is_const<Array>::value,
-		typename array_traits<Array>::const_reference,
-		typename array_traits<Array>::reference
-	>
+	decltype(auto) operator()(const typename Array::size_type off, Array& arr) const
+	noexcept(array_traits<Array>::is_noexcept_accessible)
 	{
 		using traits = array_traits<Array>;
 		using size_type = typename traits::size_type;
-		using return_value = std::conditional_t<
-			std::is_const<Array>::value,
-			typename traits::const_reference,
-			typename traits::reference
-		>;
 		using helper = detail::element_from_offset_helper<
-			0, traits::dims - 1, size_type, return_value,
+			0, traits::dims - 1, size_type,
 			traits::is_noexcept_accessible>;
 		return helper::apply(off, 1, arr);
 	}

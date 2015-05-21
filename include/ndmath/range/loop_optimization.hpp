@@ -26,18 +26,18 @@ struct direction_helper<forward>
 {
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
-	static auto start(const Integer& a, Integer) noexcept
-	{ return a; }
+	static auto start(const Integer& start, Integer) noexcept
+	{ return start; }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
-	static auto finish(const Integer& a, Integer, const Integer& l) noexcept
-	{ return a + l; }
+	static auto finish(const Integer& start, Integer, const Integer& len) noexcept
+	{ return start + len; }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE
-	static void step(Integer& c, const Integer& s) noexcept
-	{ c += s; }
+	static void step(Integer& counter, const Integer& n) noexcept
+	{ counter += n; }
 };
 
 template <>
@@ -45,18 +45,18 @@ struct direction_helper<backward>
 {
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
-	static auto start(Integer, const Integer& b) noexcept
-	{ return b; }
+	static auto start(Integer, const Integer& end) noexcept
+	{ return end; }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE constexpr
-	static auto finish(Integer, const Integer& b, const Integer& l) noexcept
-	{ return b - l; }
+	static auto finish(Integer, const Integer& end, const Integer& len) noexcept
+	{ return end - len; }
 
 	template <class Integer>
 	CC_ALWAYS_INLINE
-	static void step(Integer& c, const Integer& s) noexcept
-	{ c -= s; }
+	static void step(Integer& counter, const Integer& n) noexcept
+	{ counter -= n; }
 };
 
 template <
@@ -92,12 +92,12 @@ struct unroll_helper<Cur, End, 1, Policy, Dir, Noexcept>
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
 	static void apply(
-		const Integer& o,
-		const Integer& i,
+		const Integer& off,
+		const Integer& idx,
 		Integer, Integer,
 		const Func& f
 	)
-	noexcept(Noexcept) { f(o + i); }
+	noexcept(Noexcept) { f(off + idx); }
 };
 
 template <size_t End, size_t Factor, class Policy, class Dir, bool Noexcept>
@@ -136,15 +136,15 @@ struct unroll_helper<
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
 	static void apply(
-		const Integer& o,
-		const Integer& i,
-		const Integer& l,
-		const Integer& s,
+		const Integer& off,
+		const Integer& idx,
+		const Integer& len,
+		const Integer& stride,
 		const Func& f
 	) noexcept(Noexcept)
 	{
-		f(o + Integer(Factor) * i + Integer(Cur) * s);
-		next::apply(o, i, l, s, f);
+		f(off + Integer(Factor) * idx + Integer(Cur) * stride);
+		next::apply(off, idx, len, stride, f);
 	}
 };
 
@@ -175,15 +175,15 @@ struct unroll_helper<
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
 	static void apply(
-		const Integer& o,
-		const Integer& i,
-		const Integer& l,
-		const Integer& s,
+		const Integer& off,
+		const Integer& idx,
+		const Integer& len,
+		const Integer& stride,
 		const Func& f
 	) noexcept(Noexcept)
 	{
-		f(o + i + Integer(Cur) * l);
-		next::apply(o, i, l, s, f);
+		f(off + idx + Integer(Cur) * len);
+		next::apply(off, idx, len, stride, f);
 	}
 };
 
@@ -206,20 +206,17 @@ struct remainder_loop_helper
 	static void try_unroll(L1, L2, L3, const Func& f)
 	noexcept(Noexcept)
 	{
-		// The left endpoint.
-		static constexpr auto a =
+		static constexpr auto start =
 		std::is_same<Dir, forward>::value ?
 		L1::value() : L2::value();
 
-		// The right endpoint.
-		static constexpr auto b =
+		static constexpr auto end =
 		std::is_same<Dir, forward>::value ?
 		L2::value() : L1::value();
 
-		// The stride.
-		static constexpr auto s = L3::value();
-		static constexpr auto l = b - a + s;
-		static constexpr auto unroll_fac = l / s;
+		static constexpr auto stride = L3::value();
+		static constexpr auto len = end - start + stride;
+		static constexpr auto unroll_fac = len / stride;
 
 		using unroll_policy = contiguous<unroll_fac, false>;
 		using unroll_helper = unroll_helper<
@@ -227,7 +224,7 @@ struct remainder_loop_helper
 			dir_h::finish(size_t{0}, unroll_fac - 1, unroll_fac),
 			unroll_fac, unroll_policy, Dir, Noexcept
 		>;
-		unroll_helper::apply(0, a, s, s, f);
+		unroll_helper::apply(0, start, stride, stride, f);
 	}
 
 	template <class L1, class L2, class L3, class Func,
@@ -249,7 +246,7 @@ struct remainder_loop_helper
 /*
 ** This class performs the bulk of the loop optimization work: it addresses all
 ** of the possibilities for the kinds of loops that can arise as a result of the
-** interaction among the different loop optimizations.
+** interactions among the different loop optimizations.
 */
 template <size_t Coord, class Dir, class UnrollPolicy, class TilePolicy, bool Noexcept>
 struct tile_helper

@@ -16,9 +16,13 @@ namespace detail {
 template <class Loop, class Attribs>
 struct reverse_loop
 {
-	using a = mpl::at<Loop, Attribs>;
-	using na = set_dir<backward, a>;
-	using type = mpl::set_at<Loop, na, Attribs>;
+	using attrib = mpl::at<Loop, Attribs>;
+	using new_dir = std::conditional_t<
+		std::is_same<typename attrib::dir, forward>::value,
+		backward, forward
+	>;
+	using new_attrib = set_dir<new_dir, attrib>;
+	using type = mpl::set_at<Loop, new_attrib, Attribs>;
 };
 
 }

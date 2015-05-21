@@ -245,21 +245,18 @@ public:
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto at(const Ts... ts) noexcept
-	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) at(const Ts... ts) noexcept
+	{ return helper::at(coords_to_offset::apply(*this, ts...), *this); }
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE constexpr
-	auto at(const Ts... ts) const noexcept
-	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) at(const Ts... ts) const noexcept
+	{ return helper::at(coords_to_offset::apply(*this, ts...), *this); }
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto uninitialized_at(const Ts... ts) noexcept
-	nd_deduce_return_type(helper::uninitialized_at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) uninitialized_at(const Ts... ts) noexcept
+	{ return helper::uninitialized_at(coords_to_offset::apply(*this, ts...), *this); }
 
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept
@@ -509,21 +506,18 @@ public:
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto at(const Ts... ts) noexcept
-	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) at(const Ts... ts) noexcept
+	{ return helper::at(coords_to_offset::apply(*this, ts...), *this); }
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto at(const Ts... ts) const noexcept
-	nd_deduce_return_type(helper::at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) at(const Ts... ts) const noexcept
+	{ return helper::at(coords_to_offset::apply(*this, ts...), *this); }
 
 	template <class... Ts>
 	CC_ALWAYS_INLINE
-	auto uninitialized_at(const Ts... ts) noexcept
-	nd_deduce_return_type(helper::uninitialized_at(
-		coords_to_offset::apply(*this, ts...), *this))
+	decltype(auto) uninitialized_at(const Ts... ts) noexcept
+	{ return helper::uninitialized_at(coords_to_offset::apply(*this, ts...), *this); }
 
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept
