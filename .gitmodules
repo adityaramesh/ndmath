@@ -1,0 +1,3 @@
+[submodule "ccbase"]
+	path = ccbase
+	url = https://github.com/adityaramesh/ccbase

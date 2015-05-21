@@ -3,7 +3,7 @@ require 'rake/clean'
 
 cxx    = ENV['CXX']
 boost  = ENV['BOOST_INCLUDE_PATH']
-ccbase = ENV['CCBASE_INCLUDE_PATH']
+ccbase = "ccbase/include"
 
 langflags  = "-std=c++1y"
 wflags     = "-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-ignored-qualifiers"
@@ -11,7 +11,7 @@ archflags  = "-march=native"
 incflags   = "-I include -isystem #{boost} -isystem #{ccbase}"
 ldflags    = ""
 
-debug_optflags = "-O2"
+debug_optflags = "-O2 -ggdb"
 if cxx.include? "clang"
 	release_optflags = "-Ofast -fno-fast-math -flto -fno-unroll-loops"
 elsif cxx.include? "g++"
