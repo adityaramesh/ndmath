@@ -25,9 +25,9 @@ public:
 	/*
 	** If the wrapped type defines `integer` to be void, then this means
 	** that its value is computed using the parameter supplied to
-	** `operator()`. Thus, the return type is also dependent on the integral
-	** type of this parameter. In this case, we sent the integer type here
-	** to be `int`, in order avoid breaking code that relies on this typedef
+	** `operator()`. Then the return type is also dependent on the integral
+	** type of this parameter. In this case, we set the integer type here to
+	** be `int`, in order avoid breaking code that relies on this typedef
 	** being something reasonable.
 	*/
 	using integer = std::conditional_t<
@@ -71,20 +71,17 @@ public:
 
 	template <class Integer = unsigned, nd_enable_if(allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	static auto value(const Integer n = 0) noexcept ->
-	decltype(std::declval<const T>().value(n))
+	static decltype(auto) value(const Integer n = 0) noexcept
 	{ return T::value(n); }
 
 	template <class Integer = unsigned, nd_enable_if(!allows_static_access)>
-	CC_ALWAYS_INLINE
-	auto value(const Integer n = 0) noexcept ->
-	decltype(std::declval<T>().value(n))
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) value(const Integer n = 0) noexcept
 	{ return m_wrapped.value(n); }
 
 	template <class Integer = unsigned, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
-	auto value(const Integer n = 0) const noexcept ->
-	decltype(std::declval<const T>().value(n))
+	decltype(auto) value(const Integer n = 0) const noexcept
 	{ return m_wrapped.value(n); }
 
 	template <nd_enable_if(is_constant)>

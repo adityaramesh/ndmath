@@ -28,32 +28,32 @@ public:
 
 	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
-	const auto get() const noexcept
+	auto get() const noexcept
 	{
 		using tokens::c;
 		return Op::apply(m_i1.at_c(c<N>), m_i2.at_c(c<N>));
 	}
 };
 
-#define nd_define_arithmetic_op(symbol, name)         \
-	                                              \
-template <class Index1, class Index2>                 \
-CC_ALWAYS_INLINE constexpr                            \
-auto operator symbol (                                \
-	const index_wrapper<Index1>& i1,              \
-	const index_wrapper<Index2>& i2               \
-) noexcept                                            \
-{                                                     \
-	using w1 = index_wrapper<Index1>;             \
-	using w2 = index_wrapper<Index2>;             \
-	static_assert(                                \
-		w1::dims() == w2::dims(),             \
-		"Indices have unequal dimensions."    \
-	);                                            \
-	                                              \
-	using index_type = index_expr<name, w1, w2>;  \
-	using w3 = index_wrapper<index_type>;         \
-	return w3{in_place, i1, i2};                  \
+#define nd_define_arithmetic_op(symbol, name)        \
+	                                             \
+template <class Index1, class Index2>                \
+CC_ALWAYS_INLINE constexpr                           \
+auto operator symbol (                               \
+	const index_wrapper<Index1>& i1,             \
+	const index_wrapper<Index2>& i2              \
+) noexcept                                           \
+{                                                    \
+	using w1 = index_wrapper<Index1>;            \
+	using w2 = index_wrapper<Index2>;            \
+	static_assert(                               \
+		w1::dims() == w2::dims(),            \
+		"Indices have unequal dimensions."   \
+	);                                           \
+	                                             \
+	using index_type = index_expr<name, w1, w2>; \
+	using w3 = index_wrapper<index_type>;        \
+	return w3{in_place, i1, i2};                 \
 }
 
 nd_define_arithmetic_op(+, plus)

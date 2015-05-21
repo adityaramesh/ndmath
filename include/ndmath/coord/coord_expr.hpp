@@ -55,14 +55,12 @@ public:
 	explicit coord_expr(const Coord1 l1, const Coord2 l2)
 	noexcept : m_l1{l1}, m_l2{l2} {}
 
-	template <class Integer, nd_enable_if(
-		allows_static_access)>
+	template <class Integer, nd_enable_if(allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n) noexcept
 	{ return Op::apply(Coord1::value(n), Coord2::value(n)); }
 
-	template <class Integer, nd_enable_if(
-		!allows_static_access)>
+	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	auto value(const Integer n) const noexcept
 	{ return Op::apply(m_l1.value(n), m_l2.value(n)); }
