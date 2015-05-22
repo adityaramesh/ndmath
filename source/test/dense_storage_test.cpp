@@ -298,8 +298,6 @@ module("test move construction dynamic dynamic")
 	a(1, 0) = 3;
 	a(1, 1) = 4;
 
-	// This won't work with our strategy because b will already be default
-	// initialized before assignment to a.
 	auto b = nd::make_darray(std::move(a));
 	require(a.direct_view().begin() == nullptr);
 	require(b(0, 0) == 1);
@@ -329,6 +327,45 @@ module("test move construction dynamic dynamic")
 
 	auto f = std::move(e);
 	require(e.direct_view().begin() == nullptr);
+	require(f(0, 0));
+	require(!f(0, 1));
+	require(f(1, 0));
+	require(!f(1, 1));
+}
+
+module("test move construction static static")
+{
+	auto a = nd::make_sarray<float>(nd::cextents<2, 2>);
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+
+	auto b = nd::make_sarray(std::move(a));
+	require(b(0, 0) == 1);
+	require(b(0, 1) == 2);
+	require(b(1, 0) == 3);
+	require(b(1, 1) == 4);
+
+	auto c = std::move(b);
+	require(c(0, 0) == 1);
+	require(c(0, 1) == 2);
+	require(c(1, 0) == 3);
+	require(c(1, 1) == 4);
+	
+	auto d = nd::make_darray<bool>(nd::cextents<2, 2>);
+	d(0, 0) = true;
+	d(0, 1) = false;
+	d(1, 0) = true;
+	d(1, 1) = false;
+
+	auto e = nd::make_darray(std::move(d));
+	require(e(0, 0));
+	require(!e(0, 1));
+	require(e(1, 0));
+	require(!e(1, 1));
+
+	auto f = std::move(e);
 	require(f(0, 0));
 	require(!f(0, 1));
 	require(f(1, 0));

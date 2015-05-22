@@ -155,7 +155,6 @@ struct construction_helper
 			traits::fast_move_assignment_feasible,
 			traits::construction_from_direct_view_feasible,
 			traits::construction_from_loop_feasible>;
-		cc::println(typeid(helper).name());
 		helper::apply(dst, std::move(src));
 	}
 };
