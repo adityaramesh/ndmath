@@ -6,7 +6,7 @@
 **
 ** # Requirements of Wrapped Type
 **
-** ## Requirement 1: Mandatory Type Definitions
+** ## Requirement 1: Type Definitions
 **
 ** The wrapped type must define the following types:
 ** - is_lazy: Indicates whether the array type performs lazy computation when
@@ -20,31 +20,29 @@
 ** - size_type: The integral type used by the array to store information related
 ** to memory.
 **
-** ## Requirement 2: "Uninitialized" Variants of Constructors
+** ## Requirement 2: Either Support Copy and Move Construction Explicitly, or
+** Support Fast Initializaiton
 **
-** Suppose that each array type in the library had to explicitly implement copy
-** and move construction and assignment both from itself and all other array
-** types in the library. Then implementations of the storage classes would be
-** unmanageably complex. The `array_wrapper` class cuts down on this complexity
-** by providing generic versions of these operations if the wrapped type does
-** not implement them explicitly. This process is described in more detail in
-** `array_assignment_traits.hpp`.
+** If each array type in the library had to explicitly implement copy and move
+** construction and assignment both from itself and all other array types in the
+** library, the implementations of the storage classes would become unmanageably
+** complex. The `array_wrapper` class cuts down on this complexity by providing
+** generic versions of these operations if the wrapped type does not implement
+** them explicitly. This process is described in more detail in
+** `array_memory_traits.hpp`.
 **
 ** If the wrapped type does not implement a copy constructor, then it must
-** provide a constructor of the form `wrapped_type(uninitialized_t, const
+** provide a constructor of the form `wrapped_type(partial_init_t, const
 ** wrapped_type&)`. If the wrapped type does not implement a move constructor,
-** then should implement `wrapped_type(uninitialized_t, const wrapped_type&)` if
-** additional optimizations during uninitialized construction with the knowledge
-** that the source array is an rvalue. Otherwise, `wrapped_type(uninitialized_t,
-** const wrapped_type&)` will be invoked prior to performing the generic
-** implementation of move construction.
+** then it must implement `wrapped_type(uninitialized_t, const wrapped_type&)`.
 **
 ** Similarly, if the wrapped type does not support generic copy construction
-** from types `array_wrapper<U>`, then it should provide a constructor of the
-** form `wrapped_type(uninitialized_t, const array_wrapper<U>&)`. Analogous
-** comments apply for generic move construction.
+** from types `array_wrapper<U>`, then it must provide a constructor of the form
+** `wrapped_type(partial_init_t, const array_wrapper<U>&)`. If the wrapped type
+** does not implement generic move construction, then it must provide a
+** constructor of the form `wrapped_type(uninitialized_t, array_wrapper<U>&&)`.
 **
-** ## Requirement 3: Mandatory and Optional Member Functions
+** ## Requirement 3: Member Functions
 **
 ** The wrapped type must also define the following member functions:
 ** - extents()       (const)
@@ -67,24 +65,32 @@
 ** default-initialize the destination array, and assign the source array to it.
 **
 ** This "last resort" strategy for construction may not always be efficient. But
-** if the destionation array supports "late initialization", then we can save
-** some time by skipping the process of constructing the elements of the
-** destination array. In order words, we can leave the elements of the
-** destionation array in uninitialized states, since they will soon be
-** overwritten.
+** if the destination array supports "fast initialization", then copy and move
+** construction can be implemented efficiently using assignment operations.
+** Specifically, "fast initialization" is a way for the wrapped type to declare
+** that it is capable of the following:
+**   1. Initializing the storage necessary to contain the elements without
+**   initializing the elements themselves (e.g. an array of primitives). This is
+**   "partial initialization".
+**   2. Initializing the minimal amount of state information necessary, after
+**   which it can "steal" the internals of another array using move assignment.
+**   This is "uninitialized" construction.
 **
-** If late initialization is supported:
+** If fast initialization is supported:
 ** - Any constructor (except the default constructor) that puts the wrapped type
 ** in an initialized state but *without* explicitly specified initial values for
-** its elements must be accompanied by a variant that accepts `uninitialized_t`
-** at the first argument, followed by the same arguments as the original
-** constructor.
-**   - Note that this description excludes the copy and move constructors, if
-**   they are implemented.
-**   - The "uninitialized" variant of the constructor is not required to
+** its elements must be accompanied by two variants. They should accept
+** `partial_init_t` and `uninitialized_t` as their first arguments,
+** respectively. The other arguments are those of the original constructor.
+**   - This requirement excludes the copy and move constructors, if they are
+**   implemented.
+**   - The "partial initialization" variant of the constructor is not required to
 **   construct the elements of the array (i.e. put the elements in well-defined
 **   states). However, the storage necessary to contain the elements must be
 **   allocated.
+**   - The "uninitialized" variant of the constructor must initialize enough
+**   state information such that it becomes a valid object after being move
+**   assigned to another array.
 ** - The following member functions must be implemented:
 **   - uninitialized_at()  (non-const only)
 **   - construction_view() (non-const only)
@@ -101,27 +107,40 @@
 
 namespace nd {
 
+// Used to prepare the wrapped type for copy construction when it does not
+// support it directly. In this case, the wrapped type is constructed in a
+// "partially initialized" state, and copy assigned to the source.
+struct partial_init_t {};
+static constexpr auto partial_init = partial_init_t{};
+
+// Used to prepare the wrapped type for move construction when it does not
+// support it directly. In this case, the wrapped type is constructed in an
+// "uninitialized" state, and move assigned to the source.
 struct uninitialized_t {};
 static constexpr auto uninitialized = uninitialized_t{};
 
 namespace detail {
 
 /*
-** The purpose of the base class is to conditionally call constructors of the
-** wrapped type in contexts where they could not be disabled by the derived
-** class using `enable_if`.
+** The base class has two purposes:
+**   1. To conditionally call constructors of the wrapped type in contexts where
+**   they cannot be disabled by the derived class using `enable_if`.
+**   2. To call the appropriate functions of the wrapped type when
+**   `array_wrapper` is copy- or move-constructed. If the wrapped type supports
+**   direct copy construction, then we simply call its copy constructor.
+**   Otherwise, we 
 */
 
 template <
 	class T,
-	bool SupportsLateInitialization,
-	bool IsCopyConstructible,
-	bool IsMoveConstructible
+	bool SupportsFastInitialization,
+	bool SupportsDirectCopyConstruction,
+	bool SupportsDirectMoveConstruction
 >
 class array_wrapper_base;
 
-template <class T, bool SupportsLateInitialization>
-class array_wrapper_base<T, SupportsLateInitialization, false, false>
+template <class T, bool SupportsFastInitialization>
+class array_wrapper_base<T, SupportsFastInitialization, false, false>
 {
 protected:
 	T m_wrapped;
@@ -132,13 +151,25 @@ public:
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(!SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, Args...>::value)
+	: m_wrapped{std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, Args...>::value)
+	: m_wrapped{partial_init, std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, uninitialized_t, Args...>::value)
@@ -146,17 +177,17 @@ public:
 
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper_base(const T& rhs)
-	noexcept(std::is_nothrow_constructible<T, uninitialized_t, const T&>::value)
-	: m_wrapped{uninitialized, rhs} {}
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, const T&>::value)
+	: m_wrapped{partial_init, rhs} {}
 
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper_base(T&& rhs)
-	noexcept(std::is_nothrow_constructible<T, uninitialized_t, T&&>::value)
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, T&&>::value)
 	: m_wrapped{uninitialized, std::move(rhs)} {}
 };
 
-template <class T, bool SupportsLateInitialization>
-class array_wrapper_base<T, SupportsLateInitialization, true, false>
+template <class T, bool SupportsFastInitialization>
+class array_wrapper_base<T, SupportsFastInitialization, true, false>
 {
 protected:
 	T m_wrapped;
@@ -167,13 +198,25 @@ public:
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(!SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, Args...>::value)
+	: m_wrapped{std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, Args...>::value)
+	: m_wrapped{partial_init, std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, uninitialized_t, Args...>::value)
@@ -190,8 +233,8 @@ public:
 	: m_wrapped{uninitialized, std::move(rhs)} {}
 };
 
-template <class T, bool SupportsLateInitialization>
-class array_wrapper_base<T, SupportsLateInitialization, false, true>
+template <class T, bool SupportsFastInitialization>
+class array_wrapper_base<T, SupportsFastInitialization, false, true>
 {
 protected:
 	T m_wrapped;
@@ -202,13 +245,25 @@ public:
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(!SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, Args...>::value)
+	: m_wrapped{std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, Args...>::value)
+	: m_wrapped{partial_init, std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, uninitialized_t, Args...>::value)
@@ -216,8 +271,8 @@ public:
 
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper_base(const T& rhs)
-	noexcept(std::is_nothrow_constructible<T, uninitialized_t, const T&>::value)
-	: m_wrapped{uninitialized, rhs} {}
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, const T&>::value)
+	: m_wrapped{partial_init, rhs} {}
 
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper_base(T&& rhs)
@@ -225,8 +280,8 @@ public:
 	: m_wrapped{std::move(rhs)} {}
 };
 
-template <class T, bool SupportsLateInitialization>
-class array_wrapper_base<T, SupportsLateInitialization, true, true>
+template <class T, bool SupportsFastInitialization>
+class array_wrapper_base<T, SupportsFastInitialization, true, true>
 {
 protected:
 	T m_wrapped;
@@ -237,13 +292,25 @@ public:
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(!SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, Args...>::value)
+	: m_wrapped{std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(!SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, Args...>::value)
 	: m_wrapped{std::forward<Args>(args)...} {}
 
-	template <class... Args, nd_enable_if(SupportsLateInitialization)>
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
+	CC_ALWAYS_INLINE constexpr
+	explicit array_wrapper_base(partial_init_t, Args&&... args)
+	noexcept(std::is_nothrow_constructible<T, partial_init_t, Args...>::value)
+	: m_wrapped{partial_init, std::forward<Args>(args)...} {}
+
+	template <class... Args, nd_enable_if(SupportsFastInitialization)>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper_base(uninitialized_t, Args&&... args)
 	noexcept(std::is_nothrow_constructible<T, uninitialized_t, Args...>::value)
@@ -266,7 +333,7 @@ template <class T>
 class array_wrapper final :
 detail::array_wrapper_base<
 	T,
-	array_traits<T>::supports_late_initialization,
+	array_traits<T>::supports_fast_initialization,
 	std::is_copy_constructible<T>::value,
 	std::is_move_constructible<T>::value
 >
@@ -282,7 +349,7 @@ detail::array_wrapper_base<
 
 	using base = detail::array_wrapper_base<
 		T,
-		traits::supports_late_initialization,
+		traits::supports_fast_initialization,
 		is_copy_constructible,
 		is_move_constructible
 	>;
@@ -309,7 +376,7 @@ public:
 	static constexpr auto provides_fast_flat_view      = traits::provides_fast_flat_view;
 	static constexpr auto provides_memory_size         = traits::provides_memory_size;
 	static constexpr auto provides_allocator           = traits::provides_allocator;
-	static constexpr auto supports_late_initialization = traits::supports_late_initialization;
+	static constexpr auto supports_fast_initialization = traits::supports_fast_initialization;
 
 	using flat_iterator = std::conditional_t<
 		std::is_same<typename traits::flat_iterator, void>::value,
@@ -342,15 +409,14 @@ public:
 	*/
 
 	/*
-	** If T is copy constructible, the base class will call T's copy
-	** constructor, and the body of this function will do nothing.
+	** If T is directly copy constructible, the base class will call T's
+	** copy constructor, and the body of this function will do nothing.
 	** Otherwise:
-	**   - If T supports late initialization, the base class will construct
-	**   T in an uninitialized state.
-	**   - Else, the base class will default construct T, and the body of
-	**   this function will perform copy assignment.
-	**   - Afterwards, the body of this function will invoke the assignment
-	**   helper.
+	**   - If T supports fast initialization, the base class will construct
+	**   T in an partially-initialized state.
+	**   - Else, the base class will default-construct T.
+	**   - Afterwards, the body of this function will invoke the
+	**   construction helper.
 	*/
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper(const array_wrapper& rhs)
@@ -400,7 +466,7 @@ public:
 	/*
 	** If the wrapped type does not have a copy constructor for U, then we
 	** need to invoke the assignment helper.
-	** - If T supports late initialization, the base class will construct T
+	** - If T supports fast initialization, the base class will construct T
 	** in an uninitialized state.
 	** - Else, the base class will default construct T, and the body of this
 	** function will perform copy assignment.
@@ -412,9 +478,9 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper(const array_wrapper<U>& rhs, Args&&... args)
 	noexcept(
-		std::is_nothrow_constructible<T, uninitialized_t, Args...>::value &&
+		std::is_nothrow_constructible<T, partial_init_t, Args...>::value &&
 		noexcept(construction_helper::copy_construct(*this, rhs))
-	) : base{uninitialized, std::forward<Args>(args)...}
+	) : base{partial_init, std::forward<Args>(args)...}
 	{ construction_helper::copy_construct(*this, rhs); }
 
 	/*
@@ -426,9 +492,9 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	array_wrapper(const array_wrapper<U>& rhs)
 	noexcept(
-		std::is_nothrow_constructible<T, uninitialized_t, decltype(rhs)>::value &&
+		std::is_nothrow_constructible<T, partial_init_t, decltype(rhs)>::value &&
 		noexcept(construction_helper::copy_construct(*this, rhs))
-	) : base{uninitialized, rhs}
+	) : base{partial_init, rhs}
 	{ construction_helper::copy_construct(*this, rhs); }
 
 	/*
@@ -586,7 +652,7 @@ public:
 	auto direct_view() const noexcept
 	{ return m_wrapped.direct_view(); }
 
-	template <nd_enable_if(supports_late_initialization)>
+	template <nd_enable_if(supports_fast_initialization)>
 	CC_ALWAYS_INLINE
 	auto construction_view() noexcept
 	{ return m_wrapped.construction_view(); }
@@ -600,9 +666,8 @@ public:
 		mpl::all_true<std::is_integral<Ts>::value...>
 	))>
 	CC_ALWAYS_INLINE
-	auto at(const Ts&... ts)
-	noexcept(noexcept(is_noexcept_accessible)) ->
-	decltype(m_wrapped.at(ts...))
+	decltype(auto) at(const Ts&... ts)
+	noexcept(noexcept(is_noexcept_accessible))
 	{
 		nd_assert(
 			c_index(ts...) >= extents().start() &&
@@ -618,9 +683,8 @@ public:
 		mpl::all_true<std::is_integral<Ts>::value...>
 	))>
 	CC_ALWAYS_INLINE constexpr
-	auto at(const Ts&... ts) const
-	noexcept(noexcept(is_noexcept_accessible)) ->
-	decltype(m_wrapped.at(ts...))
+	decltype(auto) at(const Ts&... ts) const
+	noexcept(noexcept(is_noexcept_accessible))
 	{
 		nd_assert(
 			c_index(ts...) >= extents().start() &&
@@ -632,14 +696,13 @@ public:
 	}
 
 	template <class... Ts, nd_enable_if((
-		supports_late_initialization &&
+		supports_fast_initialization &&
 		sizeof...(Ts) == dims()      &&
 		mpl::all_true<std::is_integral<Ts>::value...>
 	))>
 	CC_ALWAYS_INLINE
-	auto uninitialized_at(const Ts&... ts)
-	noexcept(noexcept(is_noexcept_accessible)) ->
-	decltype(m_wrapped.uninitialized_at(ts...))
+	decltype(auto) uninitialized_at(const Ts&... ts)
+	noexcept(noexcept(is_noexcept_accessible))
 	{
 		nd_assert(
 			c_index(ts...) >= extents().start() &&

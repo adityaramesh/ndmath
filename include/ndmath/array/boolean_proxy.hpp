@@ -31,8 +31,8 @@ class boolean_proxy final
 	** * sizeof(Storage) for free. However, there is a bug in clang which
 	** causes incorrect code to be generated if this instruction is used in
 	** inline assembly. I wasn't able to produce a quick MWE, so it has not
-	** yet been reported. Hopefully, the compiler recognizes that the AND is
-	** redundant and decides to use rol anyway.
+	** yet been reported to my knowledge. Hopefully, the compiler recognizes
+	** that the AND is redundant and decides to use rol anyway.
 	*/
 	Integer m_off;
 public:

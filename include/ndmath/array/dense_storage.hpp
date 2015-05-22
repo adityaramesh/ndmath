@@ -210,6 +210,19 @@ public:
 	}
 
 	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(partial_init_t)
+	noexcept {}
+
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(partial_init_t, const dense_storage&)
+	noexcept {}
+
+	template <class U>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(partial_init_t, const array_wrapper<U>&)
+	noexcept {}
+
+	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(uninitialized_t)
 	noexcept {}
 
@@ -372,7 +385,7 @@ public:
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
-		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+		nd_assert(e.size() > 0, "cannot create array of size zero");
 		m_data = m_alloc.allocate(underlying_size());
 
 		/*
@@ -401,7 +414,7 @@ public:
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
-		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+		nd_assert(e.size() > 0, "cannot create array of size zero");
 
 		m_data = m_alloc.allocate(underlying_size());
 		for (auto i = size_type{0}; i != underlying_size(); ++i) {
@@ -411,14 +424,42 @@ public:
 
 	CC_ALWAYS_INLINE
 	explicit dense_storage(
-		uninitialized_t,
+		partial_init_t,
 		const Extents& e,
 		allocator_type alloc = allocator_type{}
 	) : base{e}, m_alloc{alloc}
 	{
-		nd_assert(e.size() > 0, "cannot allocate array of size zero");
+		nd_assert(e.size() > 0, "cannot create array of size zero");
 		m_data = m_alloc.allocate(underlying_size());
 	}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(partial_init_t, const dense_storage& rhs)
+	: dense_storage{partial_init, rhs.extents(), rhs.allocator()} {}
+
+	template <class Array, nd_enable_if((
+		mpl::is_specialization_of<array_wrapper, Array>::value &&
+		Array::provides_allocator
+	))>
+	CC_ALWAYS_INLINE
+	explicit dense_storage(partial_init_t, const Array& rhs)
+	: dense_storage{partial_init, rhs.extents(), rhs.allocator()} {}
+
+	template <class Array, nd_enable_if((
+		mpl::is_specialization_of<array_wrapper, Array>::value &&
+		!Array::provides_allocator
+	))>
+	CC_ALWAYS_INLINE
+	explicit dense_storage(partial_init_t, const Array& rhs)
+	: dense_storage{partial_init, rhs.extents()} {}
+
+	CC_ALWAYS_INLINE
+	explicit dense_storage(
+		uninitialized_t,
+		const Extents& e,
+		allocator_type alloc = allocator_type{}
+	) : base{e}, m_alloc{alloc}
+	{ nd_assert(e.size() > 0, "cannot create array of size zero"); }
 
 	CC_ALWAYS_INLINE
 	explicit dense_storage(uninitialized_t, const dense_storage& rhs)
@@ -453,13 +494,13 @@ public:
 
 	/*
 	** The generic versions of copy construction and assignment implemented
-	** for us by array_wrapper are already efficient.
+	** for us by `array_wrapper` are already efficient.
 	*/
 	dense_storage(const dense_storage&) = delete;
 	auto& operator=(const dense_storage&) = delete;
 
 	/*
-	** Since we implement move assignment, array_wrapper uses it to
+	** Since we implement move assignment, `array_wrapper` uses it to
 	** implement move construction for us. So there's no need for us to
 	** implement move construction explicitly.
 	*/
@@ -563,7 +604,7 @@ public:
 	CC_ALWAYS_INLINE
 	void destructive_resize(const Extents_& e)
 	{
-		nd_assert(e.size() > 0, "cannot change array size to zero");
+		nd_assert(e.size() > 0, "cannot resize array size to zero");
 
 		if (e.size() < extents().size()) {
 			auto off = helper::underlying_size(e.size());

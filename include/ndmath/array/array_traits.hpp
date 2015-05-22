@@ -190,7 +190,7 @@ struct array_traits
 	static constexpr auto provides_fast_flat_view      = check_flat_view<T>(0);
 	static constexpr auto provides_memory_size         = check_memory_size<T>(0);
 	static constexpr auto provides_allocator           = check_allocator<T>(0);
-	static constexpr auto supports_late_initialization = check_construction_view<T>(0);
+	static constexpr auto supports_fast_initialization = check_construction_view<T>(0);
 
 	using et = detail::element_access_traits<T, dims>;
 

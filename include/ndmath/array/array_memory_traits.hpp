@@ -61,6 +61,7 @@ struct iterator_assignment_traits<LHSIter, void>
 ** - If dst's wrapped type provides a copy assignment operator for src's wrapped
 ** type, then use it and return.
 ** - If dst needs to be resized but is not resizable, then raise an error.
+** Otherwise, resize.
 ** - If src is not lazy and dst and src have compatible storage orders:
 **   - If both dst and src support direct views over the elements, and it is
 **   possible to copy from src's direct view to dst's direct view, then do so.
@@ -107,6 +108,9 @@ struct copy_assignment_traits
 	Dst::provides_fast_flat_view;
 };
 
+/*
+** See comments for copy assignment.
+*/
 template <class Src, class Dst>
 struct move_assignment_traits
 {
@@ -154,7 +158,7 @@ struct move_assignment_traits
 **
 ** - If dst's wrapped type provides a copy constructor for src's type, then use
 ** it and return.
-** - If dst supports late initialization and dst's underlying type is copy
+** - If dst supports fast initialization and dst's underlying type is copy
 ** constructible from src's underlying type:
 **   - Construct dst in an uninitialized state with the parameters supplied to
 **   the copy constructor.
@@ -182,7 +186,7 @@ struct copy_construction_traits
 	using dst_type = typename Dst::underlying_type;
 
 	static constexpr auto indirect_construction_feasible =
-	Src::supports_late_initialization &&
+	Src::supports_fast_initialization &&
 	std::is_constructible<dst_type, const src_type&>::value;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
@@ -200,6 +204,40 @@ struct copy_construction_traits
 	indirect_construction_feasible;
 };
 
+/*
+** General procedure for move construction. The basic idea is to use the most
+** efficient mechanism for move construction that is supported by both src and
+** dst.
+**
+** Note that this procedure is different from the one for copy construction!
+** When performing copy construction, we only use copy assignment as a last
+** resort when all methods to copy construct the elements of dst from those of
+** src are ruled out as impossible. For move construction, the opposite is true.
+** If the wrapped type implements move assignment, then it is likely to be much
+** cheaper than move-constructing the elements of dst from those of src.
+**
+** - If dst's wrapped type provides a move constructor for src's type, then use
+** it and return.
+** - If dst supports fast initialization:
+**   	- Construct dst in an uninitialized state with the parameters supplied
+**   	to the move constructor.
+** 	- If dst's wrapped type provides a move assignment operator for src's
+** 	wrapped type:
+** 		- Move assign src to dst.
+** 	- Else if dst's underlying type is move constructible from src's
+** 	underlying type:
+**   		- If dst and src have compatible storage orders and src provides
+**   		a direct view over the elements:
+**     			- Move from src's direct view to dst's construction
+**     			view.
+**   		- Else:
+**     			- Use a for-each loop together with uninitialized_at to
+**     			move-construct dst's elements from those of src.
+** - Else:
+**   - Default construct dst with the parameters supplied to the move
+**   constructor.
+**   - Move assign src to dst.
+*/
 template <class Src, class Dst>
 struct move_construction_traits
 {
@@ -209,11 +247,15 @@ struct move_construction_traits
 	static constexpr auto direct_construction_feasible =
 	std::is_constructible<dst_wrapped, src_wrapped&&>::value;
 
+	static constexpr auto fast_move_assignment_feasible =
+	Src::supports_fast_initialization &&
+	std::is_assignable<dst_wrapped, src_wrapped&&>::value;
+
 	using src_type = typename Src::underlying_type;
 	using dst_type = typename Dst::underlying_type;
 
 	static constexpr auto indirect_construction_feasible =
-	Src::supports_late_initialization &&
+	Src::supports_fast_initialization &&
 	std::is_constructible<dst_type, src_type&&>::value;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
