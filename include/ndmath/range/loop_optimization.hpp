@@ -574,7 +574,7 @@ struct evaluate_helper<Dims, Dims, Attribs, Noexcept>
 	template <class Range, class Func, class... Args>
 	CC_ALWAYS_INLINE
 	static void apply(const Range&, const Func& f, const Args&... args)
-	noexcept(Noexcept) { f(make_index(args...)); }
+	noexcept(Noexcept) { f(c_index(args...)); }
 };
 
 }}

@@ -605,10 +605,10 @@ public:
 	decltype(m_wrapped.at(ts...))
 	{
 		nd_assert(
-			make_index(ts...) >= extents().start() &&
-			make_index(ts...) <= extents().finish(),
+			c_index(ts...) >= extents().start() &&
+			c_index(ts...) <= extents().finish(),
 			"index out of bounds.\n▶ $ ∉ range $",
-			make_index(ts...), extents()
+			c_index(ts...), extents()
 		);
 		return m_wrapped.at(ts...);
 	}
@@ -623,10 +623,10 @@ public:
 	decltype(m_wrapped.at(ts...))
 	{
 		nd_assert(
-			make_index(ts...) >= extents().start() &&
-			make_index(ts...) <= extents().finish(),
+			c_index(ts...) >= extents().start() &&
+			c_index(ts...) <= extents().finish(),
 			"index out of bounds.\n▶ $ ∉ range $",
-			make_index(ts...), extents()
+			c_index(ts...), extents()
 		);
 		return m_wrapped.at(ts...);
 	}
@@ -642,10 +642,10 @@ public:
 	decltype(m_wrapped.uninitialized_at(ts...))
 	{
 		nd_assert(
-			make_index(ts...) >= extents().start() &&
-			make_index(ts...) <= extents().finish(),
+			c_index(ts...) >= extents().start() &&
+			c_index(ts...) <= extents().finish(),
 			"index out of bounds.\n▶ $ ∉ range $",
-			make_index(ts...), extents()
+			c_index(ts...), extents()
 		);
 		return m_wrapped.uninitialized_at(ts...);
 	}

@@ -404,7 +404,7 @@ template <class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto extents(const Ts... ts) noexcept
 {
-	return make_range(make_index(ts...) - sc_index_n<sizeof...(Ts), 1>);
+	return make_range(c_index(ts...) - sc_index_n<sizeof...(Ts), 1>);
 }
 
 }
