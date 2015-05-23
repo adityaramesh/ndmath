@@ -953,8 +953,7 @@ template <
 	class Array,
 	class Extents,
 	class Alloc,
-	class StorageOrder = typename detail::deduce_storage_order<
-				std::decay_t<Array>>::type,
+	class StorageOrder = typename detail::deduce_storage_order<std::decay_t<Array>>::type,
 	nd_enable_if((
 		mpl::is_specialization_of<array_wrapper, std::decay_t<Array>>::value &&
 		mpl::is_specialization_of<range, Extents>::value                     &&
