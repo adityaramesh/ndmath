@@ -32,19 +32,19 @@ namespace detail {
 template <size_t Coord, class Range>
 static constexpr auto start =
 std::decay_t<decltype(
-	std::declval<Range>().start().at_c(tokens::c<Coord>)
+	std::declval<Range>().start().at_c(sc_coord<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
 static constexpr auto finish =
 std::decay_t<decltype(
-	std::declval<Range>().finish().at_c(tokens::c<Coord>)
+	std::declval<Range>().finish().at_c(sc_coord<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
 static constexpr auto stride =
 std::decay_t<decltype(
-	std::declval<Range>().strides().at_c(tokens::c<Coord>)
+	std::declval<Range>().strides().at_c(sc_coord<Coord>)
 )>::value();
 
 template <size_t Coord, class Range>
@@ -67,10 +67,9 @@ public:
 	CC_ALWAYS_INLINE constexpr
 	static auto dim_allows_static_access() noexcept
 	{
-		using tokens::c;
-		using a = std::decay_t<decltype(std::declval<Start>().at_c(c<N>))>;
-		using b = std::decay_t<decltype(std::declval<Finish>().at_c(c<N>))>;
-		using s = std::decay_t<decltype(std::declval<Stride>().at_c(c<N>))>;
+		using a = std::decay_t<decltype(std::declval<Start>().at_c(sc_coord<N>))>;
+		using b = std::decay_t<decltype(std::declval<Finish>().at_c(sc_coord<N>))>;
+		using s = std::decay_t<decltype(std::declval<Stride>().at_c(sc_coord<N>))>;
 		return a::allows_static_access &&
 		       b::allows_static_access &&
 		       s::allows_static_access;
@@ -397,7 +396,7 @@ static constexpr auto sc_range_n =
 basic_sc_range_n<unsigned, Length, Value>;
 
 template <unsigned... Ts>
-static constexpr auto cextents =
+static constexpr auto sc_extents =
 basic_sc_range<unsigned, (Ts - 1)...>;
 
 template <class... Ts>

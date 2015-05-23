@@ -51,14 +51,13 @@ struct element_from_offset_helper
 		const Ts&... ts
 	) noexcept(IsNoexceptAccessible)
 	{
-		using tokens::c;
 		return next::apply(
 			off,
 			prod * arr.extents().length(
-				arr.storage_order().at_c(c<LastDim - CurDim>)),
-			arr.extents().start(c<LastDim - CurDim>) +
+				arr.storage_order().at_c(sc_coord<LastDim - CurDim>)),
+			arr.extents().start(sc_coord<LastDim - CurDim>) +
 			(off / prod) % arr.extents().length(
-				arr.storage_order().at_c(c<LastDim - CurDim>)),
+				arr.storage_order().at_c(sc_coord<LastDim - CurDim>)),
 			ts...
 		);
 	}
@@ -80,8 +79,7 @@ struct element_from_offset_helper<LastDim, LastDim, SizeType, IsNoexceptAccessib
 		const Ts&... ts
 	) noexcept(IsNoexceptAccessible)
 	{
-		using tokens::c;
-		return arr.at(arr.extents().start(c<0>) + off / prod, ts...);
+		return arr.at(arr.extents().start(sc_coord<0>) + off / prod, ts...);
 	}
 };
 

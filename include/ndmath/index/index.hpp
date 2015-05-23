@@ -197,10 +197,7 @@ struct index_eval_helper<std::index_sequence<Ts...>>
 	template <class Index>
 	CC_ALWAYS_INLINE constexpr
 	static auto apply(const Index& i) noexcept
-	{
-		using tokens::c;
-		return index(i.at_c(c<Ts>)...);
-	}
+	{ return index(i.at_c(sc_coord<Ts>)...); }
 };
 
 }

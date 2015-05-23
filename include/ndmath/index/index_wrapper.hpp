@@ -182,35 +182,35 @@ public:
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) first_c() noexcept
-	{ return at_c(tokens::c<0>); }
+	{ return at_c(sc_coord<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) first_c() const noexcept
-	{ return at_c(tokens::c<0>); }
+	{ return at_c(sc_coord<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) last_c() noexcept
-	{ return at_c(tokens::c<dims() - 1>); }
+	{ return at_c(sc_coord<dims() - 1>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) last_c() const noexcept
-	{ return at_c(tokens::c<dims() - 1>); }
+	{ return at_c(sc_coord<dims() - 1>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) first() noexcept
-	{ return at(tokens::c<0>); }
+	{ return at(sc_coord<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) first() const noexcept
-	{ return at(tokens::c<0>); }
+	{ return at(sc_coord<0>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) last() noexcept
-	{ return at(tokens::c<dims() - 1>); }
+	{ return at(sc_coord<dims() - 1>); }
 
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) last() const noexcept
-	{ return at(tokens::c<dims() - 1>); }
+	{ return at(sc_coord<dims() - 1>); }
 
 	/*
 	** Subindex creation.
@@ -243,34 +243,22 @@ public:
 	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto head() noexcept
-	{
-		using namespace tokens;
-		return (*this)(c<0>, end - c<1>);
-	}
+	{ return (*this)(sc_coord<0>, tokens::end - sc_coord<1>); }
 
 	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto head() const noexcept
-	{
-		using namespace tokens;
-		return (*this)(c<0>, end - c<1>);
-	}
+	{ return (*this)(sc_coord<0>, tokens::end - sc_coord<1>); }
 
 	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto tail() noexcept
-	{
-		using namespace tokens;
-		return (*this)(c<1>, end);
-	}
+	{ return (*this)(sc_coord<1>, tokens::end); }
 
 	template <nd_enable_if((dims() > 1))>
 	CC_ALWAYS_INLINE constexpr
 	auto tail() const noexcept
-	{
-		using namespace tokens;
-		return (*this)(c<1>, end);
-	}
+	{ return (*this)(sc_coord<1>, tokens::end); }
 
 	template <nd_enable_if(dims() == 1)>
 	CC_ALWAYS_INLINE constexpr

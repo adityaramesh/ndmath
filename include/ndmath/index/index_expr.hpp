@@ -29,10 +29,7 @@ public:
 	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	auto get() const noexcept
-	{
-		using tokens::c;
-		return Op::apply(m_i1.at_c(c<N>), m_i2.at_c(c<N>));
-	}
+	{ return Op::apply(m_i1.at_c(sc_coord<N>), m_i2.at_c(sc_coord<N>)); }
 };
 
 #define nd_define_arithmetic_op(symbol, name)        \

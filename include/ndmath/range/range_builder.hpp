@@ -58,7 +58,7 @@ static constexpr auto r = range_builder{};
 static constexpr auto cr = const_range_builder{};
 
 template <unsigned A, unsigned B, unsigned S = 1>
-static constexpr auto scr = r(c<A>, c<B>, c<S>);
+static constexpr auto scr = r(sc_coord<A>, sc_coord<B>, sc_coord<S>);
 
 }
 

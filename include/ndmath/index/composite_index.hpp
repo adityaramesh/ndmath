@@ -22,18 +22,12 @@ struct composite_index_helper<N, Dims1, true>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static decltype(auto) get(I1& i1, I2) noexcept
-	{
-		using tokens::c;
-		return i1.at_c(c<N>);
-	}
+	{ return i1.at_c(sc_coord<N>); }
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static decltype(auto) get_const(I1& i1, I2) noexcept
-	{
-		using tokens::c;
-		return i1.at_c(c<N>);
-	}
+	{ return i1.at_c(sc_coord<N>); }
 };
 
 template <unsigned N, unsigned Dims1>
@@ -42,18 +36,12 @@ struct composite_index_helper<N, Dims1, false>
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE 
 	static decltype(auto) get(I1, I2& i2) noexcept
-	{
-		using tokens::c;
-		return i2.at_c(c<N - Dims1>);
-	}
+	{ return i2.at_c(sc_coord<N - Dims1>); }
 
 	template <class I1, class I2>
 	CC_ALWAYS_INLINE constexpr
 	static decltype(auto) get_const(I1, I2& i2) noexcept
-	{
-		using tokens::c;
-		return i2.at_c(c<N - Dims1>);
-	}
+	{ return i2.at_c(sc_coord<N - Dims1>); }
 };
 
 }

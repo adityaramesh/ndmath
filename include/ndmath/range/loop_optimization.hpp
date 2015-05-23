@@ -255,7 +255,7 @@ struct tile_helper
 	static constexpr auto tile_fac   = TilePolicy::factor;
 	static constexpr auto unroll_rem = UnrollPolicy::has_rem;
 	static constexpr auto tile_rem   = TilePolicy::has_rem;
-	static constexpr auto n          = tokens::c<Coord>;
+	static constexpr auto n          = sc_coord<Coord>;
 
 	using dir_h = direction_helper<Dir>;
 	using rem_loop_h = remainder_loop_helper<Dir, Noexcept>;

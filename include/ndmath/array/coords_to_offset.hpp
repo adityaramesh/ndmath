@@ -42,10 +42,9 @@ struct coords_to_offset_helper
 		const Ts... ts
 	) noexcept
 	{
-		using tokens::c;
 		return next::apply(arr, arr.extents().length(
-			arr.storage_order().at_c(c<CurDim>)) * prod +
-			t - arr.extents().start(c<CurDim>), ts...);
+			arr.storage_order().at_c(sc_coord<CurDim>)) * prod +
+			t - arr.extents().start(sc_coord<CurDim>), ts...);
 	}
 
 	template <class Array>

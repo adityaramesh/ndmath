@@ -36,18 +36,12 @@ public:
 	template <unsigned N, nd_enable_if(!is_const)>
 	CC_ALWAYS_INLINE
 	decltype(auto) get() noexcept
-	{
-		using tokens::c;
-		return m_index.at_c(c<N + A>);
-	}
+	{ return m_index.at_c(sc_coord<N + A>); }
 
 	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) get() const noexcept
-	{
-		using tokens::c;
-		return m_index.at_c(c<N + A>);
-	}
+	{ return m_index.at_c(sc_coord<N + A>); }
 };
 
 template <unsigned A, unsigned B, class Index>

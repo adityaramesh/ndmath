@@ -8,6 +8,8 @@
 #ifndef Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 #define Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 
+#include <ndmath/utility/metaparse.hpp>
+
 namespace nd {
 
 template <class Integer, Integer N>
@@ -89,8 +91,10 @@ auto eval(const Coord& c) noexcept
 
 namespace tokens {
 
-template <unsigned N>
-static constexpr auto c = sc_coord<N>;
+template <char... Ts>
+CC_ALWAYS_INLINE constexpr
+auto operator"" _c() noexcept
+{ return sc_coord<parse_nonneg_int_c<Ts...>>; }
 
 }
 

@@ -27,8 +27,7 @@ struct name ## _range_helper                                             \
 	CC_ALWAYS_INLINE constexpr                                       \
 	static auto apply(const W1& w1, const W2& w2) noexcept           \
 	{                                                                \
-		using tokens::c;                                         \
-		if (!(w1(c<Cur>) symbol w2(c<Cur>))) {                   \
+		if (!(w1(sc_coord<Cur>) symbol w2(sc_coord<Cur>))) {     \
 			return false;                                    \
 		}                                                        \
 		return next::apply(w1, w2);                              \
@@ -78,10 +77,7 @@ struct prod_helper
 	template <class W>
 	CC_ALWAYS_INLINE constexpr
 	static auto apply(const W& w) noexcept
-	{
-		using tokens::c;
-		return w.at_c(c<Cur>) * next::apply(w);
-	}
+	{ return w.at_c(sc_coord<Cur>) * next::apply(w); }
 };
 
 template <unsigned Max>
@@ -90,10 +86,7 @@ struct prod_helper<Max, Max>
 	template <class W>
 	CC_ALWAYS_INLINE constexpr
 	static auto apply(const W& w) noexcept
-	{
-		using tokens::c;
-		return w.at_c(c<Max>);
-	}
+	{ return w.at_c(sc_coord<Max>); }
 };
 
 }
@@ -117,8 +110,7 @@ struct for_each_helper
 	CC_ALWAYS_INLINE
 	static void apply(const W& w, const Func& f) noexcept
 	{
-		using tokens::c;
-		f(w(c<Cur>));
+		f(w(sc_coord<Cur>));
 		next::apply(w, f);
 	}
 };
@@ -153,9 +145,8 @@ struct iter_to_index_copy_helper
 	CC_ALWAYS_INLINE
 	static void apply(Iterator f, Iterator l, W& w) noexcept
 	{
-		using tokens::c;
 		if (f == l) return;
-		w.at_c(c<Cur>) = *f;
+		w.at_c(sc_coord<Cur>) = *f;
 		next::apply(f + 1, l, w);
 	}
 };
@@ -183,16 +174,15 @@ struct index_to_index_copy_helper<Cur, Last, true, true>
 	CC_ALWAYS_INLINE
 	static void apply(const W1& w1, W2& w2) noexcept
 	{
-		using tokens::c;
-		using c1 = std::decay_t<decltype(w1.at_c(c<Cur>))>;
-		using c2 = std::decay_t<decltype(w2.at_c(c<Cur>))>;
+		using c1 = std::decay_t<decltype(w1.at_c(sc_coord<Cur>))>;
+		using c2 = std::decay_t<decltype(w2.at_c(sc_coord<Cur>))>;
 		static_assert(
 			c1::value() == c2::value(),
 			"Attempt to change a constant extent of an index."
 		);
 
-		using n1 = std::decay_t<decltype(w1.at_c(c<Cur + 1>))>;
-		using n2 = std::decay_t<decltype(w2.at_c(c<Cur + 1>))>;
+		using n1 = std::decay_t<decltype(w1.at_c(sc_coord<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_c(sc_coord<Cur + 1>))>;
 		using next = index_to_index_copy_helper<
 			Cur + 1, Last,
 			n1::allows_static_access,
@@ -209,11 +199,10 @@ struct index_to_index_copy_helper<Cur, Last, SrcStaticallyAccessible, false>
 	CC_ALWAYS_INLINE
 	static void apply(const W1& w1, W2& w2) noexcept
 	{
-		using tokens::c;
-		w2.at_c(c<Cur>) = w1.at_c(c<Cur>);
+		w2.at_c(sc_coord<Cur>) = w1.at_c(sc_coord<Cur>);
 
-		using n1 = std::decay_t<decltype(w1.at_c(c<Cur + 1>))>;
-		using n2 = std::decay_t<decltype(w2.at_c(c<Cur + 1>))>;
+		using n1 = std::decay_t<decltype(w1.at_c(sc_coord<Cur + 1>))>;
+		using n2 = std::decay_t<decltype(w2.at_c(sc_coord<Cur + 1>))>;
 		using next = index_to_index_copy_helper<
 			Cur + 1, Last,
 			n1::allows_static_access,
@@ -244,9 +233,8 @@ struct index_to_index_copy_helper<Last, Last, true, true>
 	CC_ALWAYS_INLINE
 	static void apply(const W1& w1, const W2& w2) noexcept
 	{
-		using tokens::c;
-		using c1 = std::decay_t<decltype(w1.at_c(c<Last>))>;
-		using c2 = std::decay_t<decltype(w2.at_c(c<Last>))>;
+		using c1 = std::decay_t<decltype(w1.at_c(sc_coord<Last>))>;
+		using c2 = std::decay_t<decltype(w2.at_c(sc_coord<Last>))>;
 		static_assert(
 			c1::value() == c2::value(),
 			"Attempt to change a constant extent of an index."
@@ -260,10 +248,7 @@ struct index_to_index_copy_helper<Last, Last, SrcStaticallyAccessible, false>
 	template <class W1, class W2>
 	CC_ALWAYS_INLINE
 	static void apply(const W1& w1, W2& w2) noexcept
-	{
-		using tokens::c;
-		w2.at_c(c<Last>) = w1.at_c(c<Last>);
-	}
+	{ w2.at_c(sc_coord<Last>) = w1.at_c(sc_coord<Last>); }
 };
 
 }
@@ -280,9 +265,8 @@ template <class W1, class W2>
 CC_ALWAYS_INLINE
 auto copy(const W1& w1, W2& w2) noexcept
 {
-	using tokens::c;
-	using t1 = std::decay_t<decltype(w1.at_c(c<0>))>;
-	using t2 = std::decay_t<decltype(w2.at_c(c<0>))>;
+	using t1 = std::decay_t<decltype(w1.at_c(sc_coord<0>))>;
+	using t2 = std::decay_t<decltype(w2.at_c(sc_coord<0>))>;
 	using helper = detail::index_to_index_copy_helper<
 		0, W1::dims() - 1,
 		t1::allows_static_access,
