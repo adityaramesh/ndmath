@@ -54,6 +54,7 @@ module("test accessors")
 module("test regular indexing")
 {
 	using namespace nd::tokens;
+
 	auto arr = nd::make_darray<float>(2_c, 2_c);
 	arr(0, 0) = 1;
 	arr(0, 1) = 2;
@@ -70,6 +71,7 @@ module("test regular indexing")
 module("test bool indexing")
 {
 	using namespace nd::tokens;
+
 	auto arr = nd::make_darray<bool>(2_c, 2_c);
 	arr(0, 0) = true;
 	arr(0, 1) = false;
@@ -85,26 +87,28 @@ module("test bool indexing")
 
 module("test copy assignment dynamic dynamic")
 {
-	auto a = nd::make_darray<float>(nd::sc_extents<20, 20>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_darray<float>(20_c, 20_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
 	a(1, 1) = 4;
 
-	auto b = nd::make_darray<float>(nd::sc_extents<20, 20>);
+	auto b = nd::make_darray<float>(20_c, 20_c);
 	b = a;
 	require(b(0, 0) == 1);
 	require(b(0, 1) == 2);
 	require(b(1, 0) == 3);
 	require(b(1, 1) == 4);
 
-	auto c = nd::make_darray<bool>(nd::sc_extents<20, 20>);
+	auto c = nd::make_darray<bool>(20_c, 20_c);
 	c(0, 0) = true;
 	c(0, 1) = false;
 	c(1, 0) = true;
 	c(1, 1) = false;
 
-	auto d = nd::make_darray<bool>(nd::sc_extents<20, 20>);
+	auto d = nd::make_darray<bool>(20_c, 20_c);
 	d = c;
 	require(d(0, 0));
 	require(!d(0, 1));
@@ -114,26 +118,28 @@ module("test copy assignment dynamic dynamic")
 
 module("test copy assignment mixed")
 {
-	auto a = nd::make_sarray<float>(nd::sc_extents<20, 20>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_sarray<float>(20_c, 20_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
 	a(1, 1) = 4;
 
-	auto b = nd::make_darray<double>(nd::sc_extents<20, 20>);
+	auto b = nd::make_darray<double>(20_c, 20_c);
 	b = a;
 	require(b(0, 0) == 1);
 	require(b(0, 1) == 2);
 	require(b(1, 0) == 3);
 	require(b(1, 1) == 4);
 
-	auto c = nd::make_darray<float>(nd::sc_extents<20, 20>);
+	auto c = nd::make_darray<float>(20_c, 20_c);
 	c(0, 0) = 1;
 	c(0, 1) = 2;
 	c(1, 0) = 3;
 	c(1, 1) = 4;
 
-	auto d = nd::make_sarray<double>(nd::sc_extents<20, 20>);
+	auto d = nd::make_sarray<double>(20_c, 20_c);
 	d = c;
 	require(d(0, 0) == 1);
 	require(d(0, 1) == 2);
@@ -143,13 +149,15 @@ module("test copy assignment mixed")
 
 module("test move assignment dynamic dynamic")
 {
-	auto a = nd::make_darray<float>(nd::sc_extents<20, 20>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_darray<float>(20_c, 20_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
 	a(1, 1) = 4;
 
-	auto b = nd::make_darray<float>(nd::sc_extents<20, 20>);
+	auto b = nd::make_darray<float>(20_c, 20_c);
 	b = std::move(a);
 	require(a.direct_view().begin() == nullptr);
 	require(b(0, 0) == 1);
@@ -157,13 +165,13 @@ module("test move assignment dynamic dynamic")
 	require(b(1, 0) == 3);
 	require(b(1, 1) == 4);
 
-	auto c = nd::make_darray<bool>(nd::sc_extents<20, 20>);
+	auto c = nd::make_darray<bool>(20_c, 20_c);
 	c(0, 0) = true;
 	c(0, 1) = false;
 	c(1, 0) = true;
 	c(1, 1) = false;
 
-	auto d = nd::make_darray<bool>(nd::sc_extents<20, 20>);
+	auto d = nd::make_darray<bool>(20_c, 20_c);
 	d = std::move(c);
 	require(c.direct_view().begin() == nullptr);
 	require(d(0, 0));
@@ -174,7 +182,9 @@ module("test move assignment dynamic dynamic")
 
 module("test copy construction dynamic dynamic")
 {
-	auto a = nd::make_darray<float>(nd::sc_extents<2, 2>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_darray<float>(2_c, 2_c);
 	a(0, 0) = 1;
 	a(0, 0) = 1;
 	a(0, 1) = 2;
@@ -193,7 +203,7 @@ module("test copy construction dynamic dynamic")
 	require(c(1, 0) == 3);
 	require(c(1, 1) == 4);
 
-	auto d = nd::make_darray<bool>(nd::sc_extents<2, 2>);
+	auto d = nd::make_darray<bool>(2_c, 2_c);
 	d(0, 0) = true;
 	d(0, 1) = false;
 	d(1, 0) = true;
@@ -214,7 +224,9 @@ module("test copy construction dynamic dynamic")
 
 module("test copy construction static static")
 {
-	auto a = nd::make_sarray<float>(nd::sc_extents<2, 2>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_sarray<float>(2_c, 2_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
@@ -232,7 +244,7 @@ module("test copy construction static static")
 	require(c(1, 0) == 3);
 	require(c(1, 1) == 4);
 
-	auto d = nd::make_sarray<bool>(nd::sc_extents<2, 2>);
+	auto d = nd::make_sarray<bool>(2_c, 2_c);
 	d(0, 0) = true;
 	d(0, 1) = false;
 	d(1, 0) = true;
@@ -253,7 +265,9 @@ module("test copy construction static static")
 
 module("test copy construction mixed")
 {
-	auto a = nd::make_sarray<float>(nd::sc_extents<2, 2>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_sarray<float>(2_c, 2_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
@@ -265,7 +279,7 @@ module("test copy construction mixed")
 	require(b(1, 0) == 3);
 	require(b(1, 1) == 4);
 
-	auto c = nd::make_darray<float>(nd::sc_extents<2, 2>);
+	auto c = nd::make_darray<float>(2_c, 2_c);
 	c(0, 0) = 1;
 	c(0, 1) = 2;
 	c(1, 0) = 3;
@@ -292,7 +306,9 @@ module("test copy construction mixed")
 
 module("test move construction dynamic dynamic")
 {
-	auto a = nd::make_darray<float>(nd::sc_extents<2, 2>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_darray<float>(2_c, 2_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
@@ -312,7 +328,7 @@ module("test move construction dynamic dynamic")
 	require(c(1, 0) == 3);
 	require(c(1, 1) == 4);
 	
-	auto d = nd::make_darray<bool>(nd::sc_extents<2, 2>);
+	auto d = nd::make_darray<bool>(2_c, 2_c);
 	d(0, 0) = true;
 	d(0, 1) = false;
 	d(1, 0) = true;
@@ -335,7 +351,9 @@ module("test move construction dynamic dynamic")
 
 module("test move construction static static")
 {
-	auto a = nd::make_sarray<float>(nd::sc_extents<2, 2>);
+	using namespace nd::tokens;
+
+	auto a = nd::make_sarray<float>(2_c, 2_c);
 	a(0, 0) = 1;
 	a(0, 1) = 2;
 	a(1, 0) = 3;
@@ -353,7 +371,7 @@ module("test move construction static static")
 	require(c(1, 0) == 3);
 	require(c(1, 1) == 4);
 	
-	auto d = nd::make_darray<bool>(nd::sc_extents<2, 2>);
+	auto d = nd::make_darray<bool>(2_c, 2_c);
 	d(0, 0) = true;
 	d(0, 1) = false;
 	d(1, 0) = true;
