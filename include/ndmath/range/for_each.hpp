@@ -11,6 +11,7 @@
 namespace nd {
 namespace detail {
 
+// Forward declaration for the struct in `loop_optimization.hpp`.
 template <size_t Dim, size_t Dims, class Attribs, bool Noexcept>
 struct evaluate_helper;
 
