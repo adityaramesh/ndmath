@@ -10,7 +10,9 @@
 
 #include <ndmath/array/array_wrapper.hpp>
 #include <ndmath/array/layout_base.hpp>
+#include <ndmath/array/initializer_list.hpp>
 #include <ndmath/array/coords_to_offset.hpp>
+#include <ndmath/array/index_to_offset.hpp>
 #include <ndmath/array/boolean_proxy.hpp>
 #include <ndmath/array/construction_proxy.hpp>
 #include <ndmath/array/storage_order.hpp>
@@ -209,6 +211,23 @@ public:
 		}
 	}
 
+	/*
+	** Note that it's not possible to move from an `initializer_list`.
+	*/
+	template <class U, nd_enable_if((
+		std::is_constructible<underlying_type, const U&>::value))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const nested_initializer_list<U, dims()>& list)
+	noexcept(noexcept(
+		std::is_nothrow_constructible<underlying_type, const U&>::value))
+	{
+		for_each(extents(), [&] (const auto& i) 
+			CC_ALWAYS_INLINE noexcept {
+				::new (&m_data[index_to_offset(*this, i)])
+				underlying_type(get_list_element(list, i, extents()));
+			});
+	}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(partial_init_t)
 	noexcept {}
@@ -337,6 +356,9 @@ public:
 private:
 	using base   = layout_base<Extents, StorageOrder>;
 	using helper = detail::dense_storage_access<T>;
+
+	template <class U, class Extents_, class StorageOrder_, class Alloc_>
+	friend class dense_storage;
 
 	friend struct detail::construction_view_access;
 	friend struct detail::dense_storage_access<T>;
@@ -518,9 +540,13 @@ public:
 
 	template <class U, class Extents_, class StorageOrder_, class Alloc_,
 	nd_enable_if((
-		std::is_same<value_type, typename U::value_type>::value &&
+		std::is_same<value_type,
+			typename dense_storage<U, Extents_, StorageOrder_, Alloc_>::value_type
+		>::value &&
 		std::is_assignable<
-			Extents, decltype(std::declval<U>().extents())
+			Extents, decltype(std::declval<
+				dense_storage<U, Extents_, StorageOrder_, Alloc_>		
+			>().extents())
 		>::value
 	))>
 	CC_ALWAYS_INLINE
@@ -692,7 +718,7 @@ struct is_allocator
 };
 
 template <class Alloc>
-struct quote_allocator
+struct unspecialize_allocator
 {
 private:
 	template <class T>
@@ -702,6 +728,13 @@ public:
 	using apply = typename helper<T>::other;
 };
 
+template <class... Ts>
+struct variadic_checker
+{ static constexpr auto value = mpl::all_true<is_integer_or_coord<Ts>::value...>; };
+
+template <>
+struct variadic_checker<> : std::false_type {};
+
 }
 
 /*
@@ -709,14 +742,14 @@ public:
 */
 
 template <class T, class... Ts,
-nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
+nd_enable_if((detail::variadic_checker<Ts...>::value))>
 CC_ALWAYS_INLINE constexpr
 auto make_sarray(const Ts... ts)
 noexcept(noexcept(
 	std::is_nothrow_default_constructible<underlying_type<T>>::value))
 {
-	using extents       = decltype(extents(ts...));
-	using storage_order = decltype(default_storage_order<sizeof...(Ts)>);
+	using extents       = std::decay_t<decltype(extents(ts...))>;
+	using storage_order = std::decay_t<decltype(default_storage_order<sizeof...(Ts)>)>;
 	using storage_type  = dense_storage<T, extents, storage_order, void>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{};
@@ -770,6 +803,26 @@ noexcept(noexcept(
 }
 
 /*
+template <
+	class T,
+	class Extents,
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>
+>
+CC_ALWAYS_INLINE constexpr
+auto make_sarray(
+	const nested_initializer_list<T, Extents::dims()>& list,
+	const Extents&,
+	StorageOrder = default_storage_order<Extents::dims()>
+) noexcept
+{
+	// XXX
+	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
+	using array_type = array_wrapper<storage_type>;
+	return array_type{0};
+}
+*/
+
+/*
 ** TODO: Noexcept specification.
 */
 template <class Array, nd_enable_if((
@@ -805,8 +858,8 @@ auto make_sarray(
 {
 	using source_type   = std::decay_t<Array>;
 	using exterior_type = typename source_type::exterior_type;
-	using storage_type  = dense_storage<exterior_type, Extents,
-	      			StorageOrder, void>;
+	using storage_order = std::decay_t<StorageOrder>;
+	using storage_type  = dense_storage<exterior_type, Extents, storage_order, void>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr)};
 }
@@ -816,15 +869,20 @@ auto make_sarray(
 */
 
 template <class T, class... Ts,
-nd_enable_if((mpl::all_true<detail::is_integer_or_coord<Ts>::value...>))>
+nd_enable_if((detail::variadic_checker<Ts...>::value))>
 CC_ALWAYS_INLINE
 auto make_darray(const Ts... ts)
 {
-	using extents       = decltype(extents(ts...));
-	using storage_order = decltype(default_storage_order<sizeof...(Ts)>);
-	using allocator     = mpl::quote<std::allocator>;
-	using storage_type  = dense_storage<T, extents, storage_order, allocator>;
-	using array_type    = array_wrapper<storage_type>;
+	using extents         = std::decay_t<decltype(extents(ts...))>;
+	using storage_order   = std::decay_t<decltype(default_storage_order<sizeof...(Ts)>)>;
+	using underlying_type = underlying_type<T>;
+
+	// We must redundantly specialize the allocator and use
+	// `unspecialize_allocator`, so that types of the source and destination
+	// arrays agree for copy assignment, move assignment, etc.
+	using allocator       = detail::unspecialize_allocator<std::allocator<underlying_type>>;
+	using storage_type    = dense_storage<T, extents, storage_order, allocator>;
+	using array_type      = array_wrapper<storage_type>;
 	return array_type{nd::extents(ts...)};
 }
 
@@ -848,7 +906,7 @@ auto make_darray(
 )
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder,
-	      detail::quote_allocator<Alloc>>;
+	      detail::unspecialize_allocator<Alloc>>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{e, alloc};
 }
@@ -875,7 +933,7 @@ auto make_darray(
 )
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder,
-		detail::quote_allocator<Alloc>>;
+		detail::unspecialize_allocator<Alloc>>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{init, e, alloc};
 }
@@ -940,11 +998,10 @@ auto make_darray(
 {
 	using source_type   = std::decay_t<Array>;
 	using exterior_type = typename source_type::exterior_type;
-	using extents       = decltype(arr.extents());
-	using storage_order = StorageOrder;
+	using extents       = std::decay_t<decltype(arr.extents())>;
+	using storage_order = std::decay_t<StorageOrder>;
 	using allocator     = mpl::quote<std::allocator>;
-	using storage_type  = dense_storage<exterior_type, extents,
-	      			storage_order, allocator>;
+	using storage_type  = dense_storage<exterior_type, extents, storage_order, allocator>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr), e};
 }
@@ -971,8 +1028,9 @@ auto make_darray(
 {
 	using source_type   = std::decay_t<Array>;
 	using exterior_type = typename source_type::exterior_type;
-	using storage_type  = dense_storage<exterior_type, Extents,
-	      			StorageOrder, detail::quote_allocator<Alloc>>;
+	using storage_order = std::decay_t<StorageOrder>;
+	using storage_type  = dense_storage<exterior_type, Extents, storage_order,
+	                      	detail::unspecialize_allocator<Alloc>>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr), e, alloc};
 }
