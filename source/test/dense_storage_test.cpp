@@ -25,6 +25,8 @@ module("test dynamic construction")
 	// Extents with initial value:
 	auto a5 = nd::make_darray<float>(0, nd::sc_extents<20, 20>);
 	auto a6 = nd::make_darray<float>(0, nd::extents(20, 20), alloc, order);
+
+	// TODO: initializer list construction.
 }
 
 module("test static construction")
@@ -40,6 +42,9 @@ module("test static construction")
 
 	// Extents with initial value:
 	auto a3 = nd::make_sarray<float>(0, nd::sc_extents<20, 20>);
+
+	// Initializer list with extents:
+	auto a4 = nd::make_sarray<float>({{1, 2}, {3, 4}}, nd::sc_extents<2, 2>);
 }
 
 module("test accessors")

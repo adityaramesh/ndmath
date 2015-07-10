@@ -12,7 +12,6 @@
 #include <ndmath/array/layout_base.hpp>
 #include <ndmath/array/initializer_list.hpp>
 #include <ndmath/array/coords_to_offset.hpp>
-#include <ndmath/array/index_to_offset.hpp>
 #include <ndmath/array/boolean_proxy.hpp>
 #include <ndmath/array/construction_proxy.hpp>
 #include <ndmath/array/storage_order.hpp>
@@ -214,17 +213,15 @@ public:
 	/*
 	** Note that it's not possible to move from an `initializer_list`.
 	*/
-	template <class U, nd_enable_if((
-		std::is_constructible<underlying_type, const U&>::value))>
 	CC_ALWAYS_INLINE constexpr
-	explicit dense_storage(const nested_initializer_list<U, dims()>& list)
+	explicit dense_storage(const nested_initializer_list<T, dims()>& list)
 	noexcept(noexcept(
-		std::is_nothrow_constructible<underlying_type, const U&>::value))
+		std::is_nothrow_constructible<underlying_type, const T&>::value))
 	{
 		for_each(extents(), [&] (const auto& i) 
 			CC_ALWAYS_INLINE noexcept {
 				::new (&m_data[index_to_offset(*this, i)])
-				underlying_type(get_list_element(list, i, extents()));
+				underlying_type(get_init_list_element<T, dims()>(list, i));
 			});
 	}
 
@@ -802,7 +799,6 @@ noexcept(noexcept(
 	return array_type{init};
 }
 
-/*
 template <
 	class T,
 	class Extents,
@@ -815,12 +811,10 @@ auto make_sarray(
 	StorageOrder = default_storage_order<Extents::dims()>
 ) noexcept
 {
-	// XXX
 	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
 	using array_type = array_wrapper<storage_type>;
-	return array_type{0};
+	return array_type{list};
 }
-*/
 
 /*
 ** TODO: Noexcept specification.
