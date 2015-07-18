@@ -10,7 +10,6 @@
 
 #include <ndmath/array/array_wrapper.hpp>
 #include <ndmath/array/layout_base.hpp>
-#include <ndmath/array/initializer_list.hpp>
 #include <ndmath/array/coords_to_offset.hpp>
 #include <ndmath/array/boolean_proxy.hpp>
 #include <ndmath/array/construction_proxy.hpp>
@@ -77,6 +76,18 @@ struct dense_storage_access<bool>
 			std::is_const<Array>::value,
 			const underlying_type, underlying_type>;
 		using proxy_type = boolean_proxy<value_type, SizeType>;
+		return proxy_type{arr.data()[underlying_offset(off)], off};
+	}
+
+	template <class SizeType, class Array>
+	CC_ALWAYS_INLINE
+	static auto at(const SizeType off, const Array& arr)
+	noexcept
+	{
+		using value_type = std::conditional_t<
+			std::is_const<Array>::value,
+			const underlying_type, underlying_type>;
+		using proxy_type = boolean_proxy<const value_type, SizeType>;
 		return proxy_type{arr.data()[underlying_offset(off)], off};
 	}
 
@@ -213,6 +224,7 @@ public:
 	/*
 	** Note that it's not possible to move from an `initializer_list`.
 	*/
+	template <nd_enable_if((std::is_same<T, underlying_type>::value))>
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(const nested_initializer_list<T, dims()>& list)
 	noexcept(noexcept(
@@ -222,6 +234,29 @@ public:
 			CC_ALWAYS_INLINE noexcept {
 				::new (&m_data[index_to_offset(*this, i)])
 				underlying_type(get_init_list_element<T, dims()>(list, i));
+			});
+	}
+
+	/*
+	** Note that it's not possible to move from an `initializer_list`.
+	*/
+	template <nd_enable_if((!std::is_same<T, underlying_type>::value))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const nested_initializer_list<T, dims()>& list)
+	noexcept(noexcept(
+		std::is_nothrow_constructible<underlying_type, const T&>::value))
+	{
+		if (!std::is_trivial<underlying_type>::value) {
+			for (auto i = size_type{0}; i != underlying_size(); ++i) {
+				::new (&m_data[i]) underlying_type{};
+			}
+		}
+
+		for_each(extents(), [&] (const auto& i) 
+			CC_ALWAYS_INLINE noexcept {
+				expand_index([&] (auto... ts) CC_ALWAYS_INLINE noexcept {
+					return at(ts...);
+				}, i) = get_init_list_element<T, dims()>(list, i);
 			});
 	}
 
@@ -439,6 +474,61 @@ public:
 		for (auto i = size_type{0}; i != underlying_size(); ++i) {
 			m_alloc.construct(&m_data[i], init);
 		}
+	}
+
+	/*
+	** Note that it's not possible to move from an `initializer_list`.
+	*/
+	template <nd_enable_if((std::is_same<T, underlying_type>::value))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const nested_initializer_list<T, dims()>& list,
+		const Extents& e, allocator_type alloc = allocator_type{})
+	: base{e}, m_alloc{alloc}
+	{
+		nd_assert(e.size() > 0, "cannot create array of size zero");
+		m_data = m_alloc.allocate(underlying_size());
+
+		for_each(extents(), [&] (const auto& i) 
+			CC_ALWAYS_INLINE noexcept {
+				m_alloc.construct(&m_data[index_to_offset(*this, i)],
+					get_init_list_element<T, dims()>(list, i));
+			});
+	}
+
+	/*
+	** Note that it's not possible to move from an `initializer_list`.
+	*/
+	template <nd_enable_if((!std::is_same<T, underlying_type>::value))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const nested_initializer_list<T, dims()>& list,
+		const Extents& e, allocator_type alloc = allocator_type{})
+	: base{e}, m_alloc{alloc}
+	{
+		nd_assert(e.size() > 0, "cannot create array of size zero");
+		m_data = m_alloc.allocate(underlying_size());
+
+		/*
+		** XXX: Calling allocator::construct is technically required in
+		** all cases, but in practice, I don't think that omitting it
+		** when `T` is trivially constructible does any harm. I don't
+		** want to default-construct elements unnecessarily.
+		**
+		** Note that we need to check `is_trivially_constructible` as
+		** well as `is_trivially_copyable`; this is equivalent to
+		** checking `is_trivial`.
+		*/
+		if (!std::is_trivial<underlying_type>::value) {
+			for (auto i = size_type{0}; i != underlying_size(); ++i) {
+				m_alloc.construct(&m_data[i]);
+			}
+		}
+
+		for_each(extents(), [&] (const auto& i) 
+			CC_ALWAYS_INLINE noexcept {
+				expand_index([&] (auto... ts) CC_ALWAYS_INLINE noexcept {
+					return at(ts...);
+				}, i) = get_init_list_element<T, dims()>(list, i);
+			});
 	}
 
 	CC_ALWAYS_INLINE
@@ -930,6 +1020,31 @@ auto make_darray(
 		detail::unspecialize_allocator<Alloc>>;
 	using array_type = array_wrapper<storage_type>;
 	return array_type{init, e, alloc};
+}
+
+template <
+	class T,
+	class Extents,
+	class Alloc        = std::allocator<underlying_type<T>>,
+	class StorageOrder = std::decay_t<decltype(default_storage_order<Extents::dims()>)>,
+	nd_enable_if((
+		mpl::is_specialization_of<range, Extents>::value           &&
+		detail::is_allocator<Alloc>::value                         &&
+		mpl::is_specialization_of<index_wrapper, StorageOrder>::value
+	))
+>
+CC_ALWAYS_INLINE constexpr
+auto make_darray(
+	const nested_initializer_list<T, Extents::dims()>& list,
+	const Extents& e,
+	const Alloc& alloc = Alloc{},
+	StorageOrder = default_storage_order<Extents::dims()>
+) noexcept
+{
+	using storage_type = dense_storage<T, Extents, StorageOrder,
+		detail::unspecialize_allocator<Alloc>>;
+	using array_type = array_wrapper<storage_type>;
+	return array_type{list, e, alloc};
 }
 
 template <class Array, nd_enable_if((

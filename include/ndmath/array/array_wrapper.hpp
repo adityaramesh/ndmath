@@ -104,6 +104,7 @@
 #include <ndmath/array/array_construction.hpp>
 #include <ndmath/array/flat_iterator.hpp>
 #include <ndmath/array/element_from_offset.hpp>
+#include <ndmath/array/initializer_list.hpp>
 
 namespace nd {
 
@@ -572,6 +573,28 @@ public:
 	))
 	{
 		assignment_helper::move_assign(*this, std::move(rhs));
+		return *this;
+	}
+
+	CC_ALWAYS_INLINE auto&
+	operator=(const nested_initializer_list<exterior_type, traits::dims>& list)
+	noexcept(noexcept(std::is_nothrow_assignable<exterior_type, exterior_type>::value))
+	{
+		for_each(extents(), [&] (const auto& i)
+			CC_ALWAYS_INLINE noexcept {
+				/*
+				** XXX: For some reason, moving the assignment
+				** to `get_init_list_element` outside the inner
+				** lambda results in a compiler error regarding
+				** the expression not being assignable. But it
+				** works in `dense_storage`. I suspect that this
+				** is a compiler bug.
+				*/
+				expand_index([&] (auto... ts) CC_ALWAYS_INLINE noexcept {
+					at(ts...) =
+					get_init_list_element<exterior_type, dims()>(list, i);
+				}, i);
+			});
 		return *this;
 	}
 
