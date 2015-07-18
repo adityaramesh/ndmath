@@ -321,6 +321,29 @@ auto& operator<<(
 	return os << w.last() << "]";
 }
 
+namespace detail {
+
+template <class Seq>
+struct expand_index_helper;
+
+template <size_t... Ts>
+struct expand_index_helper<std::index_sequence<Ts...>>
+{
+	template <class Func, class Index>
+	CC_ALWAYS_INLINE constexpr 
+	static decltype(auto) apply(const Func& f, const Index& i)
+	nd_deduce_noexcept(f(i(sc_coord<Ts>)...))
+};
+
+}
+
+template <class Func, class Index>
+CC_ALWAYS_INLINE constexpr
+decltype(auto) expand_index(const Func& f, const Index& i)
+nd_deduce_noexcept((detail::expand_index_helper<
+	std::make_index_sequence<Index::dims()>
+>::apply(f, i)))
+
 }
 
 #endif

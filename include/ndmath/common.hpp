@@ -80,7 +80,7 @@
 	> = 0
 
 #define nd_deduce_noexcept(x) \
-	noexcept(noexcept(x)) { x; }
+	noexcept(noexcept(x)) { return x; }
 
 #define nd_deduce_noexcept_and_return_type(x) \
 	noexcept(noexcept(x))                 \

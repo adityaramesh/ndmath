@@ -77,29 +77,13 @@ struct coords_to_offset
 	}
 };
 
-namespace detail {
-
-template <class Seq>
-struct index_to_offset_helper;
-
-template <size_t... Ts>
-struct index_to_offset_helper<std::index_sequence<Ts...>>
-{
-	template <class Array, class Index>
-	CC_ALWAYS_INLINE constexpr
-	static auto apply(const Array& arr, const Index& i) noexcept
-	{ return coords_to_offset::apply(arr, i(sc_coord<Ts>)...); }
-};
-
-}
-
 template <class Array, class Index>
 CC_ALWAYS_INLINE constexpr
 static auto index_to_offset(const Array& arr, const Index& i) noexcept
 {
-	using seq = std::make_index_sequence<Index::dims()>;
-	using helper = detail::index_to_offset_helper<seq>;
-	return helper::apply(arr, i);
+	return expand_index([&] (auto... ts) CC_ALWAYS_INLINE noexcept {
+		return coords_to_offset::apply(arr, ts...);
+	}, i);
 }
 
 }

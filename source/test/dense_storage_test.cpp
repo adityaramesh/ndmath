@@ -20,13 +20,17 @@ module("test dynamic construction")
 	auto alloc = std::allocator<nd::underlying_type<float>>{};
 	auto order = nd::default_storage_order<2>;
 	auto a3 = nd::make_darray<float>(nd::extents(20, 20), alloc, order);
-	auto a4 = nd::make_darray<float>(nd::sc_extents<20, 20>, alloc, order);
+	auto a4 = nd::make_darray<float>(nd::extents(20_c, 20_c), alloc, order);
 
 	// Extents with initial value:
-	auto a5 = nd::make_darray<float>(0, nd::sc_extents<20, 20>);
+	auto a5 = nd::make_darray<float>(0, nd::extents(20_c, 20_c));
 	auto a6 = nd::make_darray<float>(0, nd::extents(20, 20), alloc, order);
 
-	// TODO: initializer list construction.
+	// Initializer list with extents:
+	auto a7 = nd::make_darray<float>({{1, 2}, {3, 4}},
+		nd::extents(2_c, 2_c));
+	auto a8 = nd::make_darray<bool>({{true, false}, {false, true}},
+		nd::extents(2_c, 2_c));
 }
 
 module("test static construction")
@@ -41,10 +45,13 @@ module("test static construction")
 	auto a2 = nd::make_sarray<float>(nd::extents(20_c, 20_c), order);
 
 	// Extents with initial value:
-	auto a3 = nd::make_sarray<float>(0, nd::sc_extents<20, 20>);
+	auto a3 = nd::make_sarray<float>(0, nd::extents(20_c, 20_c));
 
 	// Initializer list with extents:
-	auto a4 = nd::make_sarray<float>({{1, 2}, {3, 4}}, nd::sc_extents<2, 2>);
+	auto a4 = nd::make_sarray<float>({{1, 2}, {3, 4}},
+		nd::extents(2_c, 2_c));
+	auto a5 = nd::make_sarray<bool>({{true, false}, {false, true}},
+		nd::extents(2_c, 2_c));
 }
 
 module("test accessors")
