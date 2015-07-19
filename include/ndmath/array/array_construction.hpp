@@ -55,7 +55,7 @@ struct copy_construct_helper<false, false, true>
 	CC_ALWAYS_INLINE
 	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
 	{
-		for_each(src.extents(),
+		nd::for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst.uninitialized_at(i) = src(i);
 			});
@@ -111,7 +111,7 @@ struct move_construct_helper<false, false, false, true>
 	CC_ALWAYS_INLINE
 	static void apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
-		for_each(src.extents(),
+		nd::for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst.uninitialized_at(i) = std::move(src(i));
 			});

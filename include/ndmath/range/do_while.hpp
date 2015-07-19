@@ -1,18 +1,18 @@
 /*
-** File Name: for_each.hpp
+** File Name: do_while.hpp
 ** Author:    Aditya Ramesh
-** Date:      07/18/2015
+** Date:      07/19/2015
 ** Contact:   _@adityaramesh.com
 */
 
-#ifndef Z84AD1502_83F3_4952_8D89_597D97AD842A
-#define Z84AD1502_83F3_4952_8D89_597D97AD842A
+#ifndef Z69A569F7_1502_431F_8D01_F893B3221436
+#define Z69A569F7_1502_431F_8D01_F893B3221436
 
 #include <ndmath/range/loop_optimization.hpp>
 
 namespace nd {
 namespace detail {
-namespace for_each {
+namespace do_while {
 
 template <
 	size_t Cur,
@@ -46,13 +46,13 @@ struct unroll_helper<Cur, End, 1, Policy, Dir, Noexcept>
 {
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
-	static void apply(
+	static auto apply(
 		const Integer& off,
 		const Integer& idx,
 		Integer, Integer,
 		const Func& f
 	)
-	noexcept(Noexcept) { f(off + idx); }
+	noexcept(Noexcept) { return f(off + idx); }
 };
 
 template <size_t End, size_t Factor, class Policy, class Dir, bool Noexcept>
@@ -60,8 +60,8 @@ struct unroll_helper<End, End, Factor, Policy, Dir, Noexcept>
 {
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE constexpr
-	static void apply(Integer, Integer, Integer, Integer, Func)
-	noexcept {}
+	static auto apply(Integer, Integer, Integer, Integer, Func)
+	noexcept { return true; }
 };
 
 template <
@@ -90,7 +90,7 @@ struct unroll_helper<
 
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
-	static void apply(
+	static auto apply(
 		const Integer& off,
 		const Integer& idx,
 		const Integer& len,
@@ -98,8 +98,9 @@ struct unroll_helper<
 		const Func& f
 	) noexcept(Noexcept)
 	{
-		f(off + Integer(Factor) * idx + Integer(Cur) * stride);
-		next::apply(off, idx, len, stride, f);
+		if (!f(off + Integer(Factor) * idx + Integer(Cur) * stride))
+			return false;
+		return next::apply(off, idx, len, stride, f);
 	}
 };
 
@@ -129,7 +130,7 @@ struct unroll_helper<
 
 	template <class Integer, class Func>
 	CC_ALWAYS_INLINE
-	static void apply(
+	static auto apply(
 		const Integer& off,
 		const Integer& idx,
 		const Integer& len,
@@ -137,8 +138,9 @@ struct unroll_helper<
 		const Func& f
 	) noexcept(Noexcept)
 	{
-		f(off + idx + Integer(Cur) * len);
-		next::apply(off, idx, len, stride, f);
+		if (!f(off + idx + Integer(Cur) * len))
+			return false;
+		return next::apply(off, idx, len, stride, f);
 	}
 };
 
@@ -158,7 +160,7 @@ struct remainder_loop_helper
 		L3::allows_static_access
 	)>
 	CC_ALWAYS_INLINE
-	static void try_unroll(L1, L2, L3, const Func& f)
+	static auto try_unroll(L1, L2, L3, const Func& f)
 	noexcept(Noexcept)
 	{
 		static constexpr auto start =
@@ -179,7 +181,7 @@ struct remainder_loop_helper
 			dir_h::finish(size_t{0}, unroll_fac - 1, unroll_fac),
 			unroll_fac, unroll_policy, Dir, Noexcept
 		>;
-		unroll_helper::apply(0, start, stride, stride, f);
+		return unroll_helper::apply(0, start, stride, stride, f);
 	}
 
 	template <class L1, class L2, class L3, class Func,
@@ -189,12 +191,13 @@ struct remainder_loop_helper
 		L3::allows_static_access
 	))>
 	CC_ALWAYS_INLINE
-	static void try_unroll(const L1& l1, const L2& l2, const L3& l3, const Func& f)
+	static auto try_unroll(const L1& l1, const L2& l2, const L3& l3, const Func& f)
 	noexcept(Noexcept)
 	{
 		for (auto i = l1(); i != l2(); dir_h::step(i, l3())) {
-			f(i);
+			if (!f(i)) return false;
 		}
+		return true;
 	}
 };
 
@@ -229,14 +232,15 @@ struct tile_helper
 		tile_fac == 1 && unroll_fac == 1
 	)>
 	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f)
+	static auto apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		for (
 			auto i = dir_h::start(r.start(n), r.finish(n));
 			i != dir_h::finish(r.start(n), r.finish(n), r.length(n));
 			dir_h::step(i, r.stride(n))
-		) { f(i); }
+		) { if (!f(i)) return false; }
+		return true;
 	}
 
 	template <class Range, class Func, nd_enable_if((
@@ -244,7 +248,7 @@ struct tile_helper
 		tile_fac != 1
 	))>
 	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f)
+	static auto apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
@@ -265,7 +269,7 @@ struct tile_helper
 			/*
 			** Unroll the loop over the chunk of `unroll_fac` tiles.
 			*/
-			tile_count_unroller::apply(
+			if (!tile_count_unroller::apply(
 				0, i,
 				r.length(n) / (r.stride(n) * tf_coord() * uf_coord()), 1,
 				/*
@@ -277,7 +281,7 @@ struct tile_helper
 						r.stride(n), f
 					);
 				}
-			);
+			)) { return false; }
 		}
 
 		if (unroll_rem) {
@@ -285,7 +289,7 @@ struct tile_helper
 			** Loop over the remaining tiles that we could not
 			** unroll.
 			*/
-			rem_loop_h::try_unroll(
+			if (!rem_loop_h::try_unroll(
 				uf_coord * (r.length_c(n) / (r.stride_c(n) * tf_coord * uf_coord)),
 				r.length_c(n) / (r.stride_c(n) * tf_coord),
 				basic_sc_coord<integer, 1>,
@@ -295,7 +299,7 @@ struct tile_helper
 						r.stride(n), f
 					);
 				}
-			);
+			)) { return false; }
 		}
 
 		if (tile_rem) {
@@ -305,12 +309,14 @@ struct tile_helper
 			** stride, because the tile factor is in terms of stride
 			** units.
 			*/
-			rem_loop_h::try_unroll(
+			if (!rem_loop_h::try_unroll(
 				r.start_c(n) + r.stride_c(n) * tf_coord *
 				(r.length_c(n) / (r.stride_c(n) * tf_coord)),
 				r.finish_c(n), r.stride_c(n), f
-			);
+			)) { return false; }
 		}
+
+		return true;
 	}
 
 	template <class Range, class Func, nd_enable_if((
@@ -318,7 +324,7 @@ struct tile_helper
 		tile_fac != 1
 	))>
 	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f)
+	static auto apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		using integer = typename Range::integer;
@@ -339,7 +345,7 @@ struct tile_helper
 			/*
 			** Unroll the loop over the chunk of `unroll_fac` tiles.
 			*/
-			tile_count_unroller::apply(
+			if (!tile_count_unroller::apply(
 				0, i, r.length(n) / (tf_coord() * uf_coord()), 1,
 				/*
 				** Unroll the loop over each tile.
@@ -351,7 +357,7 @@ struct tile_helper
 						r.stride(n), r.stride(n), f
 					);
 				}
-			);
+			)) { return false; }
 		}
 
 		if (unroll_rem) {
@@ -359,7 +365,7 @@ struct tile_helper
 			** Loop over the remaining tiles that we could not
 			** unroll.
 			*/
-			rem_loop_h::try_unroll(
+			if (!rem_loop_h::try_unroll(
 				r.length_c(n) / (r.stride_c(n) * tf_coord * uf_coord),
 				basic_sc_coord<integer, integer(-1)>,
 				basic_sc_coord<integer, 1>,
@@ -370,7 +376,7 @@ struct tile_helper
 						i, r.stride(n), r.stride(n), f
 					);
 				}
-			);
+			)) { return false; }
 		}
 
 		if (tile_rem) {
@@ -380,11 +386,13 @@ struct tile_helper
 			** stride, because the tile factor is in terms of stride
 			** units.
 			*/
-			rem_loop_h::try_unroll(
+			if (!rem_loop_h::try_unroll(
 				r.start_c(n) + r.length_c(n) % (r.stride_c(n) * tf_coord),
 				r.start_c(n) - r.stride_c(n), r.stride_c(n), f
-			);
+			)) { return false; }
 		}
+
+		return true;
 	}
 private:
 	template <class Range>
@@ -479,7 +487,7 @@ struct evaluate_loop_helper
 
 	template <class Range, class Func>
 	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f)
+	static auto apply(const Range& r, const Func& f)
 	noexcept(Noexcept)
 	{
 		using traits = policy_traits<
@@ -499,7 +507,7 @@ struct evaluate_loop_helper
 			checked_tile_policy,
 			Noexcept
 		>;
-		helper::apply(r, f);
+		return helper::apply(r, f);
 	}
 };
 
@@ -510,15 +518,15 @@ struct evaluator
 
 	template <class Range, class Func, class... Args>
 	CC_ALWAYS_INLINE
-	static void apply(const Range& r, const Func& f, const Args&... args)
+	static auto apply(const Range& r, const Func& f, const Args&... args)
 	noexcept(Noexcept)
 	{
 		using evaluator = evaluate_loop_helper<
 			Dim, Dims, Attribs, Noexcept
 		>;
-		evaluator::apply(r, [&] (const auto& arg)
+		return evaluator::apply(r, [&] (const auto& arg)
 			CC_ALWAYS_INLINE noexcept(Noexcept) {
-				next::apply(r, f, args..., arg);
+				return next::apply(r, f, args..., arg);
 			});
 	}
 };
@@ -528,8 +536,8 @@ struct evaluator<Dims, Dims, Attribs, Noexcept>
 {
 	template <class Range, class Func, class... Args>
 	CC_ALWAYS_INLINE
-	static void apply(const Range&, const Func& f, const Args&... args)
-	noexcept(Noexcept) { f(c_index(args...)); }
+	static auto apply(const Range&, const Func& f, const Args&... args)
+	noexcept(Noexcept) { return f(c_index(args...)); }
 };
 
 }}}

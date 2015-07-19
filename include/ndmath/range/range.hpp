@@ -19,7 +19,7 @@
 #include <ndmath/index.hpp>
 #include <ndmath/range/attribute.hpp>
 #include <ndmath/range/attribute_traits.hpp>
-#include <ndmath/range/for_each.hpp>
+#include <ndmath/range/traversal.hpp>
 //#include <ndmath/range/range_iterator.hpp>
 
 namespace nd {

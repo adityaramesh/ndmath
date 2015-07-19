@@ -123,7 +123,7 @@ struct copy_assign_helper<false, false, false>
 		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
-		for_each(src.extents(),
+		nd::for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst(i) = src(i);
 			});
@@ -192,7 +192,7 @@ struct move_assign_helper<false, false, false>
 		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
-		for_each(src.extents(),
+		nd::for_each(src.extents(),
 			[&] (const auto& i) CC_ALWAYS_INLINE {
 				dst(i) = std::move(src(i));
 			});
