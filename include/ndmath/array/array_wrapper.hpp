@@ -765,12 +765,6 @@ public:
 	CC_ALWAYS_INLINE
 	void destructive_resize(const Range& r)
 	nd_deduce_noexcept(m_wrapped.destructive_resize(r))
-
-	/*
-	** Relational operations.
-	*/
-
-	//#define nd_define_relational_op(symbol)
 };
 
 }
