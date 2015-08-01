@@ -47,7 +47,7 @@ struct parse_integer
 
 	using seq_no_sign = mpl::slice_c<start::value, Seq::size() - 1, Seq>;
 
-	using match = mpl::find_first_if<detail::is_nondigit, seq_no_sign>;
+	using match = mpl::find_first_if<detail::is_non_digit, seq_no_sign>;
 
 	using end = std::conditional_t<
 		std::is_same<match, mpl::no_match>::value,

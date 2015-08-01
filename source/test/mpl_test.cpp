@@ -8,6 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/mpl/parse_integer.hpp>
 #include <ndmath/mpl/parse_decimal.hpp>
+#include <ndmath/mpl/parse_array.hpp>
 
 namespace mpl = cc::mpl;
 
@@ -57,6 +58,8 @@ module("test parse decimal")
 	using s13 = mpl::to_types<std::integer_sequence<char, '1', 'e', '-', '1'>>;
 	using s14 = mpl::to_types<std::integer_sequence<char, '1', 'e', '0', '1'>>;
 	using s15 = mpl::to_types<std::integer_sequence<char, '1', 'e', '-', '0', '1'>>;
+	using s16 = mpl::to_types<std::integer_sequence<char, '1', '.', 'e', '1'>>;
+	using s17 = mpl::to_types<std::integer_sequence<char, '.', '1', 'e', '1'>>;
 
 	using t1 = typename nd::parse_decimal<s1>::type;
 	using t2 = typename nd::parse_decimal<s2>::type;
@@ -73,6 +76,8 @@ module("test parse decimal")
 	using t13 = typename nd::parse_decimal<s13>::type;
 	using t14 = typename nd::parse_decimal<s14>::type;
 	using t15 = typename nd::parse_decimal<s15>::type;
+	using t16 = typename nd::parse_decimal<s16>::type;
+	using t17 = typename nd::parse_decimal<s17>::type;
 
 	static_assert(cast<double, t1> == 123, "");
 	static_assert(cast<double, t2> == -123, "");
@@ -89,6 +94,21 @@ module("test parse decimal")
 	static_assert(cast<double, t13> == 0.1, "");
 	static_assert(cast<double, t14> == 10, "");
 	static_assert(cast<double, t15> == 0.1, "");
+	static_assert(cast<double, t16> == 10, "");
+	static_assert(cast<double, t17> == 1, "");
+}
+
+module("test parse array")
+{
+	using s1 = mpl::to_types<std::integer_sequence<char, '[', '1', ']'>>;
+	using s2 = mpl::to_types<std::integer_sequence<char, '[', '1', ' ', '2', ']'>>;
+	using s3 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', ']'>>;
+	using s4 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', '[', '1', ']', ']'>>;
+
+	using t1 = nd::parse_array<mpl::quote<nd::parse_decimal>, s1>;
+	using t2 = nd::parse_array<mpl::quote<nd::parse_decimal>, s2>;
+	using t3 = nd::parse_array<mpl::quote<nd::parse_decimal>, s3>;
+	using t4 = nd::parse_array<mpl::quote<nd::parse_decimal>, s4>;
 }
 
 suite("mpl test")
