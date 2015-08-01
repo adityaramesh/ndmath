@@ -13,3 +13,6 @@
 *.gch
 *.out
 *.run
+
+# Ignored directories.
+out
