@@ -37,7 +37,7 @@ auto pow(const I1 z, const I2 p) noexcept
 	return v;
 }
 
-template <class Seq>
+template <class List>
 struct has_frac_part_helper :
 std::false_type {};
 
@@ -56,7 +56,7 @@ template <class... Ts>
 struct has_frac_part_helper<mpl::list<mpl::char_<'E'>, Ts...>> :
 std::false_type {};
 
-template <class Seq>
+template <class List>
 struct has_exp_part_helper :
 std::false_type {};
 
@@ -68,19 +68,19 @@ template <class... Ts>
 struct has_exp_part_helper<mpl::list<mpl::char_<'E'>, Ts...>> :
 std::true_type {};
 
-template <bool HasWholePart, class Seq>
+template <bool HasWholePart, class List>
 struct parse_decimal_helper_1;
 
-template <bool HasFracPart, class Seq>
+template <bool HasFracPart, class List>
 struct parse_decimal_helper_2;
 
-template <bool HasExpPart, class Seq>
+template <bool HasExpPart, class List>
 struct parse_decimal_helper_3;
 
-template <class Seq>
-struct parse_decimal_helper_3<true, Seq>
+template <class List>
+struct parse_decimal_helper_3<true, List>
 {
-	using seq_no_e = mpl::erase_front<Seq>;
+	using seq_no_e = mpl::erase_front<List>;
 
 	static_assert(
 		seq_no_e::size() != 0,
@@ -99,17 +99,17 @@ struct parse_decimal_helper_3<true, Seq>
 	>;
 };
 
-template <class Seq>
-struct parse_decimal_helper_3<false, Seq>
+template <class List>
+struct parse_decimal_helper_3<false, List>
 {
-	using tail     = Seq;
+	using tail     = List;
 	using exp_part = std::ratio<1, 1>;
 };
 
-template <class Seq>
-struct parse_decimal_helper_2<true, Seq>
+template <class List>
+struct parse_decimal_helper_2<true, List>
 {
-	using seq_no_dot = mpl::erase_front<Seq>;
+	using seq_no_dot = mpl::erase_front<List>;
 	using parser     = parse_integer<seq_no_dot>;
 	using result     = typename parser::type;
 	using num        = std::ratio<result::value, 1>;
@@ -127,18 +127,18 @@ struct parse_decimal_helper_2<true, Seq>
 	using exp_part  = typename helper::exp_part;
 };
 
-template <class Seq>
+template <class List>
 struct remove_dot_helper
-{ using type = Seq; };
+{ using type = List; };
 
 template <class... Ts>
 struct remove_dot_helper<mpl::list<mpl::char_<'.'>, Ts...>>
 { using type = mpl::list<Ts...>; };
 
-template <class Seq>
-struct parse_decimal_helper_2<false, Seq>
+template <class List>
+struct parse_decimal_helper_2<false, List>
 {
-	using seq_no_dot = typename remove_dot_helper<Seq>::type;
+	using seq_no_dot = typename remove_dot_helper<List>::type;
 
 	static constexpr auto has_exp_part =
 	has_exp_part_helper<seq_no_dot>::value;
@@ -149,10 +149,10 @@ struct parse_decimal_helper_2<false, Seq>
 	using exp_part  = typename helper::exp_part;
 };
 
-template <class Seq>
-struct parse_decimal_helper_1<true, Seq>
+template <class List>
+struct parse_decimal_helper_1<true, List>
 {
-	using parser     = parse_integer<Seq>;
+	using parser     = parse_integer<List>;
 	using result     = typename parser::type;
 	using whole_part = std::ratio<result::value, 1>;
 	using rest       = typename parser::tail;
@@ -170,14 +170,14 @@ struct parse_decimal_helper_1<true, Seq>
 	>;
 };
 
-template <class Seq>
-struct parse_decimal_helper_1<false, Seq>
+template <class List>
+struct parse_decimal_helper_1<false, List>
 {
 	static constexpr auto has_frac_part =
-	has_frac_part_helper<Seq>::value;
+	has_frac_part_helper<List>::value;
 
 	using whole_part = std::ratio<0, 1>;
-	using helper     = parse_decimal_helper_2<has_frac_part, Seq>;
+	using helper     = parse_decimal_helper_2<has_frac_part, List>;
 	using tail       = typename helper::tail;
 	using frac_part  = typename helper::frac_part;
 	using exp_part   = typename helper::exp_part;
@@ -186,7 +186,7 @@ struct parse_decimal_helper_1<false, Seq>
 
 }
 
-template <class Seq>
+template <class List>
 struct parse_decimal
 {
 	/*
@@ -201,15 +201,15 @@ struct parse_decimal
 	using valid_init_chars = mpl::cat<detail::digits, mpl::to_types<
 		std::integer_sequence<char, '+', '-', '.'>>>;
 
-	static_assert(Seq::size() != 0, "Sequence is empty.");
+	static_assert(List::size() != 0, "Sequence is empty.");
 
 	static_assert(!std::is_same<
-		mpl::find_first<mpl::at_c<0, Seq>, valid_init_chars>,
+		mpl::find_first<mpl::at_c<0, List>, valid_init_chars>,
 		mpl::no_match
 	>::value, "Expected '+', '-', '.', or a digit.");
 
 	using sign = std::conditional_t<
-		mpl::at_c<0, Seq>::value == '-',
+		mpl::at_c<0, List>::value == '-',
 		std::ratio<-1, 1>, std::ratio<1, 1>
 	>;
 
@@ -219,27 +219,27 @@ struct parse_decimal
 	*/
 
 	using start = std::conditional_t<
-		mpl::at_c<0, Seq>::value == '+' ||
-		mpl::at_c<0, Seq>::value == '-',
+		mpl::at_c<0, List>::value == '+' ||
+		mpl::at_c<0, List>::value == '-',
 		mpl::size_t<1>, mpl::size_t<0>
 	>;
 
 	// If the first token is a plus or minus sign, then the length of the
 	// sequence must be greater than one.
 	static_assert(
-		!(start::value == 1 && Seq::size() == 1),
+		!(start::value == 1 && List::size() == 1),
 		"Expected digit or '.'."
 	);
 
 	// If the first token was a plus or minus sign, then the succeeding
 	// character must be a digit or '.'.
 	static_assert(
-		mpl::apply<detail::is_digit, mpl::at<start, Seq>>::value ||
-		mpl::at<start, Seq>::value == '.',
+		mpl::apply<detail::is_digit, mpl::at<start, List>>::value ||
+		mpl::at<start, List>::value == '.',
 		"Expected digit or '.'."
 	);
 
-	using seq_no_sign = mpl::slice_c<start::value, Seq::size() - 1, Seq>;
+	using seq_no_sign = mpl::slice_c<start::value, List::size() - 1, List>;
 
 	/*
 	** Unlike the helper structs that parse the fractional and exponent
@@ -250,7 +250,7 @@ struct parse_decimal
 	** a compile-time error here.
 	*/
 
-	static constexpr auto has_whole_part = mpl::at<start, Seq>::value != '.';
+	static constexpr auto has_whole_part = mpl::at<start, List>::value != '.';
 	using helper = detail::parse_decimal_helper_1<has_whole_part, seq_no_sign>;
 
 	using unsigned_type = typename helper::type;

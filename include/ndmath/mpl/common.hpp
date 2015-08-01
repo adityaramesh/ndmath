@@ -38,6 +38,9 @@ using is_non_whitespace = mpl::compose<
 	mpl::bind_back<mpl::quote<mpl::not_equal_to>, mpl::no_match>
 >;
 
+using true_list = mpl::to_types<std::integer_sequence<char, 't', 'r', 'u', 'e'>>;
+using false_list = mpl::to_types<std::integer_sequence<char, 'f', 'a', 'l', 's', 'e'>>;
+
 }}
 
 #endif

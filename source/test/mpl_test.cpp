@@ -8,6 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/mpl/parse_integer.hpp>
 #include <ndmath/mpl/parse_decimal.hpp>
+#include <ndmath/mpl/parse_bool.hpp>
 #include <ndmath/mpl/parse_array.hpp>
 
 namespace mpl = cc::mpl;
@@ -96,6 +97,21 @@ module("test parse decimal")
 	static_assert(cast<double, t15> == 0.1, "");
 	static_assert(cast<double, t16> == 10, "");
 	static_assert(cast<double, t17> == 1, "");
+}
+
+module("test parse bool")
+{
+	using s1 = mpl::to_types<std::integer_sequence<char, 't', 'r', 'u', 'e'>>;
+	using s2 = mpl::to_types<std::integer_sequence<char, 'f', 'a', 'l', 's', 'e'>>;
+
+	using t1 = nd::parse_bool<s1>;
+	using t2 = nd::parse_bool<s2>;
+
+	static_assert(t1::type::value == true, "");
+	static_assert(t2::type::value == false, "");
+
+	static_assert(t1::tail::size() == 0, "");
+	static_assert(t2::tail::size() == 0, "");
 }
 
 module("test parse array")

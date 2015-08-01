@@ -222,11 +222,11 @@ struct parse_array_helper<Parser, State, mpl::list<T, Ts...>>
 
 }
 
-template <class Parser, class Seq>
+template <class Parser, class List>
 struct parse_array
 {
 	using state  = detail::array_state<mpl::size_t<0>, mpl::list<>, mpl::list<>>;
-	using helper = detail::parse_array_helper<Parser, state, Seq>;
+	using helper = detail::parse_array_helper<Parser, state, List>;
 	using type   = typename helper::type;
 };
 

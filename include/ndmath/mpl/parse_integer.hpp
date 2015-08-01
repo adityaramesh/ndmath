@@ -12,7 +12,7 @@
 
 namespace nd {
 
-template <class Seq>
+template <class List>
 struct parse_integer
 {
 	/*
@@ -23,15 +23,15 @@ struct parse_integer
 	using valid_init_chars = mpl::cat<detail::digits, mpl::to_types<
 		std::integer_sequence<char, '+', '-'>>>;
 
-	static_assert(Seq::size() != 0, "Sequence is empty.");
+	static_assert(List::size() != 0, "Sequence is empty.");
 
 	static_assert(!std::is_same<
-		mpl::find_first<mpl::at_c<0, Seq>, valid_init_chars>,
+		mpl::find_first<mpl::at_c<0, List>, valid_init_chars>,
 		mpl::no_match
 	>::value, "Expected '+', '-', or a digit.");
 
 	using sign = std::conditional_t<
-		mpl::at_c<0, Seq>::value == '-',
+		mpl::at_c<0, List>::value == '-',
 		mpl::intmax_t<-1>, mpl::intmax_t<1>
 	>;
 
@@ -40,22 +40,22 @@ struct parse_integer
 	*/
 
 	using start = std::conditional_t<
-		mpl::at_c<0, Seq>::value == '+' ||
-		mpl::at_c<0, Seq>::value == '-',
+		mpl::at_c<0, List>::value == '+' ||
+		mpl::at_c<0, List>::value == '-',
 		mpl::size_t<1>, mpl::size_t<0>
 	>;
 
-	using seq_no_sign = mpl::slice_c<start::value, Seq::size() - 1, Seq>;
+	using seq_no_sign = mpl::slice_c<start::value, List::size() - 1, List>;
 
 	using match = mpl::find_first_if<detail::is_non_digit, seq_no_sign>;
 
 	using end = std::conditional_t<
 		std::is_same<match, mpl::no_match>::value,
-		mpl::minus<mpl::size<Seq>, mpl::size_t<1>>,
+		mpl::minus<mpl::size<List>, mpl::size_t<1>>,
 		mpl::minus<mpl::plus<match, start>, mpl::size_t<1>>
 	>;
 
-	using string = mpl::slice_c<start::value, end::value, Seq>;
+	using string = mpl::slice_c<start::value, end::value, List>;
 
 	using parser = mpl::bind_back<
 		mpl::quote<mpl::foldl>,
@@ -72,12 +72,12 @@ struct parse_integer
 
 	using unsigned_type = mpl::apply<parser, string>;
 	using type = mpl::multiplies<sign, unsigned_type>;
-	using tail = mpl::slice_c<end::value + 1, Seq::size() - 1, Seq>;
+	using tail = mpl::slice_c<end::value + 1, List::size() - 1, List>;
 };
 
-template <class Seq>
+template <class List>
 static constexpr auto parse_integer_c =
-mpl::apply<mpl::quote_trait<parse_integer>, Seq>::value;
+mpl::apply<mpl::quote_trait<parse_integer>, List>::value;
 
 }
 
