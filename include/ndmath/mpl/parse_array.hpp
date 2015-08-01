@@ -39,7 +39,7 @@ struct inc_depth_helper
 		"Internal error: either State::lists or State::extents was not "
 		"correctly updated."
 	);
-	
+
 	static_assert(
 		cur_lists::size() >= cur_depth::value,
 		"Internal error: unexpected size of State::lists."
@@ -51,7 +51,7 @@ struct inc_depth_helper
 	** Note: if the current size of `lists` and `extents` is equal to
 	** `depth`, then we need to enlarge both of the former data structures.
 	*/
-	
+
 	using new_lists = std::conditional_t<
 		cur_lists::size() == cur_depth::value,
 		mpl::append<mpl::list<>, cur_lists>,
@@ -140,7 +140,7 @@ struct append_helper
 		depth::value == State::dims,
 		"Encountered scalar at incorrect level of nesting."
 	);
-	
+
 	using new_lists = mpl::replace_at_c<
 		cur_lists::size() - 1,
 		mpl::append<T, mpl::back<cur_lists>>,
@@ -216,7 +216,7 @@ struct parse_array_helper<Parser, State, mpl::list<T, Ts...>>
 		mpl::apply<is_whitespace, T>::value,
 		Parser, State, mpl::list<T, Ts...>
 	>;
-	
+
 	using type = typename helper::type;
 };
 
@@ -225,11 +225,9 @@ struct parse_array_helper<Parser, State, mpl::list<T, Ts...>>
 template <class Parser, class Seq>
 struct parse_array
 {
-	using state       = detail::array_state<mpl::size_t<0>, mpl::list<>, mpl::list<>>;
-	using helper      = detail::parse_array_helper<Parser, state, Seq>;
-	using final_state = typename helper::type;
-	using final_lists = typename final_state::lists;
-	using type        = mpl::front<final_lists>;
+	using state  = detail::array_state<mpl::size_t<0>, mpl::list<>, mpl::list<>>;
+	using helper = detail::parse_array_helper<Parser, state, Seq>;
+	using type   = typename helper::type;
 };
 
 }
