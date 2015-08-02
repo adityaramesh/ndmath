@@ -219,6 +219,11 @@ struct parse_helper<Parser, State, mpl::list<T, Ts...>>
 	>;
 
 	using type = typename helper::type;
+
+	static_assert(
+		type::depth::value == 0,
+		"Unmatched '[' or ']'."
+	);
 };
 
 }}
@@ -232,6 +237,7 @@ struct parse_array
 
 	using helper = detail::parse_array::parse_helper<Parser, state, List>;
 	using type   = typename helper::type;
+	using lists  = typename type::lists;
 };
 
 }

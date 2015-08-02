@@ -145,9 +145,9 @@ module("test flatten list")
 		mpl::list<mpl::int_<1>, mpl::list<mpl::int_<2>>, mpl::int_<3>>
 	>;
 
-	using m1 = typename nd::flatten_list<l1>::type;
-	using m2 = typename nd::flatten_list<l2>::type;
-	using m3 = typename nd::flatten_list<l3>::type;
+	using m1 = nd::flatten_list<l1>;
+	using m2 = nd::flatten_list<l2>;
+	using m3 = nd::flatten_list<l3>;
 	using n  = mpl::list<mpl::int_<1>, mpl::int_<2>, mpl::int_<3>>;
 
 	static_assert(mpl::lists_same<m1, n>::value, "");

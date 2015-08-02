@@ -8,7 +8,7 @@
 #ifndef Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 #define Z4F124366_CD62_43F3_AFA2_59A5A5650F55
 
-#include <ndmath/utility/metaparse.hpp>
+#include <ndmath/mpl/parse_integer.hpp>
 
 namespace nd {
 
@@ -94,7 +94,11 @@ namespace tokens {
 template <char... Ts>
 CC_ALWAYS_INLINE constexpr
 auto operator"" _c() noexcept
-{ return sc_coord<parse_nonneg_int_c<Ts...>>; }
+{
+	return sc_coord<parse_integer_c<
+		mpl::list<mpl::char_<Ts>...>
+	>>;
+}
 
 }
 

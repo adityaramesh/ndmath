@@ -260,6 +260,16 @@ public:
 			});
 	}
 
+	/*
+	** Constructor for use with `nd_array` initialization syntax.
+	*/
+	template <class... Ts, nd_enable_if((
+		true // TODO: different specialization for bool
+	))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const mpl::list<Ts...>) noexcept
+	: m_data{{(static_cast<underlying_type>(Ts::num) / Ts::den)...}} {}
+
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(partial_init_t)
 	noexcept {}
@@ -903,6 +913,17 @@ auto make_sarray(
 {
 	using storage_type = dense_storage<T, Extents, StorageOrder, void>;
 	using array_type = array_wrapper<storage_type>;
+	return array_type{list};
+}
+
+template <class T, class Extents, class... Ts>
+CC_ALWAYS_INLINE constexpr
+auto make_sarray(const mpl::list<Ts...> list, const Extents&) noexcept
+{
+
+	using storage_order = decltype(default_storage_order<Extents::dims()>);
+	using storage_type  = dense_storage<T, Extents, storage_order, void>;
+	using array_type    = array_wrapper<storage_type>;
 	return array_type{list};
 }
 
