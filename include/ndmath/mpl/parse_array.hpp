@@ -10,9 +10,10 @@
 
 namespace nd {
 namespace detail {
+namespace parse_array {
 
 template <class Depth, class Lists, class Extents>
-struct array_state
+struct state
 {
 	// Incremented using `inc_depth` each time we pass a '['; decremented
 	// using `dec_depth` each time we pass a ']'.
@@ -64,7 +65,7 @@ struct inc_depth_helper
 		cur_extents
 	>;
 
-	using type = array_state<new_depth, new_lists, new_extents>;
+	using type = state<new_depth, new_lists, new_extents>;
 };
 
 /*
@@ -126,7 +127,7 @@ struct dec_depth_helper
 		cur_extents
 	>;
 
-	using type = array_state<new_depth, new_lists, new_extents>;
+	using type = state<new_depth, new_lists, new_extents>;
 };
 
 template <class T, class State>
@@ -147,7 +148,7 @@ struct append_helper
 		cur_lists
 	>;
 
-	using type = array_state<depth, new_lists, extents>;
+	using type = state<depth, new_lists, extents>;
 };
 
 template <class State>
@@ -164,55 +165,55 @@ using append = typename append_helper<T, State>::type;
 */
 
 template <class Parser, class State, class Tail>
-struct parse_array_helper;
+struct parse_helper;
 
 template <class Parser, class State>
-struct parse_array_helper<Parser, State, mpl::list<>>
+struct parse_helper<Parser, State, mpl::list<>>
 { using type = State; };
 
 template <class Parser, class State, class... Ts>
-struct parse_array_helper<Parser, State, mpl::list<mpl::char_<'['>, Ts...>>
+struct parse_helper<Parser, State, mpl::list<mpl::char_<'['>, Ts...>>
 {
-	using type = typename parse_array_helper<
+	using type = typename parse_helper<
 		Parser, inc_depth<State>, mpl::list<Ts...>
 	>::type;
 };
 
 template <class Parser, class State, class... Ts>
-struct parse_array_helper<Parser, State, mpl::list<mpl::char_<']'>, Ts...>>
+struct parse_helper<Parser, State, mpl::list<mpl::char_<']'>, Ts...>>
 {
-	using type = typename parse_array_helper<
+	using type = typename parse_helper<
 		Parser, dec_depth<State>, mpl::list<Ts...>
 	>::type;
 };
 
 template <bool IsWhitespace, class Parser, class State, class List>
-struct parse_array_helper_2;
+struct parse_helper_2;
 
 template <class Parser, class State, class T, class... Ts>
-struct parse_array_helper_2<true, Parser, State, mpl::list<T, Ts...>>
+struct parse_helper_2<true, Parser, State, mpl::list<T, Ts...>>
 {
-	using type = typename parse_array_helper<
+	using type = typename parse_helper<
 		Parser, State, mpl::list<Ts...>
 	>::type;
 };
 
 template <class Parser, class State, class T, class... Ts>
-struct parse_array_helper_2<false, Parser, State, mpl::list<T, Ts...>>
+struct parse_helper_2<false, Parser, State, mpl::list<T, Ts...>>
 {
 	using result = mpl::apply<Parser, mpl::list<T, Ts...>>;
 	using scalar = typename result::type;
 	using tail   = typename result::tail;
 
-	using type = typename parse_array_helper<
+	using type = typename parse_helper<
 		Parser, append<scalar, State>, tail
 	>::type;
 };
 
 template <class Parser, class State, class T, class... Ts>
-struct parse_array_helper<Parser, State, mpl::list<T, Ts...>>
+struct parse_helper<Parser, State, mpl::list<T, Ts...>>
 {
-	using helper = parse_array_helper_2<
+	using helper = parse_helper_2<
 		mpl::apply<is_whitespace, T>::value,
 		Parser, State, mpl::list<T, Ts...>
 	>;
@@ -220,13 +221,16 @@ struct parse_array_helper<Parser, State, mpl::list<T, Ts...>>
 	using type = typename helper::type;
 };
 
-}
+}}
 
 template <class Parser, class List>
 struct parse_array
 {
-	using state  = detail::array_state<mpl::size_t<0>, mpl::list<>, mpl::list<>>;
-	using helper = detail::parse_array_helper<Parser, state, List>;
+	using state = detail::parse_array::state<
+		mpl::size_t<0>, mpl::list<>, mpl::list<>
+	>;
+
+	using helper = detail::parse_array::parse_helper<Parser, state, List>;
 	using type   = typename helper::type;
 };
 

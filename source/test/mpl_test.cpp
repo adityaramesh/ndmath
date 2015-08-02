@@ -5,11 +5,14 @@
 ** Contact:   _@adityaramesh.com
 */
 
+#include <cstdint>
 #include <ccbase/unit_test.hpp>
 #include <ndmath/mpl/parse_integer.hpp>
 #include <ndmath/mpl/parse_decimal.hpp>
 #include <ndmath/mpl/parse_bool.hpp>
 #include <ndmath/mpl/parse_array.hpp>
+#include <ndmath/mpl/flatten_list.hpp>
+#include <ndmath/mpl/pack_bools.hpp>
 
 namespace mpl = cc::mpl;
 
@@ -120,11 +123,58 @@ module("test parse array")
 	using s2 = mpl::to_types<std::integer_sequence<char, '[', '1', ' ', '2', ']'>>;
 	using s3 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', ']'>>;
 	using s4 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', '[', '1', ']', ']'>>;
+	using s5 = mpl::to_types<std::integer_sequence<char, '[', 't', 'r', 'u', 'e', ']'>>;
 
 	using t1 = nd::parse_array<mpl::quote<nd::parse_decimal>, s1>;
 	using t2 = nd::parse_array<mpl::quote<nd::parse_decimal>, s2>;
 	using t3 = nd::parse_array<mpl::quote<nd::parse_decimal>, s3>;
 	using t4 = nd::parse_array<mpl::quote<nd::parse_decimal>, s4>;
+	using t5 = nd::parse_array<mpl::quote<nd::parse_bool>, s5>;
+}
+
+module("test flatten list")
+{
+	using l1 = mpl::list<mpl::int_<1>, mpl::int_<2>, mpl::int_<3>>;
+	using l2 = mpl::list<
+		mpl::list<mpl::int_<1>>,
+		mpl::int_<2>,
+		mpl::list<mpl::int_<3>>
+	>;
+	using l3 = mpl::list<
+		mpl::list<mpl::list<>>,
+		mpl::list<mpl::int_<1>, mpl::list<mpl::int_<2>>, mpl::int_<3>>
+	>;
+
+	using m1 = typename nd::flatten_list<l1>::type;
+	using m2 = typename nd::flatten_list<l2>::type;
+	using m3 = typename nd::flatten_list<l3>::type;
+	using n  = mpl::list<mpl::int_<1>, mpl::int_<2>, mpl::int_<3>>;
+
+	static_assert(mpl::lists_same<m1, n>::value, "");
+	static_assert(mpl::lists_same<m2, n>::value, "");
+	static_assert(mpl::lists_same<m3, n>::value, "");
+}
+
+module("test pack bools")
+{
+	using l1 = mpl::to_types<std::integer_sequence<bool, true, false, true, false>>;
+	using m1 = nd::pack_bools<unsigned, l1>;
+
+	static_assert(m1::value == 0b0101, "");
+}
+
+module("test pack bool lists")
+{
+	using l1 = mpl::to_types<std::integer_sequence<bool, true, false, true, false>>;
+	using l2 = mpl::append<mpl::bool_<false>, mpl::repeat_nc<64, mpl::bool_<true>>>;
+
+	using m1 = nd::pack_bool_lists<uint32_t, l1>;
+	using m2 = nd::pack_bool_lists<uint32_t, l2>;
+
+	static_assert(mpl::at_c<0, m1>::value == 5u, "");
+	static_assert(mpl::at_c<0, m2>::value == 4294967295u, "");
+	static_assert(mpl::at_c<1, m2>::value == 4294967295u, "");
+	static_assert(mpl::at_c<2, m2>::value == 0, "");
 }
 
 suite("mpl test")

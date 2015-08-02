@@ -17,6 +17,7 @@ class boolean_proxy final
 		std::is_unsigned<Storage>::value,
 		"Boolean must be packed in unsigned integer storage type."
 	);
+
 	static_assert(
 		std::is_integral<Integer>::value,
 		"The offset must be an integral type."
