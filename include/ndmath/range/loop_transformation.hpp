@@ -1,14 +1,16 @@
 /*
-** File Name: loop_attribute_traits.hpp
+** File Name: loop_transformation.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/19/2015
 ** Contact:   _@adityaramesh.com
+**
+** Definitions of the loop transformation functions used for loop optimization.
 */
 
 #ifndef Z4591CB1E_C8EE_424D_BDBB_B0625A28BB62
 #define Z4591CB1E_C8EE_424D_BDBB_B0625A28BB62
 
-#include <ndmath/range/loop_attributes.hpp>
+#include <ndmath/range/loop_attribute.hpp>
 
 namespace nd {
 namespace detail {
@@ -84,21 +86,6 @@ mpl::set_at_c<
 	Loop,
 	set_tile_policy<Policy, mpl::at_c<Loop, Attribs>>,
 	Attribs
->;
-
-namespace detail {
-
-template <class Loop>
-struct default_attrib
-{ using type = attrib<Loop::type::value, forward, none, none>; };
-
-}
-
-template <size_t Dims>
-using default_attribs =
-mpl::transform<
-	mpl::range_c<size_t, 0, Dims - 1>,
-	mpl::quote_trait<detail::default_attrib>
 >;
 
 }

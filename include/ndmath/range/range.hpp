@@ -17,8 +17,8 @@
 #include <ccbase/format.hpp>
 #include <ccbase/platform.hpp>
 #include <ndmath/index.hpp>
-#include <ndmath/range/loop_attributes.hpp>
-#include <ndmath/range/loop_attribute_traits.hpp>
+#include <ndmath/range/loop_attribute.hpp>
+#include <ndmath/range/loop_transformation.hpp>
 #include <ndmath/range/traversal.hpp>
 //#include <ndmath/range/range_iterator.hpp>
 

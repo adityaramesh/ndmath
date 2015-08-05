@@ -32,6 +32,9 @@ module("test dynamic construction")
 		nd::extents(2_c, 2_c));
 	auto a8 = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
+
+	// TODO: Remove this later
+	auto x = nd_array([[-2.15e-2 0 0] [0 1 0] [0 0 1]]);
 }
 
 module("test static construction")
