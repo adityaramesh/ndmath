@@ -16,17 +16,14 @@ struct default_storage_order_helper;
 
 template <class T, T... Ts>
 struct default_storage_order_helper<std::integer_sequence<T, Ts...>>
-{
-	static constexpr auto value =
-	basic_sc_index<T, Ts...>;
-};
+{ static constexpr auto value = basic_sc_index<T, Ts...>; };
 
 }
 
 template <size_t Dims>
 static constexpr auto default_storage_order =
 detail::default_storage_order_helper<
-	std::make_integer_sequence<unsigned, Dims>
+	mpl::to_values<mpl::range_c<unsigned, 0, Dims - 1>>
 >::value;
 
 }

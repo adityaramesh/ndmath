@@ -21,7 +21,7 @@ struct state
 	using lists   = Lists;
 	using extents = Extents;
 
-	static constexpr auto dims = lists::size();
+	static constexpr auto dims = lists::size;
 };
 
 /*
@@ -36,17 +36,17 @@ struct inc_depth_helper
 	using cur_extents = typename State::extents;
 
 	static_assert(
-		cur_lists::size() == cur_extents::size(),
+		cur_lists::size == cur_extents::size,
 		"Internal error: either State::lists or State::extents was not "
 		"correctly updated."
 	);
 
 	static_assert(
-		cur_lists::size() >= cur_depth::value,
+		cur_lists::size >= cur_depth::value,
 		"Internal error: unexpected size of State::lists."
 	);
 
-	using new_depth = mpl::plus<cur_depth, mpl::size_t<1>>;
+	using new_depth = mpl::plus<cur_depth, mpl::list_index_c<1>>;
 
 	/*
 	** Note: if the current size of `lists` and `extents` is equal to
@@ -54,14 +54,14 @@ struct inc_depth_helper
 	*/
 
 	using new_lists = std::conditional_t<
-		cur_lists::size() == cur_depth::value,
+		cur_lists::size == cur_depth::value,
 		mpl::append<mpl::list<>, cur_lists>,
 		cur_lists
 	>;
 
 	using new_extents = std::conditional_t<
-		cur_extents::size() == cur_depth::value,
-		mpl::append<mpl::size_t<0>, cur_extents>,
+		cur_extents::size == cur_depth::value,
+		mpl::append<mpl::list_index_c<0>, cur_extents>,
 		cur_extents
 	>;
 
@@ -78,21 +78,21 @@ struct inc_depth_helper
 template <class CurDepth, class CurLists>
 struct get_new_lists_helper
 {
-	using new_depth      = mpl::minus<CurDepth, mpl::size_t<1>>;
-	using completed_list = mpl::at_c<CurDepth::value - 1, CurLists>;
-	using prev_list      = mpl::at_c<new_depth::value - 1, CurLists>;
+	using new_depth      = mpl::minus<CurDepth, mpl::list_index_c<1>>;
+	using completed_list = mpl::at<mpl::dec<CurDepth>, CurLists>;
+	using prev_list      = mpl::at<mpl::dec<new_depth>, CurLists>;
 
-	using new_lists = mpl::replace_at_c<
-		new_depth::value - 1,
+	using new_lists = mpl::replace_at<
+		mpl::dec<new_depth>,
 		mpl::append<completed_list, prev_list>,
-		mpl::replace_at_c<CurDepth::value - 1, mpl::list<>, CurLists>
+		mpl::replace_at<mpl::dec<CurDepth>, mpl::list<>, CurLists>
 	>;
 };
 
 template <class CurLists>
-struct get_new_lists_helper<mpl::size_t<1>, CurLists>
+struct get_new_lists_helper<mpl::list_index_c<1>, CurLists>
 {
-	using new_depth      = mpl::size_t<0>;
+	using new_depth      = mpl::list_index_c<0>;
 	using completed_list = mpl::at_c<0, CurLists>;
 	using new_lists      = CurLists;
 };
@@ -113,16 +113,16 @@ struct dec_depth_helper
 	using new_depth      = typename helper::new_depth;
 	using new_lists      = typename helper::new_lists;
 	using completed_list = typename helper::completed_list;
-	using cur_extent     = mpl::at_c<cur_depth::value - 1, cur_extents>;
+	using cur_extent     = mpl::at<mpl::dec<cur_depth>, cur_extents>;
 
 	static_assert(
 		cur_extent::value == 0 ||
-		cur_extent::value == completed_list::size(),
+		cur_extent::value == completed_list::size,
 		"Mismatching extents."
 	);
 
-	using new_extents = mpl::replace_at_c<
-		cur_depth::value - 1,
+	using new_extents = mpl::replace_at<
+		mpl::dec<cur_depth>,
 		mpl::size<completed_list>,
 		cur_extents
 	>;
@@ -142,8 +142,8 @@ struct append_helper
 		"Encountered scalar at incorrect level of nesting."
 	);
 
-	using new_lists = mpl::replace_at_c<
-		cur_lists::size() - 1,
+	using new_lists = mpl::replace_at<
+		mpl::dec<mpl::size<cur_lists>>,
 		mpl::append<T, mpl::back<cur_lists>>,
 		cur_lists
 	>;
@@ -232,7 +232,7 @@ template <class Parser, class List>
 struct parse_array
 {
 	using state = detail::parse_array::state<
-		mpl::size_t<0>, mpl::list<>, mpl::list<>
+		mpl::list_index_c<0>, mpl::list<>, mpl::list<>
 	>;
 
 	using helper = detail::parse_array::parse_helper<Parser, state, List>;

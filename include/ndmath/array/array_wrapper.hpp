@@ -328,6 +328,20 @@ public:
 	: m_wrapped{std::move(rhs)} {}
 };
 
+template <class List>
+struct is_first_arg_array
+{
+	static constexpr auto value =
+	mpl::is_specialization_of<
+		nd::array_wrapper,
+		std::decay_t<mpl::at_c<0, List>>
+	>::value;
+};
+
+template <>
+struct is_first_arg_array<mpl::list<>> :
+std::false_type {};
+
 }
 
 template <class T>
@@ -395,10 +409,7 @@ public:
 	noexcept(std::is_nothrow_default_constructible<base>::value) {}
 
 	template <class... Args, nd_enable_if((
-		!mpl::is_specialization_of<
-			nd::array_wrapper,
-			std::decay_t<mpl::at_c<0, mpl::list<Args...>>>
-		>::value
+		!detail::is_first_arg_array<mpl::list<Args...>>::value
 	))>
 	CC_ALWAYS_INLINE constexpr
 	explicit array_wrapper(Args&&... args)
@@ -686,7 +697,7 @@ public:
 
 	template <class... Ts, nd_enable_if((
 		sizeof...(Ts) == dims() &&
-		mpl::all_true<std::is_integral<Ts>::value...>
+		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
 	))>
 	CC_ALWAYS_INLINE
 	decltype(auto) at(const Ts&... ts)
@@ -703,7 +714,7 @@ public:
 
 	template <class... Ts, nd_enable_if((
 		sizeof...(Ts) == dims() &&
-		mpl::all_true<std::is_integral<Ts>::value...>
+		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
 	))>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) at(const Ts&... ts) const
@@ -721,7 +732,7 @@ public:
 	template <class... Ts, nd_enable_if((
 		supports_fast_initialization &&
 		sizeof...(Ts) == dims()      &&
-		mpl::all_true<std::is_integral<Ts>::value...>
+		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
 	))>
 	CC_ALWAYS_INLINE
 	decltype(auto) uninitialized_at(const Ts&... ts)

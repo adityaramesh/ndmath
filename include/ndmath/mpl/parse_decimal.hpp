@@ -83,7 +83,7 @@ struct parse_decimal_helper_3<true, List>
 	using seq_no_e = mpl::erase_front<List>;
 
 	static_assert(
-		seq_no_e::size() != 0,
+		seq_no_e::size != 0,
 		"Unexpected end of sequence."
 	);
 
@@ -201,10 +201,10 @@ struct parse_decimal
 	using valid_init_chars = mpl::cat<detail::digits, mpl::to_types<
 		std::integer_sequence<char, '+', '-', '.'>>>;
 
-	static_assert(List::size() != 0, "Sequence is empty.");
+	static_assert(List::size != 0, "Sequence is empty.");
 
 	static_assert(!std::is_same<
-		mpl::find_first<mpl::at_c<0, List>, valid_init_chars>,
+		mpl::find<mpl::at_c<0, List>, valid_init_chars>,
 		mpl::no_match
 	>::value, "Expected '+', '-', '.', or a digit.");
 
@@ -221,13 +221,13 @@ struct parse_decimal
 	using start = std::conditional_t<
 		mpl::at_c<0, List>::value == '+' ||
 		mpl::at_c<0, List>::value == '-',
-		mpl::size_t<1>, mpl::size_t<0>
+		mpl::list_index_c<1>, mpl::list_index_c<0>
 	>;
 
 	// If the first token is a plus or minus sign, then the length of the
 	// sequence must be greater than one.
 	static_assert(
-		!(start::value == 1 && List::size() == 1),
+		!(start::value == 1 && List::size == 1),
 		"Expected digit or '.'."
 	);
 
@@ -239,7 +239,7 @@ struct parse_decimal
 		"Expected digit or '.'."
 	);
 
-	using seq_no_sign = mpl::slice_c<start::value, List::size() - 1, List>;
+	using seq_no_sign = mpl::erase_front_n<start, List>;
 
 	/*
 	** Unlike the helper structs that parse the fractional and exponent

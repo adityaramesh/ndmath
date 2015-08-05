@@ -1,5 +1,5 @@
 /*
-** File Name: attribute_traits.hpp
+** File Name: loop_attribute_traits.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/19/2015
 ** Contact:   _@adityaramesh.com
@@ -8,10 +8,23 @@
 #ifndef Z4591CB1E_C8EE_424D_BDBB_B0625A28BB62
 #define Z4591CB1E_C8EE_424D_BDBB_B0625A28BB62
 
-#include <ndmath/range/attribute.hpp>
+#include <ndmath/range/loop_attributes.hpp>
 
 namespace nd {
 namespace detail {
+
+/*
+** Given a permutation in cycle notation (e.g. (1 4 3 5)), returns a
+** decomposition into two-cycles. Note that we assume permutations are applied
+** from left to right. So (1 4 3 5) decomposes into (5 3)(3 4)(4 1), *not* (1
+** 4)(4 3)(3 5)!
+*/
+template <class Perms>
+using two_cycles =
+mpl::zip<
+	mpl::reverse<mpl::erase_front<Perms>>,
+	mpl::reverse<mpl::erase_back<Perms>>
+>;
 
 template <class Loop, class Attribs>
 struct reverse_loop
@@ -29,9 +42,8 @@ struct reverse_loop
 
 template <class Loops, class Attribs>
 using reverse_loops =
-mpl::foldl<
-	Loops,
-	Attribs,
+mpl::fold<
+	Loops, Attribs,
 	mpl::reverse_args<mpl::quote_trait<detail::reverse_loop>>
 >;
 
@@ -53,9 +65,8 @@ struct apply_trans
 
 template <class Perm, class Attribs>
 using apply_perm =
-mpl::foldl<
-	mpl::two_cycles<Perm>,
-	Attribs,
+mpl::fold<
+	detail::two_cycles<Perm>, Attribs,
 	mpl::reverse_args<mpl::quote_trait<detail::apply_trans>>
 >;
 
@@ -79,9 +90,7 @@ namespace detail {
 
 template <class Loop>
 struct default_attrib
-{
-	using type = attrib<Loop::type::value, forward, none, none>;
-};
+{ using type = attrib<Loop::type::value, forward, none, none>; };
 
 }
 

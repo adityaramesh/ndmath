@@ -22,22 +22,22 @@ struct pack_bools_helper
 	);
 
 	static_assert(
-		List::size() <= 8 * sizeof(Integer),
+		List::size <= 8 * sizeof(Integer),
 		"Too many bools to pack into given integral type."
 	);
 
 	/*
-	** Note that we use `foldr` instead of `foldl`, because the value of the
-	** LSB should be the first boolean in the list.
+	** Note that we use `reverse_fold` instead of `fold`, because the value
+	** of the LSB should be the first boolean in the list.
 	*/
-	using type = mpl::foldr<
+	using type = mpl::reverse_fold<
 		List,
 		std::integral_constant<Integer, 0>,
 		mpl::compose<
 			mpl::quote<mpl::list>,
-			mpl::uncurry<mpl::combine<
+			mpl::uncurry<mpl::make_list<
 				mpl::bind_back<
-					mpl::quote<mpl::shift_left>,
+					mpl::quote<mpl::left_shift>,
 					std::integral_constant<Integer, 1>
 				>,
 				mpl::bind_back<
@@ -54,7 +54,7 @@ struct pack_bools_helper
 }
 
 template <class Integer, class List>
-using pack_bools = mpl::eval<detail::pack_bools_helper<Integer, List>>;
+using pack_bools = mpl::_t<detail::pack_bools_helper<Integer, List>>;
 
 namespace detail {
 namespace pack_bools {
@@ -77,12 +77,12 @@ struct append
 	using temp = mpl::append<T, cur_bool_list>;
 
 	using new_bool_list = std::conditional_t<
-		temp::size() == 8 * sizeof(integer),
+		temp::size == 8 * sizeof(integer),
 		mpl::list<>, temp
 	>;
 
 	using new_int_list = std::conditional_t<
-		temp::size() == 8 * sizeof(integer),
+		temp::size == 8 * sizeof(integer),
 		mpl::append<nd::pack_bools<integer, temp>, cur_int_list>,
 		cur_int_list
 	>;
@@ -105,23 +105,23 @@ template <class Integer, class Lists>
 struct helper
 {
 	static_assert(
-		Lists::size() != 0,
+		Lists::size != 0,
 		"Boolean list is empty."
 	);
 
-	using final_state = mpl::foldl<
+	using final_state = mpl::fold<
 		Lists,
 		state<Integer, mpl::list<>, mpl::list<>>,
 		mpl::reverse_args<mpl::quote_trait<append>>
 	>;
 
-	using type = typename get_int_list<final_state>::type;
+	using type = mpl::_t<get_int_list<final_state>>;
 };
 
 }}
 
 template <class Integer, class Lists>
-using pack_bool_lists = mpl::eval<detail::pack_bools::helper<Integer, Lists>>;
+using pack_bool_lists = mpl::_t<detail::pack_bools::helper<Integer, Lists>>;
 
 }
 

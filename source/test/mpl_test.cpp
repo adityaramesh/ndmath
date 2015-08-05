@@ -33,13 +33,14 @@ module("test parse integer")
 	static_assert(nd::parse_integer_c<s5> == 123, "");
 	static_assert(nd::parse_integer_c<s6> == 0, "");
 	static_assert(nd::parse_integer_c<s7> == 0, "");
-	static_assert(nd::parse_integer<s1>::tail::size() == 0, "");
-	static_assert(nd::parse_integer<s2>::tail::size() == 0, "");
-	static_assert(nd::parse_integer<s3>::tail::size() == 0, "");
-	static_assert(nd::parse_integer<s4>::tail::size() == 0, "");
-	static_assert(nd::parse_integer<s5>::tail::size() == 1, "");
-	static_assert(nd::parse_integer<s6>::tail::size() == 0, "");
-	static_assert(nd::parse_integer<s7>::tail::size() == 0, "");
+
+	static_assert(nd::parse_integer<s1>::tail::size == 0, "");
+	static_assert(nd::parse_integer<s2>::tail::size == 0, "");
+	static_assert(nd::parse_integer<s3>::tail::size == 0, "");
+	static_assert(nd::parse_integer<s4>::tail::size == 0, "");
+	static_assert(nd::parse_integer<s5>::tail::size == 1, "");
+	static_assert(nd::parse_integer<s6>::tail::size == 0, "");
+	static_assert(nd::parse_integer<s7>::tail::size == 0, "");
 }
 
 template <class Scalar, class Ratio>
@@ -113,8 +114,8 @@ module("test parse bool")
 	static_assert(t1::type::value == true, "");
 	static_assert(t2::type::value == false, "");
 
-	static_assert(t1::tail::size() == 0, "");
-	static_assert(t2::tail::size() == 0, "");
+	static_assert(t1::tail::size == 0, "");
+	static_assert(t2::tail::size == 0, "");
 }
 
 module("test parse array")
@@ -125,11 +126,17 @@ module("test parse array")
 	using s4 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', '[', '1', ']', ']'>>;
 	using s5 = mpl::to_types<std::integer_sequence<char, '[', 't', 'r', 'u', 'e', ']'>>;
 
-	using t1 = nd::parse_array<mpl::quote<nd::parse_decimal>, s1>;
-	using t2 = nd::parse_array<mpl::quote<nd::parse_decimal>, s2>;
-	using t3 = nd::parse_array<mpl::quote<nd::parse_decimal>, s3>;
-	using t4 = nd::parse_array<mpl::quote<nd::parse_decimal>, s4>;
-	using t5 = nd::parse_array<mpl::quote<nd::parse_bool>, s5>;
+	using t1 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s1>::lists;
+	using t2 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s2>::lists;
+	using t3 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s3>::lists;
+	using t4 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s4>::lists;
+	using t5 = typename nd::parse_array<mpl::quote<nd::parse_bool>, s5>::lists;
+
+	cc::println(typeid(t1).name());
+	cc::println(typeid(t2).name());
+	cc::println(typeid(t3).name());
+	cc::println(typeid(t4).name());
+	cc::println(typeid(t5).name());
 }
 
 module("test flatten list")

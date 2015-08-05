@@ -827,7 +827,7 @@ public:
 
 template <class... Ts>
 struct variadic_checker
-{ static constexpr auto value = mpl::all_true<is_integer_or_coord<Ts>::value...>; };
+{ static constexpr auto value = mpl::_v<mpl::and_c<is_integer_or_coord<Ts>::value...>>; };
 
 template <>
 struct variadic_checker<> : std::false_type {};

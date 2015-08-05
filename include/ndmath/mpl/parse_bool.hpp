@@ -41,7 +41,7 @@ struct parse_bool
 		mpl::repeat_nc<5, mpl::quote<mpl::erase_front>>
 	>;
 
-	using tail = mpl::foldl<actions, List, mpl::reverse_args<mpl::quote<mpl::apply>>>;
+	using tail = mpl::fold<actions, List, mpl::reverse_args<mpl::quote<mpl::apply>>>;
 };
 
 }

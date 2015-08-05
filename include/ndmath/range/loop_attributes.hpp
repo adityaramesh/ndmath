@@ -1,8 +1,11 @@
 /*
-** File Name: attribute.hpp
+** File Name: loop_attributes.hpp
 ** Author:    Aditya Ramesh
 ** Date:      01/19/2015
 ** Contact:   _@adityaramesh.com
+**
+** Definition for the attribute at each level of a loop nest, along with basic
+** functions to query and modify attributes.
 */
 
 #ifndef ZF3EF39F0_BFDC_412B_9107_0706F4B3BE3D

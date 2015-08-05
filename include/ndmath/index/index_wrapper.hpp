@@ -73,8 +73,8 @@ struct index_traits<Index, std::integer_sequence<Integer, Ts...>>
 	using integer = std::common_type_t<
 		typename index_return_type_helper<Index, Ts>::integer_type...>;
 
-	static constexpr auto allows_static_access = mpl::all_true<
-		index_return_type_helper<Index, Ts>::allows_static_access...>;
+	static constexpr auto allows_static_access = mpl::_v<mpl::and_c<
+		index_return_type_helper<Index, Ts>::allows_static_access...>>;
 };
 
 }

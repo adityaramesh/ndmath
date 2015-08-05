@@ -23,10 +23,10 @@ struct parse_integer
 	using valid_init_chars = mpl::cat<detail::digits, mpl::to_types<
 		std::integer_sequence<char, '+', '-'>>>;
 
-	static_assert(List::size() != 0, "Sequence is empty.");
+	static_assert(List::size != 0, "Sequence is empty.");
 
 	static_assert(!std::is_same<
-		mpl::find_first<mpl::at_c<0, List>, valid_init_chars>,
+		mpl::find<mpl::at_c<0, List>, valid_init_chars>,
 		mpl::no_match
 	>::value, "Expected '+', '-', or a digit.");
 
@@ -42,27 +42,27 @@ struct parse_integer
 	using start = std::conditional_t<
 		mpl::at_c<0, List>::value == '+' ||
 		mpl::at_c<0, List>::value == '-',
-		mpl::size_t<1>, mpl::size_t<0>
+		mpl::list_index_c<1>, mpl::list_index_c<0>
 	>;
 
-	using seq_no_sign = mpl::slice_c<start::value, List::size() - 1, List>;
+	using seq_no_sign = mpl::erase_front_n<start, List>;
 
-	using match = mpl::find_first_if<detail::is_non_digit, seq_no_sign>;
+	using match = mpl::find_if<detail::is_non_digit, seq_no_sign>;
 
 	using end = std::conditional_t<
 		std::is_same<match, mpl::no_match>::value,
-		mpl::minus<mpl::size<List>, mpl::size_t<1>>,
-		mpl::minus<mpl::plus<match, start>, mpl::size_t<1>>
+		mpl::minus<mpl::size<List>, mpl::list_index_c<1>>,
+		mpl::minus<mpl::plus<match, start>, mpl::list_index_c<1>>
 	>;
 
-	using string = mpl::slice_c<start::value, end::value, List>;
+	using string = mpl::slice<start, end, List>;
 
 	using parser = mpl::bind_back<
-		mpl::quote<mpl::foldl>,
+		mpl::quote<mpl::fold>,
 		mpl::int_<0>,
 		mpl::compose<
 			mpl::quote<mpl::list>,
-			mpl::uncurry<mpl::combine<
+			mpl::uncurry<mpl::make_list<
 				mpl::bind_front<mpl::quote<mpl::multiplies>, mpl::int_<10>>,
 				mpl::bind_back<mpl::quote<mpl::minus>, mpl::char_<'0'>>
 			>>,
@@ -72,7 +72,7 @@ struct parse_integer
 
 	using unsigned_type = mpl::apply<parser, string>;
 	using type = mpl::multiplies<sign, unsigned_type>;
-	using tail = mpl::slice_c<end::value + 1, List::size() - 1, List>;
+	using tail = mpl::erase_front_n<mpl::inc<end>, List>;
 };
 
 template <class List>

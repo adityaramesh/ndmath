@@ -38,16 +38,26 @@ template <class Char, Char... Ts>
 CC_ALWAYS_INLINE constexpr
 auto operator"" _array() noexcept
 {
-	using input        = mpl::list<mpl::char_<Ts>...>;
-	using parser       = nd::parse_array<mpl::quote<parse_decimal>, input>;
-	using state        = typename parser::type;
-	using list         = flatten_list<typename state::lists>;
-	using extents_list = typename state::extents;
+	using input  = mpl::list<mpl::char_<Ts>...>;
+	using parser = nd::parse_array<mpl::quote<parse_decimal>, input>;
+	using state  = typename parser::type;
+	using lists  = typename state::lists;
+
+	/*
+	** `lists` is a list of lists, where sublist `i` is used to store the
+	** results at level `i` (from 0 to n - 1, where n is the number of
+	** dimensions). Each time a `]` is encountered, the list from level
+	** `i + 1` is appended to the list at level `i`. So at the end of
+	** parsing, the array is the first sublist in `lists`.
+	*/
+	using array           = mpl::at_c<0, lists>;
+	using flattened_array = flatten_list<array>;
+	using extents_list    = typename state::extents;
 
 	constexpr auto extents =
 	detail::list_to_range<extents_list>;
 
-	return make_sarray<float>(list{}, extents);
+	return make_sarray<float>(flattened_array{}, extents);
 }
 
 }

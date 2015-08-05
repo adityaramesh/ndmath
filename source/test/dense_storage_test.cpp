@@ -7,6 +7,7 @@
 
 #include <ccbase/unit_test.hpp>
 #include <ndmath/array/dense_storage.hpp>
+#include <ndmath/array/array_literal.hpp>
 
 module("test dynamic construction")
 {
