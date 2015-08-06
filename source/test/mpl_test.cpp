@@ -167,21 +167,21 @@ module("test pack bools")
 	using l1 = mpl::to_types<std::integer_sequence<bool, true, false, true, false>>;
 	using m1 = nd::pack_bools<unsigned, l1>;
 
-	static_assert(m1::value == 0b0101, "");
+	static_assert(m1::num == 0b0101, "");
 }
 
-module("test pack bool lists")
+module("test pack bool list")
 {
 	using l1 = mpl::to_types<std::integer_sequence<bool, true, false, true, false>>;
 	using l2 = mpl::append<mpl::bool_<false>, mpl::repeat_nc<64, mpl::bool_<true>>>;
 
-	using m1 = nd::pack_bool_lists<uint32_t, l1>;
-	using m2 = nd::pack_bool_lists<uint32_t, l2>;
+	using m1 = nd::pack_bool_list<uint32_t, l1>;
+	using m2 = nd::pack_bool_list<uint32_t, l2>;
 
-	static_assert(mpl::at_c<0, m1>::value == 5u, "");
-	static_assert(mpl::at_c<0, m2>::value == 4294967295u, "");
-	static_assert(mpl::at_c<1, m2>::value == 4294967295u, "");
-	static_assert(mpl::at_c<2, m2>::value == 0, "");
+	static_assert(mpl::at_c<0, m1>::num == 5u, "");
+	static_assert(mpl::at_c<0, m2>::num == 4294967295u, "");
+	static_assert(mpl::at_c<1, m2>::num == 4294967295u, "");
+	static_assert(mpl::at_c<2, m2>::num == 0, "");
 }
 
 suite("mpl test")

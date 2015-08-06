@@ -30,7 +30,7 @@ struct pack_bools_helper
 	** Note that we use `reverse_fold` instead of `fold`, because the value
 	** of the LSB should be the first boolean in the list.
 	*/
-	using type = mpl::reverse_fold<
+	using result = mpl::reverse_fold<
 		List,
 		std::integral_constant<Integer, 0>,
 		mpl::compose<
@@ -49,6 +49,8 @@ struct pack_bools_helper
 			mpl::uncurry<mpl::quote<mpl::bit_or>>
 		>
 	>;
+
+	using type = std::ratio<result::value, 1>;
 };
 
 }
@@ -62,17 +64,17 @@ namespace pack_bools {
 template <class Integer, class IntList, class BoolList>
 struct state
 {
-	using integer   = Integer;
-	using int_list  = IntList;
-	using bool_list = BoolList;
+	using integer    = Integer;
+	using ratio_list = IntList;
+	using bool_list  = BoolList;
 };
 
 template <class T, class State>
 struct append
 {
-	using integer       = typename State::integer;
-	using cur_int_list  = typename State::int_list;
-	using cur_bool_list = typename State::bool_list;
+	using integer        = typename State::integer;
+	using cur_ratio_list = typename State::ratio_list;
+	using cur_bool_list  = typename State::bool_list;
 
 	using temp = mpl::append<T, cur_bool_list>;
 
@@ -81,47 +83,47 @@ struct append
 		mpl::list<>, temp
 	>;
 
-	using new_int_list = std::conditional_t<
+	using new_ratio_list = std::conditional_t<
 		temp::size == 8 * sizeof(integer),
-		mpl::append<nd::pack_bools<integer, temp>, cur_int_list>,
-		cur_int_list
+		mpl::append<nd::pack_bools<integer, temp>, cur_ratio_list>,
+		cur_ratio_list
 	>;
 
-	using type = state<integer, new_int_list, new_bool_list>;
+	using type = state<integer, new_ratio_list, new_bool_list>;
 };
 
 template <class State>
-struct get_int_list;
+struct get_ratio_list;
 
 template <class Integer, class IntList>
-struct get_int_list<state<Integer, IntList, mpl::list<>>>
+struct get_ratio_list<state<Integer, IntList, mpl::list<>>>
 { using type = IntList; };
 
 template <class Integer, class IntList, class BoolList>
-struct get_int_list<state<Integer, IntList, BoolList>>
+struct get_ratio_list<state<Integer, IntList, BoolList>>
 { using type = mpl::append<nd::pack_bools<Integer, BoolList>, IntList>; };
 
-template <class Integer, class Lists>
+template <class Integer, class List>
 struct helper
 {
 	static_assert(
-		Lists::size != 0,
+		List::size != 0,
 		"Boolean list is empty."
 	);
 
 	using final_state = mpl::fold<
-		Lists,
+		List,
 		state<Integer, mpl::list<>, mpl::list<>>,
 		mpl::reverse_args<mpl::quote_trait<append>>
 	>;
 
-	using type = mpl::_t<get_int_list<final_state>>;
+	using type = mpl::_t<get_ratio_list<final_state>>;
 };
 
 }}
 
-template <class Integer, class Lists>
-using pack_bool_lists = mpl::_t<detail::pack_bools::helper<Integer, Lists>>;
+template <class Integer, class List>
+using pack_bool_list = mpl::_t<detail::pack_bools::helper<Integer, List>>;
 
 }
 

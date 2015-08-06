@@ -77,7 +77,7 @@ constants in C++.
   be used in TMP (and hence can't be used to perform specialized codegen), but
   we can still perform `constexpr` computations using the object. This is done
   by making a `constexpr` instance of the object.
-  - Objects whose values are only known at runtime.
+  - Regular `const` objects -- generally, the values are only known at runtime.
 - When performing full unroll for loop optimization, we need to be able to
 obtain the coordinates of the range during compile-time.
 - The first time I wrote the index interface, I used `enable_if` to make the
@@ -100,11 +100,11 @@ than as runtime parameters. To avoid having to write the `template` keyword as a
 disambiguator, I made the second set of functions global. Examples:
   - `r.start(coord)` is `non-static constexpr`
   - `start<Coord>(r)` is `static constexpr`
-- This still doesn't solve the problem: how do we know whether the return type
-is `constexpr` or not?
+- This still doesn't solve the following problem: how do we know whether the
+return type is `constexpr` or not?
 - Instead of making the global accessor functions return integers, I made them
-return `locations` instead. A location has a static variable that indicates
-whether or not it is constant.
+return `coords` instead. A `coord` has a static variable that indicates whether
+or not it is constant.
 - With this framework in place, we can avoid having to double the number of
 template specializations.
 - Upshot: when designing a `constexpr` interface and `static constexpr` access

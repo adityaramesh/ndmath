@@ -263,9 +263,7 @@ public:
 	/*
 	** Constructor for use with `nd_array` initialization syntax.
 	*/
-	template <class... Ts, nd_enable_if((
-		true // TODO: different specialization for bool
-	))>
+	template <class... Ts>
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(const mpl::list<Ts...>) noexcept
 	: m_data{{(static_cast<underlying_type>(Ts::num) / Ts::den)...}} {}
