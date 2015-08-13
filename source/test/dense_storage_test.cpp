@@ -53,6 +53,13 @@ module("test static construction")
 		nd::extents(2_c, 2_c));
 	auto a5 = nd::make_sarray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
+
+	// Array literal syntax with implicit type:
+	auto a6 = nd_array([[1 2] [3 4]]);
+	auto a7 = nd_array([[true false] [false true]]);
+
+	// Array literal syntax with explicit type:
+	auto a8 = nd_array(float, [[1 2] [3 4]]);
 }
 
 module("test accessors")
@@ -72,10 +79,7 @@ module("test regular indexing")
 		nd::extents(2_c, 2_c));
 
 	require(arr.memory_size() == 4 * sizeof(float));
-	require(arr(0, 0) == 1);
-	require(arr(0, 1) == 2);
-	require(arr(1, 0) == 3);
-	require(arr(1, 1) == 4);
+	require(arr == nd_array([[1 2] [3 4]]));
 }
 
 module("test bool indexing")
@@ -86,10 +90,7 @@ module("test bool indexing")
 		nd::extents(2_c, 2_c));
 
 	require(arr.memory_size() == sizeof(unsigned));
-	require(arr(0, 0));
-	require(!arr(0, 1));
-	require(!arr(1, 0));
-	require(arr(1, 1));
+	require(arr == nd_array([[true false] [false true]]));
 }
 
 module("test copy assignment dynamic dynamic")
@@ -102,10 +103,7 @@ module("test copy assignment dynamic dynamic")
 	auto b = nd::make_darray<float>(2_c, 2_c);
 	b = a;
 
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
@@ -113,10 +111,7 @@ module("test copy assignment dynamic dynamic")
 	auto d = nd::make_darray<bool>(2_c, 2_c);
 	d = c;
 
-	require(d(0, 0));
-	require(!d(0, 1));
-	require(!d(1, 0));
-	require(d(1, 1));
+	require(d == nd_array([[true false] [false true]]));
 }
 
 module("test copy assignment mixed")
@@ -129,10 +124,7 @@ module("test copy assignment mixed")
 	auto b = nd::make_darray<float>(2_c, 2_c);
 	b = a;
 
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = nd::make_darray<float>({{1, 2}, {3, 4}},
 		nd::extents(2_c, 2_c));
@@ -140,10 +132,7 @@ module("test copy assignment mixed")
 	auto d = nd::make_sarray<float>(2_c, 2_c);
 	d = c;
 
-	require(d(0, 0) == 1);
-	require(d(0, 1) == 2);
-	require(d(1, 0) == 3);
-	require(d(1, 1) == 4);
+	require(d == nd_array([[1 2] [3 4]]));
 }
 
 module("test move assignment dynamic dynamic")
@@ -157,10 +146,7 @@ module("test move assignment dynamic dynamic")
 	b = std::move(a);
 
 	require(a.direct_view().begin() == nullptr);
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
@@ -169,10 +155,7 @@ module("test move assignment dynamic dynamic")
 	d = std::move(c);
 
 	require(c.direct_view().begin() == nullptr);
-	require(d(0, 0));
-	require(!d(0, 1));
-	require(!d(1, 0));
-	require(d(1, 1));
+	require(d == nd_array([[true false] [false true]]));
 }
 
 module("test copy construction dynamic dynamic")
@@ -183,31 +166,19 @@ module("test copy construction dynamic dynamic")
 		nd::extents(2_c, 2_c));
 
 	auto b = nd::make_darray(a);
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = a;
-	require(c(0, 0) == 1);
-	require(c(0, 1) == 2);
-	require(c(1, 0) == 3);
-	require(c(1, 1) == 4);
+	require(c == nd_array([[1 2] [3 4]]));
 
 	auto d = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
 
 	auto e = nd::make_darray(d);
-	require(e(0, 0));
-	require(!e(0, 1));
-	require(!e(1, 0));
-	require(e(1, 1));
+	require(e == nd_array([[true false] [false true]]));
 
 	auto f = d;
-	require(f(0, 0));
-	require(!f(0, 1));
-	require(!f(1, 0));
-	require(f(1, 1));
+	require(f == nd_array([[true false] [false true]]));
 }
 
 module("test copy construction static static")
@@ -218,16 +189,10 @@ module("test copy construction static static")
 		nd::extents(2_c, 2_c));
 
 	auto b = nd::make_sarray(a);
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = a;
-	require(c(0, 0) == 1);
-	require(c(0, 1) == 2);
-	require(c(1, 0) == 3);
-	require(c(1, 1) == 4);
+	require(c == nd_array([[1 2] [3 4]]));
 
 	auto d = nd::make_sarray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
@@ -253,31 +218,19 @@ module("test copy construction mixed")
 		nd::extents(2_c, 2_c));
 
 	auto b = nd::make_darray(a);
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = nd::make_darray<float>({{1, 2}, {3, 4}},
 		nd::extents(2_c, 2_c));
 
 	auto d = nd::make_sarray(c);
-	require(d(0, 0) == 1);
-	require(d(0, 1) == 2);
-	require(d(1, 0) == 3);
-	require(d(1, 1) == 4);
+	require(d == nd_array([[1 2] [3 4]]));
 
 	decltype(b) e = a;
-	require(e(0, 0) == 1);
-	require(e(0, 1) == 2);
-	require(e(1, 0) == 3);
-	require(e(1, 1) == 4);
+	require(e == nd_array([[1 2] [3 4]]));
 
 	decltype(a) f = b;
-	require(f(0, 0) == 1);
-	require(f(0, 1) == 2);
-	require(f(1, 0) == 3);
-	require(f(1, 1) == 4);
+	require(f == nd_array([[1 2] [3 4]]));
 }
 
 module("test move construction dynamic dynamic")
@@ -289,34 +242,22 @@ module("test move construction dynamic dynamic")
 
 	auto b = nd::make_darray(std::move(a));
 	require(a.direct_view().begin() == nullptr);
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = std::move(b);
 	require(b.direct_view().begin() == nullptr);
-	require(c(0, 0) == 1);
-	require(c(0, 1) == 2);
-	require(c(1, 0) == 3);
-	require(c(1, 1) == 4);
+	require(c == nd_array([[1 2] [3 4]]));
 	
 	auto d = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
 
 	auto e = nd::make_darray(std::move(d));
 	require(d.direct_view().begin() == nullptr);
-	require(e(0, 0));
-	require(!e(0, 1));
-	require(!e(1, 0));
-	require(e(1, 1));
+	require(e == nd_array([[true false] [false true]]));
 
 	auto f = std::move(e);
 	require(e.direct_view().begin() == nullptr);
-	require(f(0, 0));
-	require(!f(0, 1));
-	require(!f(1, 0));
-	require(f(1, 1));
+	require(f == nd_array([[true false] [false true]]));
 }
 
 module("test move construction static static")
@@ -327,31 +268,19 @@ module("test move construction static static")
 		nd::extents(2_c, 2_c));
 
 	auto b = nd::make_sarray(std::move(a));
-	require(b(0, 0) == 1);
-	require(b(0, 1) == 2);
-	require(b(1, 0) == 3);
-	require(b(1, 1) == 4);
+	require(b == nd_array([[1 2] [3 4]]));
 
 	auto c = std::move(b);
-	require(c(0, 0) == 1);
-	require(c(0, 1) == 2);
-	require(c(1, 0) == 3);
-	require(c(1, 1) == 4);
+	require(c == nd_array([[1 2] [3 4]]));
 	
 	auto d = nd::make_darray<bool>({{true, false}, {false, true}},
 		nd::extents(2_c, 2_c));
 
 	auto e = nd::make_darray(std::move(d));
-	require(e(0, 0));
-	require(!e(0, 1));
-	require(!e(1, 0));
-	require(e(1, 1));
+	require(e == nd_array([[true false] [false true]]));
 
 	auto f = std::move(e);
-	require(f(0, 0));
-	require(!f(0, 1));
-	require(!f(1, 0));
-	require(f(1, 1));
+	require(f == nd_array([[true false] [false true]]));
 }
 
 suite("dense storage test")

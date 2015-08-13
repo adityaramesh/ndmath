@@ -38,7 +38,7 @@ struct relational_operation_impl<true, FlatViewFeasible>
 	CC_ALWAYS_INLINE
 	static bool
 	apply(const array_wrapper<T>& x, const array_wrapper<U>& y, const Func& f)
-	noexcept { return equal(x.direct_view(), y.direct_view(), f); }
+	noexcept { return nd::detail::equal(x.direct_view(), y.direct_view(), f); }
 };
 
 template <>

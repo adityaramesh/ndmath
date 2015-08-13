@@ -202,7 +202,10 @@ public:
 		** See comments regarding construction in the other
 		** specialization of `dense_storage`.
 		*/
-		if (!std::is_trivial<underlying_type>::value) {
+		if (
+			!std::is_trivial<underlying_type>::value ||
+			std::is_same<T, bool>::value
+		) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
@@ -246,7 +249,10 @@ public:
 	noexcept(noexcept(
 		std::is_nothrow_constructible<underlying_type, const T&>::value))
 	{
-		if (!std::is_trivial<underlying_type>::value) {
+		if (
+			!std::is_trivial<underlying_type>::value ||
+			std::is_same<T, bool>::value
+		) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
@@ -456,11 +462,23 @@ public:
 		** when `T` is trivially constructible does any harm. I don't
 		** want to default-construct elements unnecessarily.
 		**
-		** Note that we need to check `is_trivially_constructible` as
-		** well as `is_trivially_copyable`; this is equivalent to
-		** checking `is_trivial`.
+		** Note 1: We need to check `is_trivially_constructible` as well
+		** as `is_trivially_copyable`; this is equivalent to checking
+		** `is_trivial`.
+		**
+		** Note 2: We default-construct the elements of the array in the
+		** case that `T == bool` for the following reason. When we use
+		** relational operations on arrays, it is much more efficient to
+		** implement them using the underlying storage, rather than by
+		** comparing boolean proxy classes. But comparing instances of
+		** the underlying type can give incorrect results if we do not
+		** initialize the elements beforehand, since the values of the
+		** bits that have not been set are undefined.
 		*/
-		if (!std::is_trivial<underlying_type>::value) {
+		if (
+			!std::is_trivial<underlying_type>::value ||
+			std::is_same<T, bool>::value
+		) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
@@ -525,7 +543,10 @@ public:
 		** well as `is_trivially_copyable`; this is equivalent to
 		** checking `is_trivial`.
 		*/
-		if (!std::is_trivial<underlying_type>::value) {
+		if (
+			!std::is_trivial<underlying_type>::value ||
+			std::is_same<T, bool>::value
+		) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
@@ -742,7 +763,10 @@ public:
 			** XXX: Technically, this branch should always be
 			** taken, for reasons discussed earlier.
 			*/
-			if (!std::is_trivial<underlying_type>::value) {
+			if (
+				!std::is_trivial<underlying_type>::value ||
+				std::is_same<T, bool>::value
+			) {
 				for (auto i = size_type{0}; i != new_size; ++i) {
 					m_alloc.construct(&m_data[i]);
 				}

@@ -32,7 +32,7 @@ template <class... Ts>
 struct list_to_range_helper<mpl::list<Ts...>>
 {
 	static constexpr auto value =
-	sc_range<Ts::value...>;
+	sc_range<(Ts::value - 1)...>;
 };
 
 template <class List>
