@@ -336,23 +336,23 @@ public:
 		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
 		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
 
-		return make_flat_view<decltype(func)>(*this, size());
+		return make_flat_view(*this, size(), func);
 	}
 
 	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
 	{
-		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		auto func = [&](const auto off, const auto& arr) CC_ALWAYS_INLINE
 		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
 
-		return make_flat_view<decltype(func)>(*this, size());
+		return make_flat_view(*this, size(), func);
 	}
 
 	CC_ALWAYS_INLINE
 	auto construction_view() noexcept
 	{
 		using access = detail::construction_view_access;
-		return make_construction_view<access>(*this, underlying_size());
+		return make_construction_view(*this, underlying_size(), access{});
 	}
 
 	CC_ALWAYS_INLINE
@@ -687,23 +687,23 @@ public:
 		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
 		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
 
-		return make_flat_view<decltype(func)>(*this, size());
+		return make_flat_view(*this, size(), func);
 	}
 
 	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
 	{
-		auto func = [&](const auto off, auto& arr) CC_ALWAYS_INLINE
+		auto func = [&](const auto off, const auto& arr) CC_ALWAYS_INLINE
 		nd_deduce_noexcept_and_return_type(helper::at(off, arr));
 
-		return make_flat_view<decltype(func)>(*this, size());
+		return make_flat_view(*this, size(), func);
 	}
 
 	CC_ALWAYS_INLINE
 	auto construction_view() noexcept
 	{
 		using access = detail::construction_view_access;
-		return make_construction_view<access>(*this, underlying_size());
+		return make_construction_view<access>(*this, underlying_size(), access{});
 	}
 
 	CC_ALWAYS_INLINE

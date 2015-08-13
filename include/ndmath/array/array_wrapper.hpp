@@ -132,6 +132,7 @@
 #include <ndmath/array/array_traits.hpp>
 #include <ndmath/array/array_assignment.hpp>
 #include <ndmath/array/array_construction.hpp>
+#include <ndmath/array/relational_operation.hpp>
 #include <ndmath/array/flat_iterator.hpp>
 #include <ndmath/array/element_from_offset.hpp>
 #include <ndmath/array/initializer_list.hpp>
@@ -808,6 +809,18 @@ public:
 	void destructive_resize(const Range& r)
 	nd_deduce_noexcept(m_wrapped.destructive_resize(r))
 };
+
+template <class T, class U>
+CC_ALWAYS_INLINE
+bool operator==(const array_wrapper<T>& x, const array_wrapper<U>& y)
+noexcept
+{
+	using helper = detail::relational_operation_helper;
+	return helper::apply(x, y,
+		[&] (const auto& a, const auto& b) CC_ALWAYS_INLINE {
+			return a == b;
+		});
+}
 
 }
 

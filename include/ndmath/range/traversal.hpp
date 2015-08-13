@@ -62,7 +62,7 @@ template <
 		>, bool
 	>::value))
 >
-CC_ALWAYS_INLINE void
+CC_ALWAYS_INLINE auto
 do_while(const range<Bases, Extents, Strides, Attribs>& r, const Func& f)
 noexcept(noexcept(f(sc_index_n<Bases::dims(), 0>)))
 {
@@ -70,7 +70,7 @@ noexcept(noexcept(f(sc_index_n<Bases::dims(), 0>)))
 	static constexpr auto dims = Bases::dims();
 	static constexpr auto is_noexcept = noexcept(f(sc_index_n<dims, 0>));
 	using helper = evaluator<0, Bases::dims(), Attribs, is_noexcept>;
-	helper::apply(r, f);
+	return helper::apply(r, f);
 }
 
 }
