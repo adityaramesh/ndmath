@@ -8,17 +8,20 @@
 **
 ** ## Requirement 1: Type Definitions
 **
-** The wrapped type must define the following types:
+** The wrapped type must define the following constants and types:
+**
 ** - is_lazy: Indicates whether the array type performs lazy computation when
-** accessing elements. This influences how assignment and copy construction is
-** performed.
+**   accessing elements. This influences how assignment and copy construction is
+**   performed.
+**
 ** - exterior_type: The type of the storage underlying the array originally
-** requested by the user. Why do we need this? Consider a dense_storage of
-** booleans. The underlying_type is unsigned, and the actual return type is
-** boolean_proxy, but there's no way for us to query the original type requested
-** by the user. This type is necesssary for copy construction.
+**   requested by the user. Why do we need this? Consider a dense_storage of
+**   booleans. The underlying_type is unsigned, and the actual return type is
+**   boolean_proxy, but there's no way for us to query the original type
+**   requested by the user. This type is necesssary for copy construction.
+**
 ** - size_type: The integral type used by the array to store information related
-** to memory.
+**   to memory.
 **
 ** ## Requirement 2: Either Support Copy and Move Construction Explicitly, or
 ** Support Fast Initializaiton
@@ -69,28 +72,35 @@
 ** construction can be implemented efficiently using assignment operations.
 ** Specifically, "fast initialization" is a way for the wrapped type to declare
 ** that it is capable of the following:
+**
 **   1. Initializing the storage necessary to contain the elements without
 **   initializing the elements themselves (e.g. an array of primitives). This is
 **   "partial initialization".
+**
 **   2. Initializing the minimal amount of state information necessary, after
 **   which it can "steal" the internals of another array using move assignment.
 **   This is "uninitialized" construction.
 **
 ** If fast initialization is supported:
+**
 ** - Any constructor (except the default constructor) that puts the wrapped type
 ** in an initialized state but *without* explicitly specified initial values for
 ** its elements must be accompanied by two variants. They should accept
 ** `partial_init_t` and `uninitialized_t` as their first arguments,
 ** respectively. The other arguments are those of the original constructor.
+**
 **   - This requirement excludes the copy and move constructors, if they are
 **   implemented.
+**
 **   - The "partial initialization" variant of the constructor is not required to
 **   construct the elements of the array (i.e. put the elements in well-defined
 **   states). However, the storage necessary to contain the elements must be
 **   allocated.
+**
 **   - The "uninitialized" variant of the constructor must initialize enough
 **   state information such that it becomes a valid object after being move
 **   assigned to another array.
+**
 ** - The following member functions must be implemented:
 **   - uninitialized_at()  (non-const only)
 **   - construction_view() (non-const only)
