@@ -209,9 +209,9 @@ struct assignment_helper
 		using traits = copy_assignment_traits<
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = copy_assign_helper<
-			traits::direct_assignment_feasible,
-			traits::assignment_to_direct_view_feasible,
-			traits::assignment_to_flat_view_feasible>;
+			traits::can_use_direct_assignment,
+			traits::can_use_direct_view,
+			traits::can_use_flat_view>;
 		helper::apply(dst, src);
 	}
 
@@ -223,9 +223,9 @@ struct assignment_helper
 		using traits = move_assignment_traits<
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = move_assign_helper<
-			traits::direct_assignment_feasible,
-			traits::assignment_to_direct_view_feasible,
-			traits::assignment_to_flat_view_feasible>;
+			traits::can_use_direct_assignment,
+			traits::can_use_direct_view,
+			traits::can_use_flat_view>;
 		helper::apply(dst, std::move(src));
 	}
 };

@@ -135,9 +135,9 @@ struct construction_helper
 		using traits = copy_construction_traits<
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = copy_construct_helper<
-			traits::direct_construction_feasible,
-			traits::construction_from_direct_view_feasible,
-			traits::construction_from_loop_feasible>;
+			traits::can_use_direct_construction,
+			traits::can_use_direct_view,
+			traits::can_use_loop>;
 		helper::apply(dst, src);
 	}
 
@@ -149,10 +149,10 @@ struct construction_helper
 		using traits = move_construction_traits<
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = move_construct_helper<
-			traits::direct_construction_feasible,
-			traits::fast_move_assignment_feasible,
-			traits::construction_from_direct_view_feasible,
-			traits::construction_from_loop_feasible>;
+			traits::can_use_direct_construction,
+			traits::can_use_fast_move_assignment,
+			traits::can_use_direct_view,
+			traits::can_use_loop>;
 		helper::apply(dst, std::move(src));
 	}
 };

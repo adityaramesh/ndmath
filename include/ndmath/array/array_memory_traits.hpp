@@ -3,6 +3,9 @@
 ** Author:    Aditya Ramesh
 ** Date:      03/27/2015
 ** Contact:   _@adityaramesh.com
+**
+** Traits used to determine how array construction and assignment are
+** implemented.
 */
 
 #ifndef ZF3BECB0C_8BCF_499F_AEB6_736DB2986112
@@ -83,7 +86,7 @@ struct copy_assignment_traits
 		"Destination array cannot be assigned to source array."
 	);
 
-	static constexpr auto direct_assignment_feasible =
+	static constexpr auto can_use_direct_assignment =
 	std::is_assignable<dst_wrapped, const src_wrapped&>::value;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
@@ -96,13 +99,13 @@ struct copy_assignment_traits
 	using src_di = typename Src::direct_iterator;
 	using traits = iterator_assignment_traits<dst_di, src_di>;
 
-	static constexpr auto assignment_to_direct_view_feasible =
+	static constexpr auto can_use_direct_view =
 	storage_orders_same       &&
 	Dst::provides_direct_view &&
 	Src::provides_direct_view &&
 	traits::is_copy_assignable;
 
-	static constexpr auto assignment_to_flat_view_feasible =
+	static constexpr auto can_use_flat_view =
 	storage_orders_same &&
 	Dst::provides_fast_flat_view;
 };
@@ -125,7 +128,7 @@ struct move_assignment_traits
 		"Destination array cannot be assigned to source array."
 	);
 
-	static constexpr auto direct_assignment_feasible =
+	static constexpr auto can_use_direct_assignment =
 	std::is_assignable<dst_wrapped, src_wrapped&&>::value;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
@@ -138,13 +141,13 @@ struct move_assignment_traits
 	using src_di = typename Src::direct_iterator;
 	using traits = iterator_assignment_traits<dst_di, src_di>;
 
-	static constexpr auto assignment_to_direct_view_feasible =
+	static constexpr auto can_use_direct_view =
 	storage_orders_same       &&
 	Dst::provides_direct_view &&
 	Src::provides_direct_view &&
 	traits::is_move_assignable;
 
-	static constexpr auto assignment_to_flat_view_feasible =
+	static constexpr auto can_use_flat_view =
 	storage_orders_same &&
 	Dst::provides_fast_flat_view;
 };
@@ -177,13 +180,13 @@ struct copy_construction_traits
 	using src_wrapped = typename Src::wrapped_type;
 	using dst_wrapped = typename Dst::wrapped_type;
 
-	static constexpr auto direct_construction_feasible =
+	static constexpr auto can_use_direct_construction =
 	std::is_constructible<dst_wrapped, const src_wrapped&>::value;
 
 	using src_type = typename Src::underlying_type;
 	using dst_type = typename Dst::underlying_type;
 
-	static constexpr auto indirect_construction_feasible =
+	static constexpr auto can_use_indirect_construction =
 	Src::supports_fast_initialization &&
 	std::is_constructible<dst_type, const src_type&>::value;
 
@@ -193,13 +196,13 @@ struct copy_construction_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	static constexpr auto construction_from_direct_view_feasible =
-	indirect_construction_feasible &&
-	storage_orders_same            &&
+	static constexpr auto can_use_direct_view =
+	can_use_indirect_construction &&
+	storage_orders_same           &&
 	Dst::provides_direct_view;
 
-	static constexpr auto construction_from_loop_feasible =
-	indirect_construction_feasible;
+	static constexpr auto can_use_loop =
+	can_use_indirect_construction;
 };
 
 /*
@@ -242,17 +245,17 @@ struct move_construction_traits
 	using src_wrapped = typename Src::wrapped_type;
 	using dst_wrapped = typename Dst::wrapped_type;
 
-	static constexpr auto direct_construction_feasible =
+	static constexpr auto can_use_direct_construction =
 	std::is_constructible<dst_wrapped, src_wrapped&&>::value;
 
-	static constexpr auto fast_move_assignment_feasible =
+	static constexpr auto can_use_fast_move_assignment =
 	Src::supports_fast_initialization &&
 	std::is_assignable<dst_wrapped, src_wrapped&&>::value;
 
 	using src_type = typename Src::underlying_type;
 	using dst_type = typename Dst::underlying_type;
 
-	static constexpr auto indirect_construction_feasible =
+	static constexpr auto can_use_indirect_construction =
 	Src::supports_fast_initialization &&
 	std::is_constructible<dst_type, src_type&&>::value;
 
@@ -262,13 +265,13 @@ struct move_construction_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	static constexpr auto construction_from_direct_view_feasible =
-	indirect_construction_feasible &&
-	storage_orders_same            &&
+	static constexpr auto can_use_direct_view =
+	can_use_indirect_construction &&
+	storage_orders_same           &&
 	Dst::provides_direct_view;
 
-	static constexpr auto construction_from_loop_feasible =
-	indirect_construction_feasible;
+	static constexpr auto can_use_loop =
+	can_use_indirect_construction;
 };
 
 }}
