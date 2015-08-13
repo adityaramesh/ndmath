@@ -8,6 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/array/dense_storage.hpp>
 #include <ndmath/array/array_literal.hpp>
+#include <boost/preprocessor/variadic/size.hpp>
 
 module("test implicit type deduction")
 {
@@ -29,7 +30,17 @@ module("test implicit type deduction")
 
 module("test explicit type deduction")
 {
-	//
+	auto a1 = nd_array(unsigned, [-1 0 1 2 3]);
+	auto a2 = nd_array(double, [-1 0 1 2 3]);
+	auto a3 = nd_array(int, [-1 0 1 2 3]);
+
+	using t1 = decltype(a1)::exterior_type;
+	using t2 = decltype(a2)::exterior_type;
+	using t3 = decltype(a3)::exterior_type;
+
+	static_assert(std::is_same<t1, unsigned>::value, "");
+	static_assert(std::is_same<t2, double>::value, "");
+	static_assert(std::is_same<t3, int>::value, "");
 }
 
 suite("array literal test")

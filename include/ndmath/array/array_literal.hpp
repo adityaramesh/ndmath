@@ -8,7 +8,13 @@
 #ifndef Z5DB3281C_001D_4110_87BF_82896F9D2F8F
 #define Z5DB3281C_001D_4110_87BF_82896F9D2F8F
 
+#if defined(__clang__)
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
+#endif
+
 #include <limits>
+#include <boost/preprocessor/variadic/size.hpp>
 #include <ndmath/array/dense_storage.hpp>
 #include <ndmath/mpl/parse_bool.hpp>
 #include <ndmath/mpl/parse_decimal.hpp>
@@ -95,6 +101,101 @@ template <bool IsBoolType, bool IsFPType, class Array>
 using deduce_scalar_type = mpl::_t<deduce_scalar_type_helper<
 	IsBoolType, IsFPType, Array>>;
 
+template <class String, class... Args>
+struct match_front_helper
+{
+	using args = mpl::list<Args...>;
+
+	using list = mpl::transform<
+		mpl::apply_list<
+			mpl::bind_front<
+				mpl::quote<mpl::select>,
+				mpl::zip<
+					mpl::erase_back<args>,
+					mpl::erase_front<args>
+				>
+			>,
+			mpl::range_c<mpl::list_index, 0, args::size - 2, 2>
+		>,
+		mpl::compose<
+			mpl::uncurry<mpl::make_list<
+				mpl::bind_back<
+					mpl::quote<mpl::starts_with>,
+					String
+				>,
+				mpl::quote_trait<mpl::id>
+			>>,
+			mpl::uncurry<
+				mpl::bind_back<mpl::quote<mpl::if_>, void>
+			>
+		>
+	>;
+
+	using match = mpl::find_if<
+		mpl::compose<
+			mpl::bind_back<mpl::quote<mpl::is_same>, void>,
+			mpl::quote<mpl::not_>
+		>,
+		list
+	>;
+
+	using index = mpl::if_<
+		mpl::equal_to<match, mpl::no_match>,
+		mpl::list_index_c<0>,
+		match
+	>;
+
+	using type = mpl::at<index, list>;
+};
+
+template <class String, class... Args>
+using match_front = mpl::_t<match_front_helper<String, Args...>>;
+
+template <class String>
+using parse_scalar_type = match_front<
+	String,
+	mpl_string("char"),               char,
+	mpl_string("signed char"),        signed char,
+	mpl_string("unsigned char"),      unsigned char,
+	mpl_string("short"),              short,
+	mpl_string("signed short"),       signed short,
+	mpl_string("unsigned short"),     unsigned short,
+	mpl_string("int"),                int,
+	mpl_string("signed"),             signed,
+	mpl_string("signed int"),         signed int,
+	mpl_string("unsigned"),           unsigned,
+	mpl_string("unsigned int"),       unsigned int,
+	mpl_string("long"),               long,
+	mpl_string("signed long"),        signed long,
+	mpl_string("unsigned long"),      unsigned long,
+	mpl_string("long long"),          long long,
+	mpl_string("signed long long"),   signed long long,
+	mpl_string("unsigned long long"), unsigned long long,
+	mpl_string("int8_t"),             int8_t,
+	mpl_string("uint8_t"),            uint8_t,
+	mpl_string("int_fast8_t"),        int_fast8_t,
+	mpl_string("uint_fast8_t"),       uint_fast8_t,
+	mpl_string("int16_t"),            int16_t,
+	mpl_string("uint16_t"),           uint16_t,
+	mpl_string("int_fast16_t"),       int_fast16_t,
+	mpl_string("uint_fast16_t"),      uint_fast16_t,
+	mpl_string("int32_t"),            int32_t,
+	mpl_string("uint32_t"),           uint32_t,
+	mpl_string("int_fast32_t"),       int_fast32_t,
+	mpl_string("uint_fast32_t"),      uint_fast32_t,
+	mpl_string("int64_t"),            int64_t,
+	mpl_string("uint64_t"),           uint64_t,
+	mpl_string("int_fast64_t"),       int_fast64_t,
+	mpl_string("uint_fast64_t"),      uint_fast64_t,
+	mpl_string("intmax_t"),           intmax_t,
+	mpl_string("uintmax_t"),          uintmax_t,
+	mpl_string("intptr_t"),           intptr_t,
+	mpl_string("uintptr_t"),          uintptr_t,
+	mpl_string("float"),              float,
+	mpl_string("double"),             double,
+	mpl_string("long double"),        long double
+>;
+
 }
 
 template <class Char, Char... Ts>
@@ -124,7 +225,7 @@ auto operator"" _array() noexcept
 		mpl::quote<parse_decimal>
 	>;
 
-	using parser = nd::parse_array<scalar_parser, input>;
+	using parser = parse_array<scalar_parser, input>;
 	using state  = typename parser::type;
 	using lists  = typename state::lists;
 
@@ -148,13 +249,47 @@ auto operator"" _array() noexcept
 	return make_sarray<scalar>(packed_array{}, extents);
 }
 
+template <class Char, Char... Ts>
+CC_ALWAYS_INLINE constexpr
+auto operator"" _array_explicit() noexcept
+{
+	using input = mpl::list<mpl::char_<Ts>...>;
+	using index = mpl::find<mpl::char_<'['>, input>;
+
+	static_assert(!std::is_same<index, mpl::no_match>::value, "Expected '['.");
+	static_assert(index::value != 0, "Expected scalar type before '['.");
+
+	using scalar_str = mpl::slice_c<0, index::value - 1, input>;
+	using array_str  = mpl::erase_front_n<index, input>;
+
+	using parser = nd::parse_array<mpl::quote<nd::parse_decimal>, array_str>;
+	using state  = typename parser::type;
+	using lists  = typename state::lists;
+										
+	using array            = mpl::at_c<0, lists>;
+	using flattened_array  = flatten_list<array>;
+	constexpr auto extents = detail::list_to_range<typename state::extents>;
+
+	using scalar = detail::parse_scalar_type<scalar_str>;
+	static_assert(!std::is_same<scalar, void>::value, "Unknown scalar type.");
+
+	return make_sarray<scalar>(flattened_array{}, extents);
+}
+
 }
 
 using nd::operator"" _array;
+using nd::operator"" _array_explicit;
 
-#define nd_array(x) #x ## _array
+#define nd_array_1(x) #x ## _array
+#define nd_array_2(scalar, x) #scalar #x ## _array_explicit
 
-// TODO: for the version of the macro that accepts the data type, define literal
-// operators for _X_array, for X in {int8_t, int16_t, int32_t, int64_t, ...}.
+#define nd_array_helper_2(n, ...) nd_array_ ## n(__VA_ARGS__)
+#define nd_array_helper_1(n, ...) nd_array_helper_2(n, __VA_ARGS__)
+#define nd_array(...) nd_array_helper_1(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), __VA_ARGS__)
+
+#if defined(__clang__)
+	#pragma GCC diagnostic pop
+#endif
 
 #endif

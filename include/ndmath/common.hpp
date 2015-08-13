@@ -15,6 +15,7 @@
 #include <ccbase/mpl.hpp>
 #include <ccbase/format.hpp>
 #include <ccbase/platform.hpp>
+#include <ccbase/mpl/string_literal.hpp>
 #include <boost/preprocessor/comparison/equal.hpp>
 #include <boost/preprocessor/variadic/size.hpp>
 

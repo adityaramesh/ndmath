@@ -13,7 +13,7 @@
 namespace nd {
 namespace detail {
 
-using digits = mpl::range_c<char, '0', '9'>;
+using digits = mpl_string("0123456789");
 
 using is_digit = mpl::compose<
 	mpl::bind_back<mpl::quote<mpl::find>, digits>,
@@ -38,8 +38,8 @@ using is_non_whitespace = mpl::compose<
 	mpl::bind_back<mpl::quote<mpl::not_equal_to>, mpl::no_match>
 >;
 
-using true_list = mpl::to_types<std::integer_sequence<char, 't', 'r', 'u', 'e'>>;
-using false_list = mpl::to_types<std::integer_sequence<char, 'f', 'a', 'l', 's', 'e'>>;
+using true_list = mpl_string("true");
+using false_list = mpl_string("false");
 
 }}
 
