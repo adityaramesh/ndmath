@@ -62,7 +62,7 @@ struct iterator_assignment_traits<LHSIter, void>
 ** type, then use it and return.
 ** - If dst needs to be resized but is not resizable, then raise an error.
 ** Otherwise, resize.
-** - If src is not lazy and dst and src have compatible storage orders:
+** - If dst and src have compatible storage orders:
 **   - If both dst and src support direct views over the elements, and it is
 **   possible to copy from src's direct view to dst's direct view, then do so.
 **   - Else if dst provides a fast flat view implementation, then copy from
@@ -103,7 +103,6 @@ struct copy_assignment_traits
 	traits::is_copy_assignable;
 
 	static constexpr auto assignment_to_flat_view_feasible =
-	!Src::is_lazy       &&
 	storage_orders_same &&
 	Dst::provides_fast_flat_view;
 };
@@ -146,7 +145,6 @@ struct move_assignment_traits
 	traits::is_move_assignable;
 
 	static constexpr auto assignment_to_flat_view_feasible =
-	!Src::is_lazy       &&
 	storage_orders_same &&
 	Dst::provides_fast_flat_view;
 };

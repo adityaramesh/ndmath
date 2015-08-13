@@ -94,6 +94,26 @@
 ** - The following member functions must be implemented:
 **   - uninitialized_at()  (non-const only)
 **   - construction_view() (non-const only)
+**
+** # Notes
+**
+** Some definitions:
+**
+** - Direct view: a flat view (i.e. a 1D range) over the elements of the array,
+**   as determined by the storage order of the array. This is a "direct" view
+**   over the elements in the sense that the value type of the iterator is the
+**   _underlying type_ of the storage. For instance, the underlying type of a
+**   dense boolean storage is an unsigned integral type. Using this view is
+**   preferable when it is possible to work with the underlying type
+**   efficiently. This view only exists if `provides_direct_view = true`.
+**
+** - Flat view: a 1D range over the elements of the array. If the underlying
+**   storage type provides an implementation of a flat view, then this
+**   implementation is used. In this case, `provides_fast_flat_view = true`.
+**   Otherwise, a generic flat view implementation is used. This genetic
+**   implementation uses a formula to compute the indices corresponding to a
+**   given offset. If an array type does not provide a "fast" flat view, then it
+**   is preferable to access the elements using indices.
 */
 
 #ifndef Z9FD66BF0_E92D_4CAE_A49B_8D7708927910
@@ -129,7 +149,8 @@ namespace detail {
 **   2. To call the appropriate functions of the wrapped type when
 **   `array_wrapper` is copy- or move-constructed. If the wrapped type supports
 **   direct copy construction, then we simply call its copy constructor.
-**   Otherwise, we 
+**   Otherwise, we first deafault-initialize the wrapped type, and then use copy
+**   assignment.
 */
 
 template <

@@ -43,9 +43,7 @@ struct copy_construct_helper<false, true, LoopFeasible>
 	template <class T, class U>
 	CC_ALWAYS_INLINE
 	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
-	{
-		boost::copy(src.direct_view(), dst.construction_view().begin());
-	}
+	{ boost::copy(src.direct_view(), dst.construction_view().begin()); }
 };
 
 template <>
