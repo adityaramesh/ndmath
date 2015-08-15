@@ -656,6 +656,7 @@ public:
 
 	template <class U, class Extents_, class StorageOrder_, class Alloc_,
 	nd_enable_if((
+		!std::is_same<Alloc_, void>::value &&
 		std::is_same<value_type,
 			typename dense_storage<U, Extents_, StorageOrder_, Alloc_>::value_type
 		>::value &&

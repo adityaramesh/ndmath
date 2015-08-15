@@ -561,7 +561,12 @@ public:
 	noexcept(
 		std::is_nothrow_constructible<T, uninitialized_t, Args...>::value &&
 		noexcept(construction_helper::move_construct(*this, std::move(rhs)))
-	) : base{uninitialized, std::forward<Args>(args)...}
+	) : base{
+		typename detail::move_construction_traits<
+			array_wrapper<U>, array_wrapper<T>
+		>::initialization_tag{},
+		std::forward<Args>(args)...
+	}
 	{ construction_helper::move_construct(*this, std::move(rhs)); }
 
 	/*
@@ -574,7 +579,12 @@ public:
 	noexcept(
 		std::is_nothrow_constructible<T, uninitialized_t, decltype(rhs)>::value &&
 		noexcept(construction_helper::move_construct(*this, std::move(rhs)))
-	) : base{uninitialized, std::move(rhs)}
+	) : base{
+		typename detail::move_construction_traits<
+			array_wrapper<U>, array_wrapper<T>
+		>::initialization_tag{},
+		std::move(rhs)
+	}
 	{ construction_helper::move_construct(*this, std::move(rhs)); }
 
 	/*

@@ -12,6 +12,10 @@
 #define ZF3BECB0C_8BCF_499F_AEB6_736DB2986112
 
 namespace nd {
+
+struct partial_init_t;
+struct uninitialized_t;
+
 namespace detail {
 
 template <class SrcIter, class DstIter>
@@ -161,8 +165,8 @@ struct move_assignment_traits
 ** it and return.
 ** - If dst supports fast initialization and dst's underlying type is copy
 ** constructible from src's underlying type:
-**   - Construct dst in an uninitialized state with the parameters supplied to
-**   the copy constructor.
+**   - Construct dst in a partially-initialized state with the parameters
+**     supplied to the copy constructor.
 **   - If dst and src have compatible storage orders and src provides a direct
 **   view over the elements:
 **     - Copy from src's direct view to dst's construction view
@@ -220,13 +224,15 @@ struct copy_construction_traits
 ** - If dst's wrapped type provides a move constructor for src's type, then use
 ** it and return.
 ** - If dst supports fast initialization:
-**   	- Construct dst in an uninitialized state with the parameters supplied
-**   	to the move constructor.
 ** 	- If dst's wrapped type provides a move assignment operator for src's
 ** 	wrapped type:
+**   	        - Construct dst in an uninitialized state with the parameters
+**   	          supplied to the move constructor.
 ** 		- Move assign src to dst.
 ** 	- Else if dst's underlying type is move constructible from src's
 ** 	underlying type:
+**   	        - Construct dst in an partially-initialized state with the
+**   	          parameters supplied to the move constructor.
 **   		- If dst and src have compatible storage orders and src provides
 **   		a direct view over the elements:
 **     			- Move from src's direct view to dst's construction
@@ -258,6 +264,15 @@ struct move_construction_traits
 	static constexpr auto can_use_indirect_construction =
 	Src::supports_fast_initialization &&
 	std::is_constructible<dst_type, src_type&&>::value;
+
+	using initialization_tag = mpl::if_c<
+		can_use_fast_move_assignment,
+		uninitialized_t,
+		mpl::if_c<
+			can_use_indirect_construction,
+			partial_init_t, void
+		>
+	>;
 
 	using src_order = decltype(std::declval<Src>().storage_order());
 	using dst_order = decltype(std::declval<Dst>().storage_order());

@@ -288,6 +288,8 @@ using nd::operator"" _array_explicit;
 #define nd_array_helper_1(n, ...) nd_array_helper_2(n, __VA_ARGS__)
 #define nd_array(...) nd_array_helper_1(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), __VA_ARGS__)
 
+#define nd_darray(...) ::nd::make_darray(nd_array(__VA_ARGS__))
+
 #if defined(__clang__)
 	#pragma GCC diagnostic pop
 #endif
