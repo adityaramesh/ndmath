@@ -711,12 +711,12 @@ public:
 	template <nd_enable_if(!provides_fast_flat_view)>
 	CC_ALWAYS_INLINE
 	auto flat_view() noexcept
-	{ return make_flat_view<element_from_offset>(*this, size()); }
+	{ return make_flat_view(*this, size(), element_from_offset{}); }
 
 	template <nd_enable_if(!provides_fast_flat_view)>
 	CC_ALWAYS_INLINE
 	auto flat_view() const noexcept
-	{ return make_flat_view<element_from_offset>(*this, size()); }
+	{ return make_flat_view(*this, size(), element_from_offset{}); }
 
 	template <nd_enable_if(provides_direct_view)>
 	CC_ALWAYS_INLINE

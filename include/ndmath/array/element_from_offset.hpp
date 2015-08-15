@@ -55,6 +55,7 @@ struct element_from_offset_helper
 			off,
 			prod * arr.extents().length(
 				arr.storage_order().at_c(sc_coord<LastDim - CurDim>)),
+			arr,
 			arr.extents().start(sc_coord<LastDim - CurDim>) +
 			(off / prod) % arr.extents().length(
 				arr.storage_order().at_c(sc_coord<LastDim - CurDim>)),
@@ -90,9 +91,9 @@ struct element_from_offset
 	template <class Array>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) operator()(const typename Array::size_type off, Array& arr) const
-	noexcept(array_traits<Array>::is_noexcept_accessible)
+	noexcept(array_traits<std::decay_t<Array>>::is_noexcept_accessible)
 	{
-		using traits = array_traits<Array>;
+		using traits = array_traits<std::decay_t<Array>>;
 		using size_type = typename traits::size_type;
 		using helper = detail::element_from_offset_helper<
 			0, traits::dims - 1, size_type,

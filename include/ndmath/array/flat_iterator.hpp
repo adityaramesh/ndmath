@@ -354,7 +354,7 @@ noexcept
 	);
 }
 
-template <class AccessFunc, class T, class SizeType>
+template <class T, class SizeType, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto make_construction_view(T& t, const SizeType size, const AccessFunc& func)
 noexcept
