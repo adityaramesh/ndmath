@@ -15,15 +15,12 @@ namespace nd {
 template <class List>
 struct parse_bool
 {
-	static constexpr auto is_true =
-	mpl::starts_with<detail::true_list, List>::value;
-
-	static constexpr auto is_false =
-	mpl::starts_with<detail::false_list, List>::value;
+	static constexpr auto is_true  = mpl::at_c<0, List>::value == 't';
+	static constexpr auto is_false = mpl::at_c<0, List>::value == 'f';
 
 	static_assert(
 		is_true || is_false,
-		"Input does not start with 'true' or 'false'."
+		"Input does not start with 't' or 'f'."
 	);
 
 	using type = std::conditional_t<
@@ -31,17 +28,20 @@ struct parse_bool
 	>;
 
 	/*
-	** We can't use `slice` to extract the characters after the string
-	** 'true' or 'false', since we would get an index out of bounds error if
-	** the input matches 'true' or 'false' exactly.
+	** We accept either 't' or 'true' for true, and 'f' or 'false' for
+	** false.
 	*/
-	using actions = std::conditional_t<
-		is_true,
-		mpl::repeat_nc<4, mpl::quote<mpl::erase_front>>,
-		mpl::repeat_nc<5, mpl::quote<mpl::erase_front>>
+	using count = mpl::if_<
+		mpl::starts_with<detail::true_list, List>,
+		mpl::list_index_c<4>,
+		mpl::if_<
+			mpl::starts_with<detail::false_list, List>,
+			mpl::list_index_c<5>,
+			mpl::list_index_c<1>
+		>
 	>;
 
-	using tail = mpl::fold<actions, List, mpl::reverse_args<mpl::quote<mpl::apply>>>;
+	using tail = mpl::erase_front_n<count, List>;
 };
 
 }

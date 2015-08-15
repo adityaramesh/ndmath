@@ -105,8 +105,8 @@ module("test parse decimal")
 
 module("test parse bool")
 {
-	using s1 = mpl::to_types<std::integer_sequence<char, 't', 'r', 'u', 'e'>>;
-	using s2 = mpl::to_types<std::integer_sequence<char, 'f', 'a', 'l', 's', 'e'>>;
+	using s1 = mpl_string("true");
+	using s2 = mpl_string("false");
 
 	using t1 = nd::parse_bool<s1>;
 	using t2 = nd::parse_bool<s2>;
@@ -120,23 +120,41 @@ module("test parse bool")
 
 module("test parse array")
 {
-	using s1 = mpl::to_types<std::integer_sequence<char, '[', '1', ']'>>;
-	using s2 = mpl::to_types<std::integer_sequence<char, '[', '1', ' ', '2', ']'>>;
-	using s3 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', ']'>>;
-	using s4 = mpl::to_types<std::integer_sequence<char, '[', '[', '1', ']', '[', '1', ']', ']'>>;
-	using s5 = mpl::to_types<std::integer_sequence<char, '[', 't', 'r', 'u', 'e', ']'>>;
+	using s1 = mpl_string("[1]");
+	using s2 = mpl_string("[1 2]");
+	using s3 = mpl_string("[[1]]");
+	using s4 = mpl_string("[[1][1]]");
+	using s5 = mpl_string("[true]");
+	using s6 = mpl_string("[t]");
+	using s7 = mpl_string("[0 1; 2 3; 4 5]");
+	using s8 = mpl_string("[[1; 2; 3; 4] [5; 6; 7; 8]]"); 
+	using s9 = mpl_string("[[0]; [1]; [2]]");
 
+	// Note: the array below is equivalent to
+	// [ [ [[0] [1]] ] [ [[2] [3]] ] [ [[4] [5]] ] ]
+	using s10 = mpl_string("[[0; 1]; [2; 3]; [4; 5]]");
+	
 	using t1 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s1>::lists;
 	using t2 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s2>::lists;
 	using t3 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s3>::lists;
 	using t4 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s4>::lists;
 	using t5 = typename nd::parse_array<mpl::quote<nd::parse_bool>, s5>::lists;
+	using t6 = typename nd::parse_array<mpl::quote<nd::parse_bool>, s6>::lists;
+	using t7 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s7>::type;
+	using t8 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s8>::type;
+	using t9 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s9>::type;
+	using t10 = typename nd::parse_array<mpl::quote<nd::parse_decimal>, s10>::type;
 
 	cc::println(typeid(t1).name());
 	cc::println(typeid(t2).name());
 	cc::println(typeid(t3).name());
 	cc::println(typeid(t4).name());
 	cc::println(typeid(t5).name());
+	cc::println(typeid(t6).name());
+	cc::println(typeid(t7).name());
+	cc::println(typeid(t8).name());
+	cc::println(typeid(t9).name());
+	cc::println(typeid(t10).name());
 }
 
 module("test flatten list")

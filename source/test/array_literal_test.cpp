@@ -16,16 +16,19 @@ module("test implicit type deduction")
 	auto a2 = nd_array([true false true]);
 	auto a3 = nd_array([0 1 2 3]);
 	auto a4 = nd_array([-1 0 1 2 3]);
+	auto a5 = nd_array([t f t]);
 
 	using t1 = decltype(a1)::exterior_type;
 	using t2 = decltype(a2)::exterior_type;
 	using t3 = decltype(a3)::exterior_type;
 	using t4 = decltype(a4)::exterior_type;
+	using t5 = decltype(a5)::exterior_type;
 
 	static_assert(std::is_same<t1, float>::value, "");
 	static_assert(std::is_same<t2, bool>::value, "");
 	static_assert(std::is_same<t3, unsigned>::value, "");
 	static_assert(std::is_same<t4, int>::value, "");
+	static_assert(std::is_same<t5, bool>::value, "");
 }
 
 module("test explicit type deduction")
