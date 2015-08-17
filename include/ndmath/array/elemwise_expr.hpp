@@ -16,8 +16,8 @@ template <class T, class U, class Func>
 struct elemwise_expr final
 {
 private:
-	using const_ref_1 = typename T::const_reference;
-	using const_ref_2 = typename U::const_reference;
+	using et_1        = std::decay_t<typename T::external_type>;
+	using et_2        = std::decay_t<typename U::external_type>;
 	using size_type_1 = typename T::size_type;
 	using size_type_2 = typename U::size_type;
 	using extents_1   = std::decay_t<decltype(std::declval<T>().extents())>;
@@ -26,7 +26,7 @@ private:
 	static constexpr auto sa_1 = extents_1::allows_static_access;
 	static constexpr auto sa_2 = extents_2::allows_static_access;
 public:
-	using external_type = std::result_of_t<Func(const_ref_1, const_ref_2)>;
+	using external_type = std::result_of_t<Func(et_1, et_2)>;
 	using size_type     = std::common_type_t<size_type_1, size_type_2>;
 	using value_type    = std::decay_t<external_type>;
 	static constexpr auto is_lazy = true;
@@ -49,6 +49,9 @@ public:
 	{ return m_func(m_left(ts...), m_right(ts...)); }
 
 	template <nd_enable_if((
+		// XXX: For now, we assume that if both arrays have the same
+		// external type and underlying type, then it's safe to evaluate
+		// the binary operation over the underlying type, if possible.
 		std::is_same<
 			std::decay_t<typename T::external_type>,
 			std::decay_t<typename U::external_type>
@@ -60,7 +63,19 @@ public:
 		decltype(std::declval<T>().storage_order()){} ==
 		decltype(std::declval<U>().storage_order()){} &&
 		T::provides_underlying_view &&
-		U::provides_underlying_view
+		U::provides_underlying_view &&
+		// Ensure that `m_func` can actually be applied to the
+		// underlying types.
+		std::is_same<
+			std::result_of_t<Func(
+				typename T::underlying_type,
+				typename U::underlying_type
+			)>,
+			std::result_of_t<Func(
+				typename T::underlying_type,
+				typename U::underlying_type
+			)>
+		>::value
 	))>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) underlying_view() const noexcept
@@ -96,7 +111,21 @@ public:
 	{ return m_left.extents(); }
 };
 
-template <class T, class U, class Func>
+template <class T, class U, class Func, nd_enable_if((
+	// Check that the binary operation over the external types of the arrays
+	// actually compiles, so that we don't get a cryptic compiler error
+	// later down the line.
+	std::is_same<
+		std::result_of_t<Func(
+			typename T::external_type,
+			typename U::external_type
+		)>,
+		std::result_of_t<Func(
+			typename T::external_type,
+			typename U::external_type
+		)>
+	>::value
+))>
 CC_ALWAYS_INLINE constexpr
 auto make_elemwise_expr(
 	const array_wrapper<T>& t,
@@ -108,6 +137,98 @@ auto make_elemwise_expr(
 	using array_type = array_wrapper<expr>;
 	return array_type{expr{t, u, f}};
 }
+
+namespace detail {
+
+#define nd_define_binary_op(symbol, name)                     \
+	struct name final                                     \
+	{                                                     \
+		template <class T, class U>                   \
+		CC_ALWAYS_INLINE constexpr                    \
+		auto operator()(const T& t, const U& u) const \
+		noexcept { return t symbol u; }               \
+	};
+
+// Arithmetic operations.
+nd_define_binary_op(+, plus)
+nd_define_binary_op(-, minus)
+nd_define_binary_op(*, multiplies)
+nd_define_binary_op(/, divides)
+nd_define_binary_op(%, modulus)
+
+// Relational operations.
+nd_define_binary_op(==, equal_to)
+nd_define_binary_op(!=, not_equal_to)
+nd_define_binary_op(>, greater)
+nd_define_binary_op(<, less)
+nd_define_binary_op(>=, greater_equal)
+nd_define_binary_op(<=, less_equal)
+
+// Bitwise operations.
+nd_define_binary_op(&, bit_and)
+nd_define_binary_op(|, bit_or)
+nd_define_binary_op(^, bit_xor)
+nd_define_binary_op(<<, left_shift)
+nd_define_binary_op(>>, right_shift)
+
+#undef nd_define_binary_op
+
+struct logical_and final
+{
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const bool& t, const bool& u) const
+	noexcept { return t && u; }
+
+	template <class T, class U>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const T& t, const U& u) const
+	noexcept { return t & u; }
+};
+
+struct logical_or final
+{
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const bool& t, const bool& u) const
+	noexcept { return t || u; }
+
+	template <class T, class U>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const T& t, const U& u) const
+	noexcept { return t | u; }
+};
+
+}
+
+#define nd_define_elemwise_expr(symbol, name)                                       \
+	template <class T, class U>                                                 \
+	CC_ALWAYS_INLINE constexpr                                                  \
+	auto operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u) \
+	noexcept { return make_elemwise_expr(t, u, name{}); }
+
+nd_define_elemwise_expr(+, detail::plus)
+nd_define_elemwise_expr(-, detail::minus)
+nd_define_elemwise_expr(*, detail::multiplies)
+nd_define_elemwise_expr(/, detail::divides)
+nd_define_elemwise_expr(%, detail::modulus)
+
+// Relational operations. TODO only use these when the arrays are both
+// elemwise_comparison_expr types.
+//
+//nd_define_elemwise_expr(==, detail::equal_to)
+//nd_define_elemwise_expr(!=, detail::not_equal_to)
+//nd_define_elemwise_expr(>, detail::greater)
+//nd_define_elemwise_expr(<, detail::less)
+//nd_define_elemwise_expr(>=, detail::greater_equal)
+//nd_define_elemwise_expr(<=, detail::less_equal)
+
+// Bitwise operations.
+nd_define_elemwise_expr(&, detail::bit_and)
+nd_define_elemwise_expr(|, detail::bit_or)
+nd_define_elemwise_expr(^, detail::bit_xor)
+nd_define_elemwise_expr(<<, detail::left_shift)
+nd_define_elemwise_expr(>>, detail::right_shift)
+
+#undef nd_define_elemwise_expr
 
 }
 

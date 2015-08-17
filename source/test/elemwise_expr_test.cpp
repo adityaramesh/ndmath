@@ -21,6 +21,7 @@ module("test construction")
 	require(e.dims() == 2);
 	require(e.extents() == nd::extents(2_c, 2_c));
 	require(e == nd_array([2 4; 6 8]));
+	require(nd_array([1 2]) + nd_array([3 4]) == nd_array([4 6]));
 }
 
 suite("elemwise expr test")
