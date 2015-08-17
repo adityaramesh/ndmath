@@ -46,6 +46,15 @@ public:
 	decltype(auto) at(const Ts... ts) const noexcept
 	{ return m_func(m_left(ts...), m_right(ts...)); }
 
+	/*
+	** We should implement flat_view in case both the LHS and the RHS
+	** have the same storage order, and support fast flat views.
+	*/
+
+	/*
+	** TODO: if both LHS and RHS have the same storage order, then we should
+	** return that storage order.
+	*/
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) storage_order() const noexcept
 	{ return default_storage_order<std::decay_t<T>::dims()>; }

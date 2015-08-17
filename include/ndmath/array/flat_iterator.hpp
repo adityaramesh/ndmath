@@ -23,10 +23,8 @@ class flat_iterator final
 	using size_type = typename T::size_type;
 public:
 	using difference_type   = size_type;
-	using reference         = decltype(std::declval<AccessFunc>()
-					(size_type{}, std::declval<T&>()));
-	using const_reference   = decltype(std::declval<AccessFunc>()
-					(size_type{}, std::declval<const T&>()));
+	using reference         = std::result_of_t<AccessFunc(size_type, T&)>;
+	using const_reference   = std::result_of_t<AccessFunc(size_type, const T&)>;
 	using value_type        = std::decay_t<reference>;
 	using pointer           = value_type*;
 	using const_pointer     = const value_type*;
@@ -193,7 +191,7 @@ class construction_iterator final
 	using size_type = typename T::size_type;
 public:
 	using difference_type   = size_type;
-	using reference         = decltype(AccessFunc{}(size_type{}, std::declval<T&>()));
+	using reference         = std::result_of_t<AccessFunc(size_type, T&)>;
 	using const_reference   = reference;
 	using value_type        = std::decay_t<reference>;
 	using pointer           = value_type*;

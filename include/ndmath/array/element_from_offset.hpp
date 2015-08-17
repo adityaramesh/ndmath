@@ -79,9 +79,7 @@ struct element_from_offset_helper<LastDim, LastDim, SizeType, IsNoexceptAccessib
 		Array& arr,
 		const Ts&... ts
 	) noexcept(IsNoexceptAccessible)
-	{
-		return arr.at(arr.extents().start(sc_coord<0>) + off / prod, ts...);
-	}
+	{ return arr.at(arr.extents().start(sc_coord<0>) + off / prod, ts...); }
 };
 
 }

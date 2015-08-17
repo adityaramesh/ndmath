@@ -725,7 +725,7 @@ public:
 	auto construction_view() noexcept
 	{
 		using access = detail::construction_view_access;
-		return make_construction_view<access>(*this, underlying_size(), access{});
+		return make_construction_view(*this, underlying_size(), access{});
 	}
 
 	CC_ALWAYS_INLINE
