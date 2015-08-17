@@ -3,6 +3,12 @@
 ** Author:    Aditya Ramesh
 ** Date:      03/16/2015
 ** Contact:   _@adityaramesh.com
+**
+** Note: boolean arrays have their storage zero-initialized by default. This is
+** because logical operations work on the underlying storage rather than the
+** proxy types returned for each bit, in order to maintain efficiency. However,
+** this optimization will cause incorrect results if an unused bit happens not
+** to be zero.
 */
 
 #ifndef Z48CDD07C_465F_4840_8116_DB760EF85D3B
@@ -178,7 +184,7 @@ private:
 		"Range of dense storage must have unit stride."
 	);
 public:
-	using exterior_type   = T;
+	using external_type   = T;
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
@@ -362,14 +368,14 @@ public:
 	}
 
 	CC_ALWAYS_INLINE
-	auto direct_view() noexcept
+	auto underlying_view() noexcept
 	{
 		return boost::make_iterator_range(m_data.begin(),
 			m_data.end());
 	}
 
 	CC_ALWAYS_INLINE
-	auto direct_view() const noexcept
+	auto underlying_view() const noexcept
 	{
 		return boost::make_iterator_range(m_data.begin(),
 			m_data.end());
@@ -431,7 +437,7 @@ private:
 		"Range of dense storage must have unit stride."
 	);
 public:
-	using exterior_type   = T;
+	using external_type   = T;
 	using size_type       = unsigned;
 	using value_type      = std::decay_t<T>;
 	using underlying_type = typename helper::underlying_type;
@@ -729,14 +735,14 @@ public:
 	}
 
 	CC_ALWAYS_INLINE
-	auto direct_view() noexcept
+	auto underlying_view() noexcept
 	{
 		return boost::make_iterator_range(
 			m_data, m_data + underlying_size());
 	}
 
 	CC_ALWAYS_INLINE
-	auto direct_view() const noexcept
+	auto underlying_view() const noexcept
 	{
 		return boost::make_iterator_range(
 			m_data, m_data + underlying_size());
@@ -985,9 +991,9 @@ auto make_sarray(
 )
 {
 	using source_type   = std::decay_t<Array>;
-	using exterior_type = typename source_type::exterior_type;
+	using external_type = typename source_type::external_type;
 	using storage_order = std::decay_t<StorageOrder>;
-	using storage_type  = dense_storage<exterior_type, Extents, storage_order, void>;
+	using storage_type  = dense_storage<external_type, Extents, storage_order, void>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr)};
 }
@@ -1150,11 +1156,11 @@ auto make_darray(
 )
 {
 	using source_type   = std::decay_t<Array>;
-	using exterior_type = typename source_type::exterior_type;
+	using external_type = typename source_type::external_type;
 	using extents       = std::decay_t<decltype(arr.extents())>;
 	using storage_order = std::decay_t<StorageOrder>;
 	using allocator     = mpl::quote<std::allocator>;
-	using storage_type  = dense_storage<exterior_type, extents, storage_order, allocator>;
+	using storage_type  = dense_storage<external_type, extents, storage_order, allocator>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr), e};
 }
@@ -1180,9 +1186,9 @@ auto make_darray(
 )
 {
 	using source_type   = std::decay_t<Array>;
-	using exterior_type = typename source_type::exterior_type;
+	using external_type = typename source_type::external_type;
 	using storage_order = std::decay_t<StorageOrder>;
-	using storage_type  = dense_storage<exterior_type, Extents, storage_order,
+	using storage_type  = dense_storage<external_type, Extents, storage_order,
 	                      	detail::unspecialize_allocator<Alloc>>;
 	using array_type    = array_wrapper<storage_type>;
 	return array_type{std::forward<Array>(arr), e, alloc};

@@ -23,7 +23,7 @@ namespace detail {
 **
 ** Call the two arrays involved in the operation `A` and `B`.
 ** - If the exterior types of A and B are both `bool`, and A and B both have the
-**   same underlying type, then use a while loop over the direct views.
+**   same underlying type, then use a while loop over the underlying views.
 ** - Else if A or B provides a fast flat view implementation, then use a while
 **   loop over the flat views.
 ** - Else, use a while-each loop over the arrays' range.
@@ -31,8 +31,8 @@ namespace detail {
 template <class A, class B>
 struct relational_operation_traits
 {
-	using src_etype = typename A::exterior_type;
-	using dst_etype = typename B::exterior_type;
+	using src_etype = typename A::external_type;
+	using dst_etype = typename B::external_type;
 	using src_utype = typename A::underlying_type;
 	using dst_utype = typename B::underlying_type;
 
@@ -42,13 +42,13 @@ struct relational_operation_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	static constexpr auto can_use_direct_view =
+	static constexpr auto can_use_underlying_view =
 	std::is_same<src_etype, bool>::value      &&
 	std::is_same<dst_etype, bool>::value      &&
 	std::is_same<src_utype, dst_utype>::value &&
 	storage_orders_same                       &&
-	A::provides_direct_view                   &&
-	B::provides_direct_view;
+	A::provides_underlying_view               &&
+	B::provides_underlying_view;
 
 	static constexpr auto can_use_flat_view =
 	storage_orders_same &&

@@ -15,7 +15,7 @@ namespace detail {
 
 template <
 	bool DirectConstructionFeasible,
-	bool DirectViewFeasible,
+	bool UnderlyingViewFeasible,
 	bool LoopFeasible
 >
 struct copy_construct_helper;
@@ -23,13 +23,13 @@ struct copy_construct_helper;
 template <
 	bool DirectConstructionFeasible,
 	bool FastMoveAssignmentFeasible,
-	bool DirectViewFeasible,
+	bool UnderlyingViewFeasible,
 	bool LoopFeasible
 >
 struct move_construct_helper;
 
-template <bool DirectViewFeasible, bool LoopFeasible>
-struct copy_construct_helper<true, DirectViewFeasible, LoopFeasible>
+template <bool UnderlyingViewFeasible, bool LoopFeasible>
+struct copy_construct_helper<true, UnderlyingViewFeasible, LoopFeasible>
 {
 	template <class T, class U>
 	CC_ALWAYS_INLINE constexpr
@@ -43,7 +43,7 @@ struct copy_construct_helper<false, true, LoopFeasible>
 	template <class T, class U>
 	CC_ALWAYS_INLINE
 	static void apply(array_wrapper<T>& dst, const array_wrapper<U>& src)
-	{ boost::copy(src.direct_view(), dst.construction_view().begin()); }
+	{ boost::copy(src.underlying_view(), dst.construction_view().begin()); }
 };
 
 template <>
@@ -69,8 +69,8 @@ struct copy_construct_helper<false, false, false>
 	{ dst = src; }
 };
 
-template <bool FastMoveAssignmentFeasible, bool DirectViewFeasible, bool LoopFeasible>
-struct move_construct_helper<true, FastMoveAssignmentFeasible, DirectViewFeasible, LoopFeasible>
+template <bool FastMoveAssignmentFeasible, bool UnderlyingViewFeasible, bool LoopFeasible>
+struct move_construct_helper<true, FastMoveAssignmentFeasible, UnderlyingViewFeasible, LoopFeasible>
 {
 	template <class T, class U>
 	CC_ALWAYS_INLINE constexpr
@@ -78,8 +78,8 @@ struct move_construct_helper<true, FastMoveAssignmentFeasible, DirectViewFeasibl
 	noexcept {}
 };
 
-template <bool DirectViewFeasible, bool LoopFeasible>
-struct move_construct_helper<false, true, DirectViewFeasible, LoopFeasible>
+template <bool UnderlyingViewFeasible, bool LoopFeasible>
+struct move_construct_helper<false, true, UnderlyingViewFeasible, LoopFeasible>
 {
 	template <class T, class U>
 	CC_ALWAYS_INLINE constexpr
@@ -95,8 +95,8 @@ struct move_construct_helper<false, false, true, LoopFeasible>
 	static void apply(array_wrapper<T>& dst, array_wrapper<U>&& src)
 	{
 		std::move(
-			src.direct_view().begin(),
-			src.direct_view().end(),
+			src.underlying_view().begin(),
+			src.underlying_view().end(),
 			dst.construction_view().begin()
 		);
 	}
@@ -136,7 +136,7 @@ struct construction_helper
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = copy_construct_helper<
 			traits::can_use_direct_construction,
-			traits::can_use_direct_view,
+			traits::can_use_underlying_view,
 			traits::can_use_loop>;
 		helper::apply(dst, src);
 	}
@@ -151,7 +151,7 @@ struct construction_helper
 		using helper = move_construct_helper<
 			traits::can_use_direct_construction,
 			traits::can_use_fast_move_assignment,
-			traits::can_use_direct_view,
+			traits::can_use_underlying_view,
 			traits::can_use_loop>;
 		helper::apply(dst, std::move(src));
 	}

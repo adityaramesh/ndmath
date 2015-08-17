@@ -14,7 +14,7 @@
 **   accessing elements. This influences how assignment and copy construction is
 **   performed.
 **
-** - exterior_type: The type of the storage underlying the array originally
+** - external_type: The type of the storage underlying the array originally
 **   requested by the user. Why do we need this? Consider a dense_storage of
 **   booleans. The underlying_type is unsigned, and the actual return type is
 **   boolean_proxy, but there's no way for us to query the original type
@@ -48,14 +48,14 @@
 ** ## Requirement 3: Member Functions
 **
 ** The wrapped type must also define the following member functions:
-** - extents()       (const)
-** - storage_order() (const)
-** - at()            (const and non-const)
-** - memory_size()   (optional, const)
-** - allocator()     (optional, const and non-const)
-** - flat_view()     (optional, const and non-const)
-** - direct_view()   (optional, const and non-const)
-** - resize()        (optional, const and non-const)
+** - extents()           (const)
+** - storage_order()     (const)
+** - at()                (const and non-const)
+** - memory_size()       (optional, const)
+** - allocator()         (optional, const and non-const)
+** - flat_view()         (optional, const and non-const)
+** - underlying_view()   (optional, const and non-const)
+** - resize()            (optional, const and non-const)
 **
 ** ## Requirement 4: Optional Support for "Late Initialization"
 **
@@ -109,13 +109,13 @@
 **
 ** Some definitions:
 **
-** - Direct view: a flat view (i.e. a 1D range) over the elements of the array,
-**   as determined by the storage order of the array. This is a "direct" view
+** - Underlying view: a flat view (i.e. a 1D range) over the elements of the array,
+**   as determined by the storage order of the array. This is a "underlying" view
 **   over the elements in the sense that the value type of the iterator is the
 **   _underlying type_ of the storage. For instance, the underlying type of a
 **   dense boolean storage is an unsigned integral type. Using this view is
 **   preferable when it is possible to work with the underlying type
-**   efficiently. This view only exists if `provides_direct_view = true`.
+**   efficiently. This view only exists if `provides_underlying_view = true`.
 **
 ** - Flat view: a 1D range over the elements of the array. If the underlying
 **   storage type provides an implementation of a flat view, then this
@@ -159,7 +159,7 @@ namespace detail {
 **   they cannot be disabled by the derived class using `enable_if`.
 **   2. To call the appropriate functions of the wrapped type when
 **   `array_wrapper` is copy- or move-constructed. If the wrapped type supports
-**   direct copy construction, then we simply call its copy constructor.
+**   underlying copy construction, then we simply call its copy constructor.
 **   Otherwise, we first deafault-initialize the wrapped type, and then use copy
 **   assignment.
 */
@@ -406,20 +406,20 @@ detail::array_wrapper_base<
 	using construction_helper = detail::construction_helper;
 public:
 	using wrapped_type     = T;
-	using exterior_type    = typename traits::exterior_type;
+	using external_type    = typename traits::external_type;
 	using size_type        = typename traits::size_type;
 	using reference        = typename traits::reference;
 	using const_reference  = typename traits::const_reference;
 
-	using direct_iterator       = typename traits::direct_iterator;
-	using const_direct_iterator = typename traits::const_direct_iterator;
+	using underlying_iterator       = typename traits::underlying_iterator;
+	using const_underlying_iterator = typename traits::const_underlying_iterator;
 	using underlying_type       = typename traits::underlying_type;
 
 	static constexpr auto is_lazy                      = traits::is_lazy;
 	static constexpr auto is_conservatively_resizable  = traits::is_conservatively_resizable;
 	static constexpr auto is_destructively_resizable   = traits::is_destructively_resizable;
 	static constexpr auto is_noexcept_accessible       = traits::is_noexcept_accessible;
-	static constexpr auto provides_direct_view         = traits::provides_direct_view;
+	static constexpr auto provides_underlying_view     = traits::provides_underlying_view;
 	static constexpr auto provides_fast_flat_view      = traits::provides_fast_flat_view;
 	static constexpr auto provides_memory_size         = traits::provides_memory_size;
 	static constexpr auto provides_allocator           = traits::provides_allocator;
@@ -630,8 +630,8 @@ public:
 	}
 
 	CC_ALWAYS_INLINE auto&
-	operator=(const nested_initializer_list<exterior_type, traits::dims>& list)
-	noexcept(noexcept(std::is_nothrow_assignable<exterior_type, exterior_type>::value))
+	operator=(const nested_initializer_list<external_type, traits::dims>& list)
+	noexcept(noexcept(std::is_nothrow_assignable<external_type, external_type>::value))
 	{
 		for_each(extents(), [&] (const auto& i)
 			CC_ALWAYS_INLINE noexcept {
@@ -645,7 +645,7 @@ public:
 				*/
 				expand_index([&] (auto... ts) CC_ALWAYS_INLINE noexcept {
 					at(ts...) =
-					get_init_list_element<exterior_type, dims()>(list, i);
+					get_init_list_element<external_type, dims()>(list, i);
 				}, i);
 			});
 		return *this;
@@ -718,15 +718,15 @@ public:
 	auto flat_view() const noexcept
 	{ return make_flat_view(*this, size(), element_from_offset{}); }
 
-	template <nd_enable_if(provides_direct_view)>
+	template <nd_enable_if(provides_underlying_view)>
 	CC_ALWAYS_INLINE
-	auto direct_view() noexcept
-	{ return m_wrapped.direct_view(); }
+	auto underlying_view() noexcept
+	{ return m_wrapped.underlying_view(); }
 
-	template <nd_enable_if(provides_direct_view)>
+	template <nd_enable_if(provides_underlying_view)>
 	CC_ALWAYS_INLINE
-	auto direct_view() const noexcept
-	{ return m_wrapped.direct_view(); }
+	auto underlying_view() const noexcept
+	{ return m_wrapped.underlying_view(); }
 
 	template <nd_enable_if(supports_fast_initialization)>
 	CC_ALWAYS_INLINE

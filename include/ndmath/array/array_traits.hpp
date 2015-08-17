@@ -76,14 +76,14 @@ struct flat_view_traits<T, Ref, CRef, false>
 	using const_iterator = void;
 };
 
-template <class T, class ValueType, bool SupportsDirectView>
-struct direct_view_traits;
+template <class T, class ValueType, bool SupportsUnderlyingView>
+struct underlying_view_traits;
 
 template <class T, class ValueType>
-struct direct_view_traits<T, ValueType, true>
+struct underlying_view_traits<T, ValueType, true>
 {
-	using range           = decltype(std::declval<T>().direct_view());
-	using const_range     = decltype(std::declval<const T>().direct_view());
+	using range           = decltype(std::declval<T>().underlying_view());
+	using const_range     = decltype(std::declval<const T>().underlying_view());
 	using iterator        = decltype(std::declval<range>().begin());
 	using const_iterator  = decltype(std::declval<const_range>().begin());
 	using traits          = std::iterator_traits<iterator>;
@@ -91,7 +91,7 @@ struct direct_view_traits<T, ValueType, true>
 };
 
 template <class T, class ValueType>
-struct direct_view_traits<T, ValueType, false>
+struct underlying_view_traits<T, ValueType, false>
 {
 	using iterator        = void;
 	using const_iterator  = void;
@@ -100,8 +100,16 @@ struct direct_view_traits<T, ValueType, false>
 
 }
 
+/*
+** A version of `array_traits` that does not invoke `flat_view()` or
+** `construction_view()`. The reason for this is that some of the structs used
+** by the generic implementation of `flat_view()` and `construction_view()` may
+** rely on `array_traits`. Since `array_traits` calls `flat_view()`, this would
+** cause a circular dependency, and lead to a cryptic error about usage of an
+** incomplete type.
+*/
 template <class T>
-struct array_traits
+struct array_traits_no_view
 {
 	using storage_order = std::decay_t<
 		decltype(std::declval<T>().storage_order())>;
@@ -139,33 +147,6 @@ struct array_traits
 	{ return false; }
 
 	template <class U>
-	static constexpr auto check_direct_view(U*) ->
-	decltype(std::declval<U>().direct_view(), bool{})
-	{ return true; }
-
-	template <class U>
-	static constexpr auto check_direct_view(...)
-	{ return false; }
-
-	template <class U>
-	static constexpr auto check_construction_view(U*) ->
-	decltype(std::declval<U>().construction_view(), bool{})
-	{ return true; }
-
-	template <class U>
-	static constexpr auto check_construction_view(...)
-	{ return false; }
-
-	template <class U>
-	static constexpr auto check_flat_view(U*) ->
-	decltype(std::declval<U>().flat_view(), bool{})
-	{ return true; }
-
-	template <class U>
-	static constexpr auto check_flat_view(...)
-	{ return false; }
-
-	template <class U>
 	static constexpr auto check_memory_size(U*) ->
 	decltype(std::declval<U>().memory_size(), bool{})
 	{ return true; }
@@ -186,21 +167,57 @@ struct array_traits
 	static constexpr auto is_lazy                      = T::is_lazy;
 	static constexpr auto is_conservatively_resizable  = check_conservative_resize<T>(0);
 	static constexpr auto is_destructively_resizable   = check_destructive_resize<T>(0);
-	static constexpr auto provides_direct_view         = check_direct_view<T>(0);
-	static constexpr auto provides_fast_flat_view      = check_flat_view<T>(0);
 	static constexpr auto provides_memory_size         = check_memory_size<T>(0);
 	static constexpr auto provides_allocator           = check_allocator<T>(0);
-	static constexpr auto supports_fast_initialization = check_construction_view<T>(0);
 
 	using et = detail::element_access_traits<T, dims>;
 
-	using exterior_type    = typename T::exterior_type;
+	using external_type    = typename T::external_type;
 	using size_type        = typename T::size_type;
 	using reference        = typename et::reference;
 	using const_reference  = typename et::const_reference;
 
 	static constexpr auto is_noexcept_accessible =
 	et::is_noexcept_accessible;
+};
+
+template <class T>
+struct array_traits : array_traits_no_view<T>
+{
+	template <class U>
+	static constexpr auto check_underlying_view(U*) ->
+	decltype(std::declval<U>().underlying_view(), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check_underlying_view(...)
+	{ return false; }
+
+	template <class U>
+	static constexpr auto check_construction_view(U*) ->
+	decltype(std::declval<U>().construction_view(), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check_construction_view(...)
+	{ return false; }
+
+	template <class U>
+	static constexpr auto check_flat_view(U*) ->
+	decltype(std::declval<U>().flat_view(), bool{})
+	{ return true; }
+
+	template <class U>
+	static constexpr auto check_flat_view(...)
+	{ return false; }
+
+	static constexpr auto provides_underlying_view     = check_underlying_view<T>(0);
+	static constexpr auto provides_fast_flat_view      = check_flat_view<T>(0);
+	static constexpr auto supports_fast_initialization = check_construction_view<T>(0);
+
+	using base            = array_traits_no_view<T>;
+	using reference       = typename base::reference;
+	using const_reference = typename base::const_reference;
 
 	using fvt = detail::flat_view_traits<
 		T, reference, const_reference, provides_fast_flat_view>;
@@ -208,13 +225,14 @@ struct array_traits
 	using flat_iterator       = typename fvt::iterator;
 	using const_flat_iterator = typename fvt::const_iterator;
 
-	using dvt = detail::direct_view_traits<T, std::decay_t<reference>,
-	      provides_direct_view>;
+	using dvt = detail::underlying_view_traits<T, std::decay_t<reference>,
+	      provides_underlying_view>;
 
-	using direct_iterator       = typename dvt::iterator;
-	using const_direct_iterator = typename dvt::const_iterator;
+	using underlying_iterator       = typename dvt::iterator;
+	using const_underlying_iterator = typename dvt::const_iterator;
 	using underlying_type       = typename dvt::underlying_type;
 };
+
 
 }
 

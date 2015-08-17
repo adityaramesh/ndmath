@@ -20,8 +20,7 @@ module("test construction")
 
 	require(e.dims() == 2);
 	require(e.extents() == nd::extents(2_c, 2_c));
-	e.flat_view();
-	//require(e == nd_array([2 4; 6 8]));
+	require(e == nd_array([2 4; 6 8]));
 }
 
 suite("elemwise expr test")

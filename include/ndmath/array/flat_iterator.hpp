@@ -23,14 +23,14 @@ class flat_iterator final
 	using size_type = typename T::size_type;
 public:
 	using difference_type   = size_type;
-	using reference         = std::result_of_t<AccessFunc(size_type, T&)>;
-	using const_reference   = std::result_of_t<AccessFunc(size_type, const T&)>;
+	using reference         = std::result_of_t<AccessFunc(difference_type, T&)>;
+	using const_reference   = std::result_of_t<AccessFunc(difference_type, const T&)>;
 	using value_type        = std::decay_t<reference>;
 	using pointer           = value_type*;
 	using const_pointer     = const value_type*;
 	using iterator_category = std::random_access_iterator_tag;
 private:
-	size_type m_pos{};
+	difference_type m_pos{};
 	T& m_ref;
 	const AccessFunc& m_func;
 public:
@@ -39,7 +39,7 @@ public:
 	noexcept : m_ref{src}, m_func{func} {}
 
 	CC_ALWAYS_INLINE constexpr
-	explicit flat_iterator(T& src, const size_type size, const AccessFunc& func)
+	explicit flat_iterator(T& src, const difference_type size, const AccessFunc& func)
 	noexcept : m_pos{size}, m_ref{src}, m_func{func} {}
 
 	CC_ALWAYS_INLINE constexpr
@@ -77,11 +77,11 @@ public:
 	{ return &m_func(m_pos, m_ref); }
 
 	CC_ALWAYS_INLINE 
-	auto operator[](const size_type n)
+	auto operator[](const difference_type n)
 	nd_deduce_noexcept_and_return_type(m_func(m_pos + n, m_ref))
 
 	CC_ALWAYS_INLINE constexpr
-	auto operator[](const size_type n) const
+	auto operator[](const difference_type n) const
 	nd_deduce_noexcept_and_return_type(m_func(m_pos + n, m_ref))
 
 	CC_ALWAYS_INLINE auto
@@ -107,14 +107,14 @@ public:
 	}
 
 	CC_ALWAYS_INLINE auto&
-	operator+=(const size_type n) noexcept
+	operator+=(const difference_type n) noexcept
 	{
 		m_pos += n;
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE auto&
-	operator-=(const size_type n) noexcept
+	operator-=(const difference_type n) noexcept
 	{
 		m_pos -= n;
 		return *this;
@@ -153,7 +153,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
 	const flat_iterator<T, AccessFunc>& x,
-	const typename T::size_type n
+	const typename T::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -164,7 +164,7 @@ auto operator+(
 template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const typename T::size_type n,
+	const typename T::difference_type n,
 	const flat_iterator<T, AccessFunc>& x
 ) noexcept
 {
@@ -177,7 +177,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator-(
 	const flat_iterator<T, AccessFunc>& x,
-	const typename T::size_type n
+	const typename T::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -191,14 +191,14 @@ class construction_iterator final
 	using size_type = typename T::size_type;
 public:
 	using difference_type   = size_type;
-	using reference         = std::result_of_t<AccessFunc(size_type, T&)>;
+	using reference         = std::result_of_t<AccessFunc(difference_type, T&)>;
 	using const_reference   = reference;
 	using value_type        = std::decay_t<reference>;
 	using pointer           = value_type*;
 	using const_pointer     = pointer;
 	using iterator_category = std::random_access_iterator_tag;
 private:
-	size_type m_pos{};
+	difference_type m_pos{};
 	T& m_ref;
 	const AccessFunc& m_func;
 public:
@@ -207,7 +207,7 @@ public:
 	noexcept : m_ref{src}, m_func{func} {}
 
 	CC_ALWAYS_INLINE constexpr
-	explicit construction_iterator(T& src, const size_type size, const AccessFunc& func)
+	explicit construction_iterator(T& src, const difference_type size, const AccessFunc& func)
 	noexcept : m_pos{size}, m_ref{src}, m_func{func} {}
 
 	CC_ALWAYS_INLINE constexpr
@@ -236,7 +236,7 @@ public:
 	{ return &m_func(m_pos, m_ref); }
 
 	CC_ALWAYS_INLINE 
-	auto operator[](const size_type n)
+	auto operator[](const difference_type n)
 	nd_deduce_noexcept_and_return_type(m_func(m_pos + n, m_ref))
 
 	CC_ALWAYS_INLINE auto
@@ -262,14 +262,14 @@ public:
 	}
 
 	CC_ALWAYS_INLINE auto&
-	operator+=(const size_type n) noexcept
+	operator+=(const difference_type n) noexcept
 	{
 		m_pos += n;
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE auto&
-	operator-=(const size_type n) noexcept
+	operator-=(const difference_type n) noexcept
 	{
 		m_pos -= n;
 		return *this;
@@ -308,7 +308,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
 	const construction_iterator<T, AccessFunc>& x,
-	const typename T::size_type n
+	const typename T::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -319,7 +319,7 @@ auto operator+(
 template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const typename T::size_type n,
+	const typename T::difference_type n,
 	const construction_iterator<T, AccessFunc>& x
 ) noexcept
 {
@@ -332,7 +332,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator-(
 	const construction_iterator<T, AccessFunc>& x,
-	const typename T::size_type n
+	const typename T::difference_type n
 ) noexcept
 {
 	auto t = x;

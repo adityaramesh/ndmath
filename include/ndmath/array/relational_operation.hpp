@@ -28,7 +28,7 @@ bool equal(const A& the, const B& ray, const Func& ready)
 	while (++go, ++to != the.end()); return true;
 }
 
-template <bool DirectViewFeasible, bool FlatViewFeasible>
+template <bool UnderlyingViewFeasible, bool FlatViewFeasible>
 struct relational_operation_impl;
 
 template <bool FlatViewFeasible>
@@ -38,7 +38,7 @@ struct relational_operation_impl<true, FlatViewFeasible>
 	CC_ALWAYS_INLINE
 	static bool
 	apply(const array_wrapper<T>& x, const array_wrapper<U>& y, const Func& f)
-	noexcept { return nd::detail::equal(x.direct_view(), y.direct_view(), f); }
+	noexcept { return nd::detail::equal(x.underlying_view(), y.underlying_view(), f); }
 };
 
 template <>
@@ -51,7 +51,7 @@ struct relational_operation_impl<false, true>
 	noexcept { return nd::detail::equal(x.flat_view(), y.flat_view(), f); }
 };
 
-template <bool DirectViewFeasible, bool FlatViewFeasible>
+template <bool UnderlyingViewFeasible, bool FlatViewFeasible>
 struct relational_operation_impl
 {
 	template <class T, class U, class Func>
@@ -78,7 +78,7 @@ struct relational_operation_helper
 		using traits = relational_operation_traits<
 			array_wrapper<T>, array_wrapper<U>>;
 		using helper = relational_operation_impl<
-			traits::can_use_direct_view,
+			traits::can_use_underlying_view,
 			traits::can_use_flat_view>;
 		return helper::apply(x, y, f);
 	}

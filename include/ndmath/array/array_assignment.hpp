@@ -57,20 +57,20 @@ struct resize_helper<false>
 
 template <
 	bool DirectAssignmentFeasible, 
-	bool DirectViewFeasible,
+	bool UnderlyingViewFeasible,
 	bool FlatViewFeasible
 >
 struct copy_assign_helper;
 
 template <
 	bool DirectAssignmentFeasible, 
-	bool DirectViewFeasible,
+	bool UnderlyingViewFeasible,
 	bool FlatViewFeasible
 >
 struct move_assign_helper;
 
-template <bool DirectViewFeasible, bool FlatViewFeasible>
-struct copy_assign_helper<true, DirectViewFeasible, FlatViewFeasible>
+template <bool UnderlyingViewFeasible, bool FlatViewFeasible>
+struct copy_assign_helper<true, UnderlyingViewFeasible, FlatViewFeasible>
 {
 	template <class T, class U>
 	CC_ALWAYS_INLINE
@@ -91,7 +91,7 @@ struct copy_assign_helper<false, true, FlatViewFeasible>
 		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
-		boost::copy(src.direct_view(), dst.direct_view().begin());
+		boost::copy(src.underlying_view(), dst.underlying_view().begin());
 	}
 };
 
@@ -130,8 +130,8 @@ struct copy_assign_helper<false, false, false>
 	}
 };
 
-template <bool DirectViewFeasible, bool FlatViewFeasible>
-struct move_assign_helper<true, DirectViewFeasible, FlatViewFeasible>
+template <bool UnderlyingViewFeasible, bool FlatViewFeasible>
+struct move_assign_helper<true, UnderlyingViewFeasible, FlatViewFeasible>
 {
 	template <class T, class U>
 	CC_ALWAYS_INLINE
@@ -153,9 +153,9 @@ struct move_assign_helper<false, true, FlatViewFeasible>
 
 		helper::apply(dst, src);
 		std::move(
-			src.direct_view().begin(),
-			src.direct_view().end(),
-			dst.direct_view().begin()
+			src.underlying_view().begin(),
+			src.underlying_view().end(),
+			dst.underlying_view().begin()
 		);
 	}
 };
@@ -210,7 +210,7 @@ struct assignment_helper
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = copy_assign_helper<
 			traits::can_use_direct_assignment,
-			traits::can_use_direct_view,
+			traits::can_use_underlying_view,
 			traits::can_use_flat_view>;
 		helper::apply(dst, src);
 	}
@@ -224,7 +224,7 @@ struct assignment_helper
 			array_wrapper<U>, array_wrapper<T>>;
 		using helper = move_assign_helper<
 			traits::can_use_direct_assignment,
-			traits::can_use_direct_view,
+			traits::can_use_underlying_view,
 			traits::can_use_flat_view>;
 		helper::apply(dst, std::move(src));
 	}

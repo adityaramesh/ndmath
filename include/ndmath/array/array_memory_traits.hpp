@@ -70,8 +70,8 @@ struct iterator_assignment_traits<LHSIter, void>
 ** - If dst needs to be resized but is not resizable, then raise an error.
 ** Otherwise, resize.
 ** - If dst and src have compatible storage orders:
-**   - If both dst and src support direct views over the elements, and it is
-**   possible to copy from src's direct view to dst's direct view, then do so.
+**   - If both dst and src support underlying views over the elements, and it is
+**   possible to copy from src's underlying view to dst's underlying view, then do so.
 **   - Else if dst provides a fast flat view implementation, then copy from
 **   src's flat view to dst's flat view.
 ** - Else, copy using a for-each loop over src's range.
@@ -99,14 +99,14 @@ struct copy_assignment_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	using dst_di = typename Dst::direct_iterator;
-	using src_di = typename Src::direct_iterator;
+	using dst_di = typename Dst::underlying_iterator;
+	using src_di = typename Src::underlying_iterator;
 	using traits = iterator_assignment_traits<dst_di, src_di>;
 
-	static constexpr auto can_use_direct_view =
-	storage_orders_same       &&
-	Dst::provides_direct_view &&
-	Src::provides_direct_view &&
+	static constexpr auto can_use_underlying_view =
+	storage_orders_same           &&
+	Dst::provides_underlying_view &&
+	Src::provides_underlying_view &&
 	traits::is_copy_assignable;
 
 	static constexpr auto can_use_flat_view =
@@ -141,14 +141,14 @@ struct move_assignment_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	using dst_di = typename Dst::direct_iterator;
-	using src_di = typename Src::direct_iterator;
+	using dst_di = typename Dst::underlying_iterator;
+	using src_di = typename Src::underlying_iterator;
 	using traits = iterator_assignment_traits<dst_di, src_di>;
 
-	static constexpr auto can_use_direct_view =
-	storage_orders_same       &&
-	Dst::provides_direct_view &&
-	Src::provides_direct_view &&
+	static constexpr auto can_use_underlying_view =
+	storage_orders_same           &&
+	Dst::provides_underlying_view &&
+	Src::provides_underlying_view &&
 	traits::is_move_assignable;
 
 	static constexpr auto can_use_flat_view =
@@ -167,9 +167,9 @@ struct move_assignment_traits
 ** constructible from src's underlying type:
 **   - Construct dst in a partially-initialized state with the parameters
 **     supplied to the copy constructor.
-**   - If dst and src have compatible storage orders and src provides a direct
+**   - If dst and src have compatible storage orders and src provides a underlying
 **   view over the elements:
-**     - Copy from src's direct view to dst's construction view
+**     - Copy from src's underlying view to dst's construction view
 **   - Else:
 **     - Use a for-each loop together with uninitialized_at to copy-construct
 **     dst's elements from those of src.
@@ -200,10 +200,10 @@ struct copy_construction_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	static constexpr auto can_use_direct_view =
+	static constexpr auto can_use_underlying_view =
 	can_use_indirect_construction &&
 	storage_orders_same           &&
-	Dst::provides_direct_view;
+	Dst::provides_underlying_view;
 
 	static constexpr auto can_use_loop =
 	can_use_indirect_construction;
@@ -234,8 +234,8 @@ struct copy_construction_traits
 **   	        - Construct dst in an partially-initialized state with the
 **   	          parameters supplied to the move constructor.
 **   		- If dst and src have compatible storage orders and src provides
-**   		a direct view over the elements:
-**     			- Move from src's direct view to dst's construction
+**   		a underlying view over the elements:
+**     			- Move from src's underlying view to dst's construction
 **     			view.
 **   		- Else:
 **     			- Use a for-each loop together with uninitialized_at to
@@ -280,10 +280,10 @@ struct move_construction_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
-	static constexpr auto can_use_direct_view =
+	static constexpr auto can_use_underlying_view =
 	can_use_indirect_construction &&
 	storage_orders_same           &&
-	Dst::provides_direct_view;
+	Dst::provides_underlying_view;
 
 	static constexpr auto can_use_loop =
 	can_use_indirect_construction;

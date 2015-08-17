@@ -139,7 +139,7 @@ module("test move assignment dynamic dynamic")
 	auto b = nd::make_darray<float>(2_c, 2_c);
 	b = std::move(a);
 
-	require(a.direct_view().begin() == nullptr);
+	require(a.underlying_view().begin() == nullptr);
 	require(b == nd_array([1 2; 3 4]));
 
 	auto c = nd_darray([t f; f t]);
@@ -147,7 +147,7 @@ module("test move assignment dynamic dynamic")
 	auto d = nd::make_darray<bool>(2_c, 2_c);
 	d = std::move(c);
 
-	require(c.direct_view().begin() == nullptr);
+	require(c.underlying_view().begin() == nullptr);
 	require(d == nd_array([t f; f t]));
 }
 
@@ -221,21 +221,21 @@ module("test move construction dynamic dynamic")
 	auto a = nd_darray(float, [1 2; 3 4]);
 
 	auto b = nd::make_darray(std::move(a));
-	require(a.direct_view().begin() == nullptr);
+	require(a.underlying_view().begin() == nullptr);
 	require(b == nd_array([1 2; 3 4]));
 
 	auto c = std::move(b);
-	require(b.direct_view().begin() == nullptr);
+	require(b.underlying_view().begin() == nullptr);
 	require(c == nd_array([1 2; 3 4]));
 	
 	auto d = nd_darray([t f; f t]);
 
 	auto e = nd::make_darray(std::move(d));
-	require(d.direct_view().begin() == nullptr);
+	require(d.underlying_view().begin() == nullptr);
 	require(e == nd_array([t f; f t]));
 
 	auto f = std::move(e);
-	require(e.direct_view().begin() == nullptr);
+	require(e.underlying_view().begin() == nullptr);
 	require(f == nd_array([t f; f t]));
 }
 
