@@ -12,9 +12,9 @@ module("test static constexpr arithmetic")
 {
 	using namespace nd::tokens;
 
-	constexpr auto c1 = c<10>;
-	constexpr auto c2 = end - c<1>;
-	constexpr auto c3 = c<2> * (end - c<1>) / c<2>;
+	constexpr auto c1 = 10_c;
+	constexpr auto c2 = end - 1_c;
+	constexpr auto c3 = 2_c * (end - 1_c) / 2_c;
 	
 	static_assert(c1.value() == 10, "");
 	static_assert(c2.value(10) == 9, "");

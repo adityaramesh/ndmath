@@ -10,7 +10,7 @@
 
 namespace nd {
 
-template <class Op, class Index1, class Index2>
+template <class Index1, class Index2, class Func>
 class index_expr final
 {
 public:
@@ -29,7 +29,7 @@ public:
 	template <unsigned N>
 	CC_ALWAYS_INLINE constexpr
 	auto get() const noexcept
-	{ return Op::apply(m_i1.at_c(sc_coord<N>), m_i2.at_c(sc_coord<N>)); }
+	{ return Func{}(m_i1.at_c(sc_coord<N>), m_i2.at_c(sc_coord<N>)); }
 };
 
 #define nd_define_arithmetic_op(symbol, name)        \
@@ -48,16 +48,16 @@ auto operator symbol (                               \
 		"Indices have unequal dimensions."   \
 	);                                           \
 	                                             \
-	using index_type = index_expr<name, w1, w2>; \
+	using index_type = index_expr<w1, w2, name>; \
 	using w3 = index_wrapper<index_type>;        \
 	return w3{in_place, i1, i2};                 \
 }
 
-nd_define_arithmetic_op(+, plus)
-nd_define_arithmetic_op(-, minus)
-nd_define_arithmetic_op(*, times)
-nd_define_arithmetic_op(/, divide)
-nd_define_arithmetic_op(%, modulus)
+nd_define_arithmetic_op(+, detail::plus)
+nd_define_arithmetic_op(-, detail::minus)
+nd_define_arithmetic_op(*, detail::multiplies)
+nd_define_arithmetic_op(/, detail::divides)
+nd_define_arithmetic_op(%, detail::modulus)
 
 #undef nd_define_arithmetic_op
 

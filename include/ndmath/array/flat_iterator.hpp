@@ -66,6 +66,12 @@ public:
 	auto operator*() const
 	nd_deduce_noexcept_and_return_type(m_func(m_pos, m_ref))
 
+	/*
+	** To avoid potential compiler errors about taking addresses of rvalues,
+	** we refrain from using the addressof operator within the `noexcept`
+	** specification. This way, the compiler will only produce an error when
+	** the member function is actually invoked.
+	*/
 	CC_ALWAYS_INLINE
 	pointer operator->()
 	noexcept(noexcept(m_func(m_pos, m_ref)))
@@ -153,7 +159,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
 	const flat_iterator<T, AccessFunc>& x,
-	const typename T::difference_type n
+	const typename flat_iterator<T, AccessFunc>::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -164,7 +170,7 @@ auto operator+(
 template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const typename T::difference_type n,
+	const typename flat_iterator<T, AccessFunc>::difference_type n,
 	const flat_iterator<T, AccessFunc>& x
 ) noexcept
 {
@@ -177,7 +183,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator-(
 	const flat_iterator<T, AccessFunc>& x,
-	const typename T::difference_type n
+	const typename flat_iterator<T, AccessFunc>::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -308,7 +314,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
 	const construction_iterator<T, AccessFunc>& x,
-	const typename T::difference_type n
+	const typename construction_iterator<T, AccessFunc>::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -319,7 +325,7 @@ auto operator+(
 template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const typename T::difference_type n,
+	const typename construction_iterator<T, AccessFunc>::difference_type n,
 	const construction_iterator<T, AccessFunc>& x
 ) noexcept
 {
@@ -332,7 +338,7 @@ template <class T, class AccessFunc>
 CC_ALWAYS_INLINE constexpr
 auto operator-(
 	const construction_iterator<T, AccessFunc>& x,
-	const typename T::difference_type n
+	const typename construction_iterator<T, AccessFunc>::difference_type n
 ) noexcept
 {
 	auto t = x;

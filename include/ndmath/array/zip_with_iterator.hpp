@@ -8,61 +8,78 @@
 #ifndef Z6097DA22_2BEE_4CEF_90B2_1FD8B3235A33
 #define Z6097DA22_2BEE_4CEF_90B2_1FD8B3235A33
 
+#include <ndmath/common.hpp>
+#include <ndmath/utility/fusion.hpp>
+
 namespace nd {
+namespace detail {
+
+template <class T>
+using difference_type = typename T::difference_type;
+
+template <class T>
+using reference = typename T::reference;
+
+template <class T>
+using iterator_category = typename T::iterator_category;
+
+}
 
 /*
-** XXX: Currently, the implementation assumes that both `It1` and `It2` are
-** random-access iterators.
+** XXX: Currently, the implementation assumes that all iterators `Ts` are of
+** random-access type. Note: the template parameter `Ts` is used for perfect
+** forwarding, so it's safe to have const references and rvalues.
 */
-template <class It1, class It2, class Func>
+template <class Func, class... Ts>
 class zip_with_iterator final
 {
-	using traits_1 = std::iterator_traits<It1>;
-	using traits_2 = std::iterator_traits<It2>;
-	using dt_1     = typename traits_1::difference_type;
-	using dt_2     = typename traits_2::difference_type;
-	using ref_1    = typename traits_1::reference;
-	using ref_2    = typename traits_2::reference;
-	using cat_1    = typename traits_1::iterator_category;
-	using cat_2    = typename traits_2::iterator_category;
-
+	using traits_list = mpl::list<std::iterator_traits<std::decay_t<Ts>>...>;
+	using dt_list     = mpl::transform<traits_list, mpl::quote<detail::difference_type>>;
+	using ref_list    = mpl::transform<traits_list, mpl::quote<detail::reference>>;
+	using cat_list    = mpl::transform<traits_list, mpl::quote<detail::iterator_category>>;
+	
 	static_assert(
-		std::is_same<cat_1, std::random_access_iterator_tag>::value &&
-		std::is_same<cat_2, std::random_access_iterator_tag>::value,
+		mpl::apply_list<
+			mpl::bind_front<
+				mpl::quote<mpl::is_same>,
+				std::random_access_iterator_tag
+			>,
+			cat_list
+		>::value,
 		"Implementation of zip_with_iterator currently assumes that "
 		"both iterators are of random-access type."
 	);
 public:
-	using difference_type   = std::common_type_t<dt_1, dt_2>;
-	using reference         = std::result_of_t<Func(ref_1, ref_2)>;
+	using reference = std::result_of_t<Func(
+		typename std::iterator_traits<std::decay_t<Ts>>::reference...
+	)>;
+
+	using difference_type   = mpl::apply_list<mpl::quote<std::common_type_t>, dt_list>;
 	using value_type        = std::decay_t<reference>;
 	using pointer           = value_type*;
 	using const_pointer     = const value_type*;
 	using iterator_category = std::random_access_iterator_tag;
 private:
-	It1 m_it1;
-	It2 m_it2;
+	tuple<Ts...> m_iters;
 	const Func& m_func;
 public:
 	CC_ALWAYS_INLINE constexpr
-	explicit zip_with_iterator(It1&& it1, It2&& it2, const Func& func)
-	noexcept : m_it1{std::move(it1)}, m_it2{std::move(it2)}, m_func{func} {}
+	explicit zip_with_iterator(Ts&&... ts, const Func& func)
+	noexcept : m_iters{std::forward<Ts>(ts)...}, m_func{func} {}
 
 	CC_ALWAYS_INLINE constexpr
 	zip_with_iterator(const zip_with_iterator& rhs)
-	noexcept : m_it1{rhs.m_it1}, m_it2{rhs.m_it2}, m_func{rhs.m_func} {}
+	noexcept : m_iters{rhs.m_iters}, m_func{rhs.m_func} {}
 
 	CC_ALWAYS_INLINE constexpr
 	zip_with_iterator(zip_with_iterator&& rhs)
-	noexcept : m_it1{std::move(rhs.m_it1)}, m_it2{std::move(rhs.m_it2)},
-	m_func{std::move(rhs.m_func)} {}
+	noexcept : m_iters{std::move(rhs.m_iters)}, m_func{std::move(rhs.m_func)} {}
 
 	CC_ALWAYS_INLINE
 	auto& operator=(const zip_with_iterator& rhs)
 	noexcept
 	{
-		m_it1 = rhs.m_it1;
-		m_it2 = rhs.m_it2;
+		m_iters = rhs.m_iters;
 		return *this;
 	}
 
@@ -70,111 +87,141 @@ public:
 	auto& operator=(zip_with_iterator&& rhs)
 	noexcept
 	{
-		m_it1 = std::move(rhs.m_it1);
-		m_it2 = std::move(rhs.m_it2);
+		m_iters = std::move(rhs.m_iters);
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE
 	auto operator*()
-	nd_deduce_noexcept_and_return_type(m_func(*m_it1, *m_it2))
+	nd_deduce_noexcept_and_return_type(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func))
 
 	CC_ALWAYS_INLINE constexpr
 	auto operator*() const
-	nd_deduce_noexcept_and_return_type(m_func(*m_it1, *m_it2))
+	nd_deduce_noexcept_and_return_type(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func))
 
 	CC_ALWAYS_INLINE
 	pointer operator->()
-	noexcept(noexcept(m_func(*m_it1, *m_it2)))
-	{ return &m_func(*m_it1, *m_it2); }
+	noexcept(noexcept(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func)))
+	{
+		return &expand_with(m_iters,
+			[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+			m_func);
+	}
 
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE
 	const_pointer operator->() const
-	noexcept(noexcept(m_func(*m_it1, *m_it2)))
-	{ return &m_func(*m_it1, *m_it2); }
+	noexcept(noexcept(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func)))
+	{
+		return &expand_with(m_iters,
+			[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+			m_func);
+	}
 
+	/*
+	** We don't use subscripting in the noexcept specifications below,
+	** because the capture of the parameter `n` by a lambda within the
+	** noexcept specification does not compile under Clang 3.6.
+	*/
 	CC_ALWAYS_INLINE 
 	auto operator[](const difference_type n)
-	nd_deduce_noexcept_and_return_type(m_func(m_it1[n], m_it2[n]))
+	noexcept(noexcept(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func)))
+	{
+		return expand_with(m_iters,
+			[&] (auto& x) CC_ALWAYS_INLINE noexcept { return x[n]; },
+		m_func);
+	}
 
-	CC_ALWAYS_INLINE constexpr
+	CC_ALWAYS_INLINE 
 	auto operator[](const difference_type n) const
-	nd_deduce_noexcept_and_return_type(m_func(m_it1[n], m_it2[n]))
+	noexcept(noexcept(expand_with(m_iters,
+		[] (auto& x) CC_ALWAYS_INLINE noexcept { return *x; },
+	m_func)))
+	{
+		return expand_with(m_iters,
+			[&] (auto& x) CC_ALWAYS_INLINE noexcept { return x[n]; },
+		m_func);
+	}
 
 	CC_ALWAYS_INLINE auto
 	operator++(int) noexcept
-	{ auto t = *this; ++m_it1; ++m_it2; return t; }
+	{ auto t = *this; ++(*this); return t; }
 
 	CC_ALWAYS_INLINE auto
 	operator--(int) noexcept
-	{ auto t = *this; --m_it1; --m_it2; return t; }
+	{ auto t = *this; --(*this); return t; }
 
 	CC_ALWAYS_INLINE auto&
 	operator++() noexcept
 	{
-		++m_it1;
-		++m_it2;
+		for_each(m_iters, [] (auto& x) CC_ALWAYS_INLINE noexcept { ++x; });
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE auto&
 	operator--() noexcept
 	{
-		--m_it1;
-		--m_it2;
+		for_each(m_iters, [] (auto& x) CC_ALWAYS_INLINE noexcept { --x; });
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE auto&
 	operator+=(const difference_type n) noexcept
 	{
-		m_it1 += n;
-		m_it2 += n;
+		for_each(m_iters, [&] (auto& x) CC_ALWAYS_INLINE noexcept { x += n; });
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE auto&
 	operator-=(const difference_type n) noexcept
 	{
-		m_it1 -= n;
-		m_it2 -= n;
+		for_each(m_iters, [&] (auto& x) CC_ALWAYS_INLINE noexcept { x -= n; });
 		return *this;
 	}
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator==(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 == rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) == get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator!=(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 != rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) != get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator>=(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 >= rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) >= get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator<=(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 <= rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) <= get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator>(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 > rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) > get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr bool
 	operator<(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 < rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) < get<0>(rhs.m_iters); }
 
 	CC_ALWAYS_INLINE constexpr auto
 	operator-(const zip_with_iterator& rhs)
-	const noexcept { return m_it1 - rhs.m_it1; }
+	const noexcept { return get<0>(m_iters) - get<0>(rhs.m_iters); }
 };
 
-template <class It1, class It2, class Func>
+template <class Func, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const zip_with_iterator<It1, It2, Func>& x,
-	const typename zip_with_iterator<It1, It2, Func>::difference_type n
+	const zip_with_iterator<Func, Ts...>& x,
+	const typename zip_with_iterator<Func, Ts...>::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -182,11 +229,11 @@ auto operator+(
 	return t;
 }
 
-template <class It1, class It2, class Func>
+template <class Func, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto operator+(
-	const typename zip_with_iterator<It1, It2, Func>::difference_type n,
-	const zip_with_iterator<It1, It2, Func>& x
+	const typename zip_with_iterator<Func, Ts...>::difference_type n,
+	const zip_with_iterator<Func, Ts...>& x
 ) noexcept
 {
 	auto t = x;
@@ -194,11 +241,11 @@ auto operator+(
 	return t;
 }
 
-template <class It1, class It2, class Func>
+template <class Func, class... Ts>
 CC_ALWAYS_INLINE constexpr
 auto operator-(
-	const zip_with_iterator<It1, It2, Func>& x,
-	const typename zip_with_iterator<It1, It2, Func>::difference_type n
+	const zip_with_iterator<Func, Ts...>& x,
+	const typename zip_with_iterator<Func, Ts...>::difference_type n
 ) noexcept
 {
 	auto t = x;
@@ -206,17 +253,21 @@ auto operator-(
 	return t;
 }
 
-template <class R1, class R2, class Func>
+template <class Func, class... Ts, nd_enable_if((
+	!mpl::and_c<
+		mpl::is_specialization_of<array_wrapper, Ts>::value...
+	>::value
+))>
 CC_ALWAYS_INLINE constexpr
-auto zip_with(const R1& r1, const R2& r2, const Func& func)
+auto zip_with(const Func& f, const Ts&... ts)
 {
-	using iter_1   = typename R1::iterator;
-	using iter_2   = typename R2::iterator;
-	using iterator = zip_with_iterator<iter_1, iter_2, Func>;
+	using iterator = zip_with_iterator<Func, std::decay_t<decltype(
+		std::declval<Ts>().begin()
+	)>...>;
 
 	return boost::make_iterator_range(
-		iterator{r1.begin(), r2.begin(), func},
-		iterator{r1.end(), r2.end(), func}
+		iterator{ts.begin()..., f},
+		iterator{ts.end()..., f}
 	);
 }
 

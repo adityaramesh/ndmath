@@ -11,25 +11,25 @@
 namespace nd {
 namespace detail {
 
-template <class Op, class Coord1, class Coord2, bool Enable>
+template <class Coord1, class Coord2, class Func, bool Enable>
 struct coord_traits;
 
-template <class Op, class Coord1, class Coord2>
-struct coord_traits<Op, Coord1, Coord2, false>
+template <class Coord1, class Coord2, class Func>
+struct coord_traits<Coord1, Coord2, Func, false>
 { using integer = void; };
 
-template <class Op, class Coord1, class Coord2>
-struct coord_traits<Op, Coord1, Coord2, true>
+template <class Func, class Coord1, class Coord2>
+struct coord_traits<Coord1, Coord2, Func, true>
 {
-	using integer = decltype(Op::apply(
-		std::declval<typename Coord1::integer>(),
-		std::declval<typename Coord2::integer>()
-	));
+	using integer = std::result_of_t<Func(
+		typename Coord1::integer,
+		typename Coord2::integer
+	)>;
 };
 
 }
 
-template <class Op, class Coord1, class Coord2>
+template <class Coord1, class Coord2, class Func>
 class coord_expr final
 {
 public:
@@ -41,7 +41,7 @@ public:
 	Coord1::is_constant &&
 	Coord2::is_constant;
 private:
-	using traits = detail::coord_traits<Op, Coord1, Coord2, is_constant>;
+	using traits = detail::coord_traits<Coord1, Coord2, Func, is_constant>;
 public:
 	using integer = typename traits::integer;
 private:
@@ -58,12 +58,12 @@ public:
 	template <class Integer, nd_enable_if(allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	static auto value(const Integer n) noexcept
-	{ return Op::apply(Coord1::value(n), Coord2::value(n)); }
+	{ return Func{}(Coord1::value(n), Coord2::value(n)); }
 
 	template <class Integer, nd_enable_if(!allows_static_access)>
 	CC_ALWAYS_INLINE constexpr
 	auto value(const Integer n) const noexcept
-	{ return Op::apply(m_l1.value(n), m_l2.value(n)); }
+	{ return Func{}(m_l1.value(n), m_l2.value(n)); }
 };
 
 }
