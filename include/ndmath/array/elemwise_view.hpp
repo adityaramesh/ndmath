@@ -402,6 +402,28 @@ auto fast_not(const array_wrapper<T>& t) noexcept
 static constexpr auto fast_and = make_named_operator(detail::fast_and_helper{});
 static constexpr auto fast_or = make_named_operator(detail::fast_or_helper{});
 
+#define nd_define_reflexive_op(symbol)                                              \
+	template <class T, class U>                                                 \
+	CC_ALWAYS_INLINE                                                            \
+	auto& operator symbol ## = (array_wrapper<T>& t, const array_wrapper<U>& u) \
+	noexcept { return t = t symbol u; }
+
+// Arithmetic operations.
+nd_define_reflexive_op(+)
+nd_define_reflexive_op(-)
+nd_define_reflexive_op(*)
+nd_define_reflexive_op(/)
+nd_define_reflexive_op(%)
+
+// Bitwise operations.
+nd_define_reflexive_op(&)
+nd_define_reflexive_op(|)
+nd_define_reflexive_op(^)
+nd_define_reflexive_op(<<)
+nd_define_reflexive_op(>>)
+
+#undef nd_define_reflexive_op
+
 }
 
 #endif
