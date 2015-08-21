@@ -270,7 +270,7 @@ struct move_construction_traits
 		uninitialized_t,
 		mpl::if_c<
 			can_use_indirect_construction,
-			partial_init_t, void
+			partial_init_t, uninitialized_t
 		>
 	>;
 

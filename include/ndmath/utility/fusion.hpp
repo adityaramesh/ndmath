@@ -126,7 +126,7 @@ noexcept
 	return helper::for_each(t, f);
 }
 
-template <class... Ts>
+template <class... Ts, nd_enable_if((sizeof...(Ts) != 1))>
 CC_ALWAYS_INLINE constexpr
 auto erase_front(const tuple<Ts...>& ts)
 noexcept
@@ -136,7 +136,7 @@ noexcept
 	return helper::erase_front(ts);
 }
 
-template <class... Ts>
+template <class... Ts, nd_enable_if((sizeof...(Ts) != 1))>
 CC_ALWAYS_INLINE constexpr
 auto erase_back(const tuple<Ts...>& ts)
 noexcept
@@ -176,7 +176,7 @@ struct fusion_helper<Last, Last>
 
 }}
 
-template <size_t N, class... Ts>
+template <size_t N, class... Ts, nd_enable_if((sizeof...(Ts) != 0))>
 CC_ALWAYS_INLINE constexpr
 decltype(auto) at(Ts&&... ts) noexcept
 {
@@ -185,12 +185,12 @@ decltype(auto) at(Ts&&... ts) noexcept
 	return helper::at(std::forward<Ts>(ts)...);
 }
 
-template <class... Ts>
+template <class... Ts, nd_enable_if((sizeof...(Ts) != 0))>
 CC_ALWAYS_INLINE constexpr
 decltype(auto) front(Ts&&... ts) noexcept
 { return at<0>(std::forward<Ts>(ts)...); }
 
-template <class... Ts>
+template <class... Ts, nd_enable_if((sizeof...(Ts) != 0))>
 CC_ALWAYS_INLINE constexpr
 decltype(auto) back(Ts&&... ts) noexcept
 { return at<sizeof...(Ts) - 1>(std::forward<Ts>(ts)...); }

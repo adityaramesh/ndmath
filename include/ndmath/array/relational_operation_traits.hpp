@@ -17,7 +17,7 @@ namespace nd {
 namespace detail {
 
 /*
-** General procedure for deciding how a reduction operation should be
+** General procedure for deciding how a relational operation should be
 ** implemented. Our goal is to reduce the reduction operation to a single
 ** for-loop, whenever this would provide a gain in efficiency.
 **
@@ -28,9 +28,23 @@ namespace detail {
 **   loop over the flat views.
 ** - Else, use a while-each loop over the arrays' range.
 */
-template <class A, class B>
+template <class A, class B, class Func>
 struct relational_operation_traits
 {
+	template <class T, class U>
+	static constexpr auto supported_by_underlying_type(T*, U*) ->
+	decltype(
+		std::declval<Func>()(
+			*std::declval<T>().underlying_view().begin(),
+			*std::declval<U>().underlying_view().begin()
+		),
+		bool{}
+	) { return true; }
+
+	template <class T, class U>
+	static constexpr auto supported_by_underlying_type(...)
+	{ return false; }
+
 	using src_etype = typename A::external_type;
 	using dst_etype = typename B::external_type;
 	using src_utype = typename A::underlying_type;
@@ -48,7 +62,8 @@ struct relational_operation_traits
 	std::is_same<src_utype, dst_utype>::value &&
 	storage_orders_same                       &&
 	A::provides_underlying_view               &&
-	B::provides_underlying_view;
+	B::provides_underlying_view               &&
+	supported_by_underlying_type<A, B>(0);
 
 	static constexpr auto can_use_flat_view =
 	storage_orders_same &&

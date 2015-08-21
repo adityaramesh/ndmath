@@ -11,6 +11,7 @@
 #include <ndmath/array/array_wrapper.hpp>
 #include <ndmath/array/layout_base.hpp>
 #include <ndmath/array/coords_to_offset.hpp>
+#include <ndmath/array/boolean_storage.hpp>
 #include <ndmath/array/boolean_proxy.hpp>
 #include <ndmath/array/construction_proxy.hpp>
 #include <ndmath/array/storage_order.hpp>
@@ -65,7 +66,8 @@ struct dense_storage_access
 template <>
 struct dense_storage_access<bool>
 {
-	using underlying_type = unsigned;
+	using storage_type    = unsigned;
+	using underlying_type = boolean_storage<storage_type>;
 
 	template <class SizeType, class Array>
 	CC_ALWAYS_INLINE
@@ -74,9 +76,10 @@ struct dense_storage_access<bool>
 	{
 		using value_type = std::conditional_t<
 			std::is_const<Array>::value,
-			const underlying_type, underlying_type>;
+			const storage_type, storage_type
+		>;
 		using proxy_type = boolean_proxy<value_type, SizeType>;
-		return proxy_type{arr.data()[underlying_offset(off)], off};
+		return proxy_type{arr.data()[underlying_offset(off)].value(), off};
 	}
 
 	template <class SizeType, class Array>
@@ -86,9 +89,10 @@ struct dense_storage_access<bool>
 	{
 		using value_type = std::conditional_t<
 			std::is_const<Array>::value,
-			const underlying_type, underlying_type>;
+			const storage_type, storage_type
+		>;
 		using proxy_type = boolean_proxy<const value_type, SizeType>;
-		return proxy_type{arr.data()[underlying_offset(off)], off};
+		return proxy_type{arr.data()[underlying_offset(off)].value(), off};
 	}
 
 	template <class SizeType, class Extents, class StorageOrder>
@@ -112,7 +116,11 @@ struct dense_storage_access<bool>
 		using array_type     = std::decay_t<decltype(arr)>;
 		using allocator_type = typename array_type::allocator_type;
 		using proxy_type     = construction_proxy<underlying_type, allocator_type>;
-		return proxy_type{arr.data()[underlying_offset(off)], arr.allocator()};
+
+		return proxy_type{
+			arr.data()[underlying_offset(off)],
+			arr.allocator()
+		};
 	}
 
 	template <class SizeType>
@@ -162,7 +170,7 @@ private:
 	friend struct detail::construction_view_access;
 	friend struct detail::dense_storage_access<T>;
 
-	using start = std::decay_t<decltype(std::declval<Extents>().start())>;
+	using start   = std::decay_t<decltype(std::declval<Extents>().start())>;
 	using strides = std::decay_t<decltype(std::declval<Extents>().strides())>;
 
 	static_assert(
@@ -261,12 +269,18 @@ public:
 	}
 
 	/*
-	** Constructor for use with `nd_array` initialization syntax.
+	** Constructors for use with `nd_array` initialization syntax.
 	*/
-	template <class... Ts>
+
+	template <class... Ts, nd_enable_if((!std::is_same<T, bool>::value))>
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(const mpl::list<Ts...>) noexcept
 	: m_data{{(static_cast<underlying_type>(Ts::num) / Ts::den)...}} {}
+
+	template <class... Ts, nd_enable_if((std::is_same<T, bool>::value))>
+	CC_ALWAYS_INLINE constexpr
+	explicit dense_storage(const mpl::list<Ts...>) noexcept
+	: m_data{{underlying_type{Ts::num}...}} {}
 
 	CC_ALWAYS_INLINE constexpr
 	explicit dense_storage(partial_init_t)
@@ -357,17 +371,11 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto underlying_view() noexcept
-	{
-		return boost::make_iterator_range(m_data.begin(),
-			m_data.end());
-	}
+	{ return boost::make_iterator_range(m_data.begin(), m_data.end()); }
 
 	CC_ALWAYS_INLINE
 	auto underlying_view() const noexcept
-	{
-		return boost::make_iterator_range(m_data.begin(),
-			m_data.end());
-	}
+	{ return boost::make_iterator_range(m_data.begin(), m_data.end()); }
 private:
 	CC_ALWAYS_INLINE
 	auto data() noexcept
@@ -718,17 +726,11 @@ public:
 
 	CC_ALWAYS_INLINE
 	auto underlying_view() noexcept
-	{
-		return boost::make_iterator_range(
-			m_data, m_data + underlying_size());
-	}
+	{ return boost::make_iterator_range(m_data, m_data + underlying_size()); }
 
 	CC_ALWAYS_INLINE
 	auto underlying_view() const noexcept
-	{
-		return boost::make_iterator_range(
-			m_data, m_data + underlying_size());
-	}
+	{ return boost::make_iterator_range(m_data, m_data + underlying_size()); }
 
 	template <class Extents_, nd_enable_if((
 		std::is_assignable<Extents, Extents_>::value))>

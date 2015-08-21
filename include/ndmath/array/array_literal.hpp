@@ -46,9 +46,17 @@ struct pack_array_helper
 template <bool... Ts>
 struct pack_array_helper<mpl::list<std::integral_constant<bool, Ts>...>>
 {
-	using list = mpl::list<std::integral_constant<bool, Ts>...>;
+	using list            = mpl::list<std::integral_constant<bool, Ts>...>;
 	using underlying_type = underlying_type<bool>;
-	using type = nd::pack_bool_list<underlying_type, list>;
+
+	static_assert(
+		mpl::is_specialization_of<
+			boolean_storage, underlying_type
+		>::value, ""
+	);
+
+	using storage_type = typename underlying_type::storage_type;
+	using type         = nd::pack_bool_list<storage_type, list>;
 };
 
 template <class List>

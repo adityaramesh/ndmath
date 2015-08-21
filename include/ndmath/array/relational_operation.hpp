@@ -76,7 +76,7 @@ struct relational_operation_helper
 	noexcept
 	{
 		using traits = relational_operation_traits<
-			array_wrapper<T>, array_wrapper<U>>;
+			array_wrapper<T>, array_wrapper<U>, Func>;
 		using helper = relational_operation_impl<
 			traits::can_use_underlying_view,
 			traits::can_use_flat_view>;

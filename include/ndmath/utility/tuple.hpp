@@ -14,6 +14,10 @@
 ** - Allocator functionality.
 ** - Reference wrappers (I'd rather just define the correct tuple type
 **   beforehand).
+** - Separate `tuple_size` struct -- instead, `tuple` has a static member called
+**   `size`.
+** - Nested tuples are disallowed, in order to make disabling the perfect
+**   forwarding constructor easier in certain circumstances.
 */
 
 #ifndef Z4A217EC0_9998_4BBF_A6A0_19A9F7AF31F1
@@ -90,7 +94,12 @@ protected:
 		std::is_nothrow_default_constructible<Ts>::value...
 	>::value) {}
 
-	template <class... Us, nd_enable_if((sizeof...(Us) == size))>
+	template <class... Us, nd_enable_if((
+		sizeof...(Us) == size &&
+		!mpl::or_c<
+			mpl::is_specialization_of<tuple, std::decay_t<Us>>::value...
+		>::value
+	))>
 	CC_ALWAYS_INLINE constexpr
 	explicit tuple_data(Us&&... us)
 	noexcept(mpl::and_c<
@@ -170,6 +179,7 @@ class tuple : detail::tuple_data<std::make_index_sequence<sizeof...(Ts)>, Ts...>
 	using base = detail::tuple_data<std::make_index_sequence<sizeof...(Ts)>, Ts...>;
 public:
 	using base::get;
+	static constexpr auto size = sizeof...(Ts);
 
 	CC_ALWAYS_INLINE constexpr
 	tuple() noexcept(std::is_nothrow_default_constructible<base>::value) {}

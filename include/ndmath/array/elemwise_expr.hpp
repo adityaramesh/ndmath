@@ -10,9 +10,33 @@
 
 #include <ndmath/array/zip_with_iterator.hpp>
 #include <ndmath/utility/fusion.hpp>
+#include <ndmath/utility/named_operator.hpp>
 
 namespace nd {
 namespace detail {
+
+struct check_extents_helper
+{
+	template <class Tuple, nd_enable_if((Tuple::size != 1))>
+	CC_ALWAYS_INLINE
+	static auto apply(const Tuple& t) noexcept
+	{
+		const auto& h = nd::get<0>(t);
+
+		nd::for_each(erase_front(t), [&] (const auto& x)
+			CC_ALWAYS_INLINE noexcept {
+				nd_assert(
+					h.extents() == x.extents(),
+					"mismatching extents.\n▶ $ ≠ $",
+					h.extents(), x.extents()
+				);
+			});
+	}
+
+	template <class Tuple, nd_enable_if((Tuple::size == 1))>
+	CC_ALWAYS_INLINE
+	static auto apply(Tuple) noexcept {}
+};
 
 template <class T, class U>
 static constexpr auto storage_orders_same_2 =
@@ -59,6 +83,19 @@ private:
 		"Expression can only involve reference types."
 	);
 
+	template <class... Us>
+	static constexpr auto supported_by_underlying_type(std::decay_t<Us>*...) ->
+	decltype(
+		std::declval<Func>()(
+			*std::declval<std::decay_t<Us>>().underlying_view().begin()...
+		),
+		bool{}
+	) { return true; }
+
+	template <class... Us>
+	static constexpr auto supported_by_underlying_type(...)
+	{ return false; }
+
 	using extents_list = mpl::list<std::decay_t<decltype(std::declval<Ts>().extents())>...>;
 	using access_list  = mpl::transform<extents_list, mpl::quote<detail::allows_static_access>>;
 	using match        = mpl::find<mpl::true_, access_list>;
@@ -75,11 +112,14 @@ private:
 	>;
 public:
 	using external_type = std::decay_t<
+		std::result_of_t<Func(typename std::decay_t<Ts>::external_type...)>
+	>;
+
+	using value_type = std::decay_t<
 		std::result_of_t<Func(typename std::decay_t<Ts>::reference...)>
 	>;
 
 	using size_type  = std::common_type_t<typename std::decay_t<Ts>::size_type...>;
-	using value_type = external_type;
 	static constexpr auto is_lazy = true;
 private:
 	/*
@@ -113,16 +153,8 @@ public:
 	noexcept : m_refs{ts...}, m_func{f}
 	{
 		#ifndef nd_no_debug
-			const auto& h = front(ts...);
-
-			for_each(erase_front(m_refs), [&] (const auto& x)
-				CC_ALWAYS_INLINE noexcept {
-					nd_assert(
-						h.extents() == x.extents(),
-						"mismatching extents.\n▶ $ ≠ $",
-						h.extents(), x.extents()
-					);
-				});
+			using helper = detail::check_extents_helper;
+			helper::apply(m_refs);
 		#endif
 	}
 
@@ -162,11 +194,9 @@ public:
 		detail::storage_orders_same<Ts...>                                               &&
 		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value                 &&
 		// Ensure that `m_func` can actually be applied to the
-		// underlying types.
-		mpl::is_same<
-			std::result_of_t<Func(typename std::decay_t<Ts>::underlying_type...)>,
-			std::result_of_t<Func(typename std::decay_t<Ts>::underlying_type...)>
-		>::value
+		// underlying types. The purpose of the parameter pack expansion
+		// is to generate a number of zeros equal to `sizeof...(Ts)`.
+		supported_by_underlying_type<Ts...>((0, std::is_same<Ts, Ts>::value)...)
 	))>
 	CC_ALWAYS_INLINE
 	decltype(auto) underlying_view() noexcept
@@ -187,11 +217,9 @@ public:
 		detail::storage_orders_same<Ts...>                                               &&
 		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value                 &&
 		// Ensure that `m_func` can actually be applied to the
-		// underlying types.
-		mpl::is_same<
-			std::result_of_t<Func(typename std::decay_t<Ts>::underlying_type...)>,
-			std::result_of_t<Func(typename std::decay_t<Ts>::underlying_type...)>
-		>::value
+		// underlying types. The purpose of the parameter pack expansion
+		// is to generate a number of zeros equal to `sizeof...(Ts)`.
+		supported_by_underlying_type<Ts...>((0, std::is_same<Ts, Ts>::value)...)
 	))>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) underlying_view() const noexcept
@@ -245,8 +273,8 @@ template <class Func, class... Ts, nd_enable_if((
 	// arrays, so that we don't get a cryptic error message later down the
 	// line.
 	std::is_same<
-		std::result_of_t<Func(typename std::decay_t<Ts>::reference...)>,
-		std::result_of_t<Func(typename std::decay_t<Ts>::reference...)>
+		std::result_of_t<Func(typename std::decay_t<Ts>::external_type...)>,
+		std::result_of_t<Func(typename std::decay_t<Ts>::external_type...)>
 	>::value
 ))>
 CC_ALWAYS_INLINE constexpr
@@ -297,37 +325,82 @@ auto make_elemwise_expr(Ts&... ts) noexcept
 		{ return zip_with(us...); }, ts...);
 }
 
-#define nd_define_elemwise_expr(symbol, name)                                       \
+#define nd_define_unary_expr(symbol, name)               \
+	template <class T>                               \
+	CC_ALWAYS_INLINE constexpr                       \
+	auto operator symbol (const array_wrapper<T>& t) \
+	noexcept { return zip_with(name{}, t); }
+
+nd_define_unary_expr(+, detail::unary_plus)
+nd_define_unary_expr(-, detail::unary_minus)
+nd_define_unary_expr(!, detail::logical_not)
+nd_define_unary_expr(~, detail::bit_not)
+
+#undef nd_define_unary_expr
+
+#define nd_define_binary_expr(symbol, name)                                         \
 	template <class T, class U>                                                 \
 	CC_ALWAYS_INLINE constexpr                                                  \
 	auto operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u) \
 	noexcept { return zip_with(name{}, t, u); }
 
 // Arithmetic expressions.
-nd_define_elemwise_expr(+, detail::plus)
-nd_define_elemwise_expr(-, detail::minus)
-nd_define_elemwise_expr(*, detail::multiplies)
-nd_define_elemwise_expr(/, detail::divides)
-nd_define_elemwise_expr(%, detail::modulus)
+nd_define_binary_expr(+, detail::plus)
+nd_define_binary_expr(-, detail::minus)
+nd_define_binary_expr(*, detail::multiplies)
+nd_define_binary_expr(/, detail::divides)
+nd_define_binary_expr(%, detail::modulus)
 
 // Relational expressions. TODO only use these when the arrays are both
-// elemwise_comparison_expr types, or have external type bool.
+// binary_comparison_expr types, or have external type bool.
 //
-//nd_define_elemwise_expr(==, detail::equal_to)
-//nd_define_elemwise_expr(!=, detail::not_equal_to)
-//nd_define_elemwise_expr(>, detail::greater)
-//nd_define_elemwise_expr(<, detail::less)
-//nd_define_elemwise_expr(>=, detail::greater_equal)
-//nd_define_elemwise_expr(<=, detail::less_equal)
+//nd_define_binary_expr(==, detail::equal_to)
+//nd_define_binary_expr(!=, detail::not_equal_to)
+//nd_define_binary_expr(>, detail::greater)
+//nd_define_binary_expr(<, detail::less)
+//nd_define_binary_expr(>=, detail::greater_equal)
+//nd_define_binary_expr(<=, detail::less_equal)
+
+// Logical expressions.
+nd_define_binary_expr(&&, detail::logical_and)
+nd_define_binary_expr(||, detail::logical_or)
 
 // Bitwise expressions.
-nd_define_elemwise_expr(&, detail::bit_and)
-nd_define_elemwise_expr(|, detail::bit_or)
-nd_define_elemwise_expr(^, detail::bit_xor)
-nd_define_elemwise_expr(<<, detail::left_shift)
-nd_define_elemwise_expr(>>, detail::right_shift)
+nd_define_binary_expr(&, detail::bit_and)
+nd_define_binary_expr(|, detail::bit_or)
+nd_define_binary_expr(^, detail::bit_xor)
+nd_define_binary_expr(<<, detail::left_shift)
+nd_define_binary_expr(>>, detail::right_shift)
 
 #undef nd_define_elemwise_expr
+
+namespace detail {
+
+struct fast_and_helper
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
+	const noexcept { return zip_with(detail::fast_and{}, t, u); }
+};
+
+struct fast_or_helper
+{
+	template <class T, class U>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
+	const noexcept { return zip_with(detail::fast_or{}, t, u); }
+};
+
+}
+
+template <class T>
+CC_ALWAYS_INLINE constexpr
+auto fast_not(const array_wrapper<T>& t) noexcept
+{ return zip_with(detail::fast_not{}, t); }
+
+static constexpr auto fast_and = make_named_operator(detail::fast_and_helper{});
+static constexpr auto fast_or = make_named_operator(detail::fast_or_helper{});
 
 }
 
