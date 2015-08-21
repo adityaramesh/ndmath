@@ -1,5 +1,5 @@
 /*
-** File Name: elemwise_expr_test.cpp
+** File Name: elemwise_view_test.cpp
 ** Author:    Aditya Ramesh
 ** Date:      08/15/2015
 ** Contact:   _@adityaramesh.com
@@ -8,7 +8,7 @@
 #include <ccbase/unit_test.hpp>
 #include <ndmath/array/dense_storage.hpp>
 #include <ndmath/array/array_literal.hpp>
-#include <ndmath/array/elemwise_expr.hpp>
+#include <ndmath/array/elemwise_view.hpp>
 
 module("test arithmetic ops")
 {
@@ -21,7 +21,7 @@ module("test arithmetic ops")
 	//auto f = [](auto x, auto y) { return x + y; };
 	//auto a = nd_array([1 2; 3 4]);
 	//auto b = nd_array(float, [1 2; 3 4]);
-	//auto e = nd::make_elemwise_expr(a, b, f);
+	//auto e = nd::make_elemwise_view(a, b, f);
 
 	//require(e.dims() == 2);
 	//require(e.extents() == nd::extents(2_c, 2_c));
@@ -53,4 +53,4 @@ module("test logical ops")
 	// use assertions on the 
 }
 
-suite("elemwise expr test")
+suite("elemwise view test")

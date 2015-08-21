@@ -1,5 +1,5 @@
 /*
-** File Name: elemwise_expr.hpp
+** File Name: elemwise_view.hpp
 ** Author:    Aditya Ramesh
 ** Date:      08/15/2015
 ** Contact:   _@adityaramesh.com
@@ -75,7 +75,7 @@ using remove_rvalue_reference_t = typename remove_rvalue_reference<T>::type;
 }
 
 template <class Func, class... Ts>
-struct elemwise_expr final
+struct elemwise_view final
 {
 private:
 	static_assert(
@@ -149,7 +149,7 @@ private:
 	const Func& m_func;
 public:
 	CC_ALWAYS_INLINE
-	explicit elemwise_expr(const Func& f, Ts... ts)
+	explicit elemwise_view(const Func& f, Ts... ts)
 	noexcept : m_refs{ts...}, m_func{f}
 	{
 		#ifndef nd_no_debug
@@ -280,7 +280,7 @@ template <class Func, class... Ts, nd_enable_if((
 CC_ALWAYS_INLINE constexpr
 auto zip_with(const Func& f, Ts&... ts) noexcept
 {
-	using expr = elemwise_expr<Func, Ts&...>;
+	using expr = elemwise_view<Func, Ts&...>;
 	using array_type = array_wrapper<expr>;
 	return array_type{expr{f, ts...}};
 }
@@ -306,7 +306,7 @@ auto zip(Ts&... ts) noexcept
 */
 template <class... Ts, nd_enable_if((sizeof...(Ts) >= 2))>
 CC_ALWAYS_INLINE constexpr
-auto make_elemwise_expr(Ts&... ts) noexcept
+auto make_elemwise_view(Ts&... ts) noexcept
 {
 	/*
 	** The last parameter to this function should be the nary function used
@@ -372,7 +372,7 @@ nd_define_binary_expr(^, detail::bit_xor)
 nd_define_binary_expr(<<, detail::left_shift)
 nd_define_binary_expr(>>, detail::right_shift)
 
-#undef nd_define_elemwise_expr
+#undef nd_define_elemwise_view
 
 namespace detail {
 
