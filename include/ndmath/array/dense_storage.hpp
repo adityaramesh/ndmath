@@ -3,12 +3,6 @@
 ** Author:    Aditya Ramesh
 ** Date:      03/16/2015
 ** Contact:   _@adityaramesh.com
-**
-** Note: boolean arrays have their storage zero-initialized by default. This is
-** because logical operations work on the underlying storage rather than the
-** proxy types returned for each bit, in order to maintain efficiency. However,
-** this optimization will cause incorrect results if an unused bit happens not
-** to be zero.
 */
 
 #ifndef Z48CDD07C_465F_4840_8116_DB760EF85D3B
@@ -208,10 +202,7 @@ public:
 		** See comments regarding construction in the other
 		** specialization of `dense_storage`.
 		*/
-		if (
-			!std::is_trivial<underlying_type>::value ||
-			std::is_same<T, bool>::value
-		) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
@@ -255,10 +246,7 @@ public:
 	noexcept(noexcept(
 		std::is_nothrow_constructible<underlying_type, const T&>::value))
 	{
-		if (
-			!std::is_trivial<underlying_type>::value ||
-			std::is_same<T, bool>::value
-		) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				::new (&m_data[i]) underlying_type{};
 			}
@@ -481,10 +469,7 @@ public:
 		** initialize the elements beforehand, since the values of the
 		** bits that have not been set are undefined.
 		*/
-		if (
-			!std::is_trivial<underlying_type>::value ||
-			std::is_same<T, bool>::value
-		) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
@@ -549,10 +534,7 @@ public:
 		** well as `is_trivially_copyable`; this is equivalent to
 		** checking `is_trivial`.
 		*/
-		if (
-			!std::is_trivial<underlying_type>::value ||
-			std::is_same<T, bool>::value
-		) {
+		if (!std::is_trivial<underlying_type>::value) {
 			for (auto i = size_type{0}; i != underlying_size(); ++i) {
 				m_alloc.construct(&m_data[i]);
 			}
@@ -770,10 +752,7 @@ public:
 			** XXX: Technically, this branch should always be
 			** taken, for reasons discussed earlier.
 			*/
-			if (
-				!std::is_trivial<underlying_type>::value ||
-				std::is_same<T, bool>::value
-			) {
+			if (!std::is_trivial<underlying_type>::value) {
 				for (auto i = size_type{0}; i != new_size; ++i) {
 					m_alloc.construct(&m_data[i]);
 				}
