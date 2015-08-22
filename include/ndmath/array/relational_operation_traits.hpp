@@ -63,7 +63,7 @@ struct relational_operation_traits
 	storage_orders_same                       &&
 	A::provides_underlying_view               &&
 	B::provides_underlying_view               &&
-	supported_by_underlying_type<A, B>(0);
+	supported_by_underlying_type<A, B>(0, 0);
 
 	static constexpr auto can_use_flat_view =
 	storage_orders_same &&

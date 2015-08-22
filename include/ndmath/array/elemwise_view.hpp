@@ -8,6 +8,7 @@
 #ifndef Z485491EA_9715_4B7F_973C_58E0EA5942C8
 #define Z485491EA_9715_4B7F_973C_58E0EA5942C8
 
+#include <ndmath/array/boolean_storage.hpp>
 #include <ndmath/array/zip_with_iterator.hpp>
 #include <ndmath/utility/fusion.hpp>
 #include <ndmath/utility/named_operator.hpp>
@@ -263,6 +264,16 @@ public:
 	CC_ALWAYS_INLINE
 	decltype(auto) extents() const noexcept
 	{ return get<index::value>(m_refs).extents(); }
+
+	template <size_t N>
+	CC_ALWAYS_INLINE
+	auto& arg() noexcept
+	{ return nd::get<N>(m_refs); }
+
+	template <size_t N>
+	CC_ALWAYS_INLINE
+	const auto& arg() noexcept
+	{ return nd::get<N>(m_refs); }
 };
 
 template <class Func, class... Ts, nd_enable_if((
@@ -280,9 +291,9 @@ template <class Func, class... Ts, nd_enable_if((
 CC_ALWAYS_INLINE constexpr
 auto zip_with(const Func& f, Ts&... ts) noexcept
 {
-	using expr = elemwise_view<Func, Ts&...>;
-	using array_type = array_wrapper<expr>;
-	return array_type{expr{f, ts...}};
+	using view = elemwise_view<Func, Ts&...>;
+	using array_type = array_wrapper<view>;
+	return array_type{view{f, ts...}};
 }
 
 template <class... Ts, nd_enable_if((
@@ -351,16 +362,6 @@ nd_define_binary_expr(*, detail::multiplies)
 nd_define_binary_expr(/, detail::divides)
 nd_define_binary_expr(%, detail::modulus)
 
-// Relational expressions. TODO only use these when the arrays are both
-// binary_comparison_expr types, or have external type bool.
-//
-//nd_define_binary_expr(==, detail::equal_to)
-//nd_define_binary_expr(!=, detail::not_equal_to)
-//nd_define_binary_expr(>, detail::greater)
-//nd_define_binary_expr(<, detail::less)
-//nd_define_binary_expr(>=, detail::greater_equal)
-//nd_define_binary_expr(<=, detail::less_equal)
-
 // Logical expressions.
 nd_define_binary_expr(&&, detail::logical_and)
 nd_define_binary_expr(||, detail::logical_or)
@@ -372,7 +373,55 @@ nd_define_binary_expr(^, detail::bit_xor)
 nd_define_binary_expr(<<, detail::left_shift)
 nd_define_binary_expr(>>, detail::right_shift)
 
-#undef nd_define_elemwise_view
+#undef nd_define_binary_expr
+
+namespace detail {
+
+struct elemwise_comp
+{
+	template <class T>
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) operator()(T&& t) const noexcept
+	{ return std::forward<T>(t); }
+};
+
+}
+
+template <class T>
+using elemwise_comp_expr = nd::array_wrapper<
+	nd::elemwise_view<detail::elemwise_comp, T>>;
+
+template <class T>
+CC_ALWAYS_INLINE constexpr
+auto use_elemwise_comp(const array_wrapper<T>& t) noexcept
+{ return zip_with(detail::elemwise_comp{}, t); }
+
+#define nd_define_relational_expr(symbol, name)                              \
+	template <class T, class U, nd_enable_if((                           \
+		(std::is_same<typename T::exterior_type, bool>::value ||     \
+		 mpl::is_specialization_of<elemwise_comp_expr, T>::value) && \
+		(std::is_same<typename U::exterior_type, bool>::value ||     \
+		 mpl::is_specialization_of<elemwise_comp_expr, U>::value)    \
+	))>                                                                  \
+	CC_ALWAYS_INLINE                                                     \
+	constexpr auto                                                       \
+	operator symbol (const T& t, const U& u) noexcept                    \
+	{                                                                    \
+		return zip_with(                                             \
+			name{},                                              \
+			t.wrapped().template arg<0>(),                       \
+			u.wrapped().template arg<0>()                        \
+		);                                                           \
+	}
+
+nd_define_relational_expr(==, detail::equal_to)
+nd_define_relational_expr(!=, detail::not_equal_to)
+nd_define_relational_expr(>, detail::greater)
+nd_define_relational_expr(<, detail::less)
+nd_define_relational_expr(>=, detail::greater_equal)
+nd_define_relational_expr(<=, detail::less_equal)
+
+#undef nd_define_relational_expr
 
 namespace detail {
 
@@ -392,7 +441,64 @@ struct fast_or_helper
 	const noexcept { return zip_with(detail::fast_or{}, t, u); }
 };
 
+struct fast_eq_helper
+{
+	/*
+	** This overload is used for elementwise comparison operations.
+	*/
+	template <class T, class U, nd_enable_if((
+		mpl::is_specialization_of<elemwise_comp_expr, T>::value ||
+		mpl::is_specialization_of<elemwise_comp_expr, U>::value
+	))>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
+	const noexcept { return zip_with(detail::fast_eq{}, t, u); }
+
+	/*
+	** This overload is used for comparison operations that output a single
+	** boolean value.
+	*/
+	template <class T, class U, nd_enable_if((!(
+		mpl::is_specialization_of<elemwise_comp_expr, T>::value ||
+		mpl::is_specialization_of<elemwise_comp_expr, U>::value
+	)))>
+	CC_ALWAYS_INLINE
+	bool operator()(const array_wrapper<T>& x, const array_wrapper<U>& y)
+	const noexcept
+	{
+		using helper = detail::relational_operation_helper;
+		return helper::apply(x, y, detail::fast_eq{});
+	}
+};
+
+struct fast_neq_helper
+{
+	template <class T, class U, nd_enable_if((
+		mpl::is_specialization_of<elemwise_comp_expr, T>::value ||
+		mpl::is_specialization_of<elemwise_comp_expr, U>::value
+	))>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
+	const noexcept { return zip_with(detail::fast_neq{}, t, u); }
+
+	template <class T, class U, nd_enable_if((!(
+		mpl::is_specialization_of<elemwise_comp_expr, T>::value ||
+		mpl::is_specialization_of<elemwise_comp_expr, U>::value
+	)))>
+	CC_ALWAYS_INLINE
+	bool operator()(const array_wrapper<T>& x, const array_wrapper<U>& y)
+	const noexcept
+	{
+		using helper = detail::relational_operation_helper;
+		return helper::apply(x, y, detail::fast_neq{});
+	}
+};
+
 }
+
+/*
+** Named operators for boolean arrays.
+*/
 
 template <class T>
 CC_ALWAYS_INLINE constexpr
@@ -400,7 +506,9 @@ auto fast_not(const array_wrapper<T>& t) noexcept
 { return zip_with(detail::fast_not{}, t); }
 
 static constexpr auto fast_and = make_named_operator(detail::fast_and_helper{});
-static constexpr auto fast_or = make_named_operator(detail::fast_or_helper{});
+static constexpr auto fast_or  = make_named_operator(detail::fast_or_helper{});
+static constexpr auto fast_eq  = make_named_operator(detail::fast_eq_helper{});
+static constexpr auto fast_neq = make_named_operator(detail::fast_neq_helper{});
 
 #define nd_define_reflexive_op(symbol)                                              \
 	template <class T, class U>                                                 \

@@ -15,10 +15,6 @@
 #include <boost/range/algorithm/copy.hpp>
 
 namespace nd {
-
-template <class T>
-class array_wrapper;
-
 namespace detail {
 
 template <bool IsResizable>

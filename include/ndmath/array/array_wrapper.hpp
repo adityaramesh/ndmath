@@ -129,13 +129,27 @@
 #ifndef Z9FD66BF0_E92D_4CAE_A49B_8D7708927910
 #define Z9FD66BF0_E92D_4CAE_A49B_8D7708927910
 
+namespace nd {
+
+template <class T>
+class array_wrapper;
+
+}
+
 #include <ndmath/array/array_traits.hpp>
 #include <ndmath/array/array_assignment.hpp>
 #include <ndmath/array/array_construction.hpp>
-#include <ndmath/array/relational_operation.hpp>
-#include <ndmath/array/flat_iterator.hpp>
-#include <ndmath/array/element_from_offset.hpp>
+
 #include <ndmath/array/initializer_list.hpp>
+#include <ndmath/array/element_from_offset.hpp>
+#include <ndmath/array/flat_iterator.hpp>
+
+/*
+** Note: `elemwise_view.hpp` depends on `relational_operation.hpp` for `fast_eq`
+** and `fast_neq`, so the latter header *must* be included before the former.
+*/
+#include <ndmath/array/relational_operation.hpp>
+#include <ndmath/array/elemwise_view.hpp>
 
 namespace nd {
 
@@ -820,17 +834,27 @@ public:
 	nd_deduce_noexcept(m_wrapped.destructive_resize(r))
 };
 
-template <class T, class U>
-CC_ALWAYS_INLINE
-bool operator==(const array_wrapper<T>& x, const array_wrapper<U>& y)
-noexcept
-{
-	using helper = detail::relational_operation_helper;
-	return helper::apply(x, y,
-		[&] (const auto& a, const auto& b) CC_ALWAYS_INLINE {
-			return a == b;
-		});
-}
+#define nd_define_relational_op(symbol)                                             \
+	template <class T, class U>                                                 \
+	CC_ALWAYS_INLINE                                                            \
+	bool operator symbol (const array_wrapper<T>& x, const array_wrapper<U>& y) \
+	noexcept                                                                    \
+	{                                                                           \
+		using helper = detail::relational_operation_helper;                 \
+		return helper::apply(x, y,                                          \
+			[&] (const auto& a, const auto& b) CC_ALWAYS_INLINE {       \
+				return a symbol b;                                  \
+			});                                                         \
+	}
+
+nd_define_relational_op(==)
+nd_define_relational_op(!=)
+nd_define_relational_op(>)
+nd_define_relational_op(>=)
+nd_define_relational_op(<)
+nd_define_relational_op(<=)
+
+#undef nd_define_relational_op
 
 }
 

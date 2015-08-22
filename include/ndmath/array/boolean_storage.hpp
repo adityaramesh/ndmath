@@ -104,6 +104,44 @@ struct fast_or
 	const noexcept { return x || y; }
 };
 
+struct fast_eq
+{
+	template <class T>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const boolean_storage<T>& x, const boolean_storage<T>& y)
+	const noexcept { return !(x.value() ^ y.value()); }
+
+	template <class S1, class I1, class S2, class I2>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(
+		const boolean_proxy<S1, I1>& x,
+		const boolean_proxy<S2, I2>& y
+	) const noexcept { return x == y; }
+
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const bool& x, const bool& y)
+	const noexcept { return x == y; }
+};
+
+struct fast_neq
+{
+	template <class T>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const boolean_storage<T>& x, const boolean_storage<T>& y)
+	const noexcept { return !!(x.value() ^ y.value()); }
+
+	template <class S1, class I1, class S2, class I2>
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(
+		const boolean_proxy<S1, I1>& x,
+		const boolean_proxy<S2, I2>& y
+	) const noexcept { return x != y; }
+
+	CC_ALWAYS_INLINE constexpr
+	auto operator()(const bool& x, const bool& y)
+	const noexcept { return x != y; }
+};
+
 }
 
 }
