@@ -388,6 +388,16 @@ template <>
 struct is_first_arg_array<mpl::list<>> :
 std::false_type {};
 
+template <class... Ts>
+struct is_integral_helper
+{
+	static constexpr auto value =
+	mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>;
+};
+
+template <>
+struct is_integral_helper<> : std::false_type {};
+
 }
 
 template <class T>
@@ -753,7 +763,7 @@ public:
 
 	template <class... Ts, nd_enable_if((
 		sizeof...(Ts) == dims() &&
-		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
+		detail::is_integral_helper<Ts...>::value
 	))>
 	CC_ALWAYS_INLINE
 	decltype(auto) at(const Ts&... ts)
@@ -770,7 +780,7 @@ public:
 
 	template <class... Ts, nd_enable_if((
 		sizeof...(Ts) == dims() &&
-		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
+		detail::is_integral_helper<Ts...>::value
 	))>
 	CC_ALWAYS_INLINE constexpr
 	decltype(auto) at(const Ts&... ts) const
@@ -788,7 +798,7 @@ public:
 	template <class... Ts, nd_enable_if((
 		supports_fast_initialization &&
 		sizeof...(Ts) == dims()      &&
-		mpl::_v<mpl::and_c<std::is_integral<Ts>::value...>>
+		detail::is_integral_helper<Ts...>::value
 	))>
 	CC_ALWAYS_INLINE
 	decltype(auto) uninitialized_at(const Ts&... ts)
@@ -832,29 +842,15 @@ public:
 	CC_ALWAYS_INLINE
 	void destructive_resize(const Range& r)
 	nd_deduce_noexcept(m_wrapped.destructive_resize(r))
+
+	/*
+	** Elementwise comparison view.
+	*/
+
+	CC_ALWAYS_INLINE
+	auto operator()() const noexcept
+	{ return use_elemwise_comp(*this); }
 };
-
-#define nd_define_relational_op(symbol)                                             \
-	template <class T, class U>                                                 \
-	CC_ALWAYS_INLINE                                                            \
-	bool operator symbol (const array_wrapper<T>& x, const array_wrapper<U>& y) \
-	noexcept                                                                    \
-	{                                                                           \
-		using helper = detail::relational_operation_helper;                 \
-		return helper::apply(x, y,                                          \
-			[&] (const auto& a, const auto& b) CC_ALWAYS_INLINE {       \
-				return a symbol b;                                  \
-			});                                                         \
-	}
-
-nd_define_relational_op(==)
-nd_define_relational_op(!=)
-nd_define_relational_op(>)
-nd_define_relational_op(>=)
-nd_define_relational_op(<)
-nd_define_relational_op(<=)
-
-#undef nd_define_relational_op
 
 }
 

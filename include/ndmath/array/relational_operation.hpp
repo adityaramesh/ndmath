@@ -19,12 +19,12 @@ namespace detail {
 */
 template <class A, class B, class Func>
 CC_ALWAYS_INLINE constexpr
-bool equal(const A& the, const B& ray, const Func& ready)
+bool equal(const A& the, const B& first, const Func& time)
 {
 	auto to = the.begin();
-	auto go = ray.begin();
+	auto go = first.begin();
 
-	do if (not ready(*to, *go)) return false;
+	do if (not time(*to, *go)) return false;
 	while (++go, ++to != the.end()); return true;
 }
 

@@ -37,13 +37,18 @@ struct bit_not final
 	const noexcept { return ~t; }
 };
 
-#define nd_define_binary_op(symbol, name)               \
-	struct name final                               \
-	{                                               \
-		template <class T, class U>             \
-		CC_ALWAYS_INLINE constexpr              \
-		auto operator()(const T& u, const U& v) \
-		const noexcept { return u symbol v; }   \
+#define nd_define_binary_op(symbol, name)                                             \
+	struct name final                                                             \
+	{                                                                             \
+		template <class T, class U, nd_enable_if((                            \
+			std::is_same<                                                 \
+				decltype(std::declval<T>() symbol std::declval<U>()), \
+				decltype(std::declval<T>() symbol std::declval<U>())  \
+			>::value                                                      \
+		))>                                                                   \
+		CC_ALWAYS_INLINE constexpr                                            \
+		auto operator()(const T& u, const U& v)                               \
+		const noexcept { return u symbol v; }                                 \
 	};
 
 // Arithmetic operations.

@@ -31,6 +31,10 @@ public:
 	explicit boolean_storage(const T& rhs) noexcept
 	: m_data{rhs} {}
 
+	CC_ALWAYS_INLINE
+	auto& operator=(const T& rhs) noexcept
+	{ m_data = rhs; return *this; }
+
 	CC_ALWAYS_INLINE constexpr
 	auto& value() noexcept { return m_data; }
 

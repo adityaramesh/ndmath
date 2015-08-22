@@ -18,11 +18,11 @@ struct uninitialized_t;
 
 namespace detail {
 
-template <class SrcIter, class DstIter>
+template <class LHSIter, class RHSIter>
 struct iterator_assignment_traits
 {
 	template <class T, class U>
-	static constexpr auto check_copy_assignable(int) ->
+	static constexpr auto check_copy_assignable(T*, U*) ->
 	decltype(*std::declval<T>() = *std::declval<U>(), bool{})
 	{ return true; }
 
@@ -31,7 +31,7 @@ struct iterator_assignment_traits
 	{ return false; }
 
 	template <class T, class U>
-	static constexpr auto check_move_assignable(int) ->
+	static constexpr auto check_move_assignable(T*, U*) ->
 	decltype(*std::declval<T>() = std::move(*std::declval<U>()), bool{})
 	{ return true; }
 
@@ -40,10 +40,10 @@ struct iterator_assignment_traits
 	{ return false; }
 
 	static constexpr auto is_copy_assignable =
-	check_copy_assignable<SrcIter, DstIter>(0);
+	check_copy_assignable<LHSIter, RHSIter>(0, 0);
 
 	static constexpr auto is_move_assignable =
-	check_move_assignable<SrcIter, DstIter>(0);
+	check_move_assignable<LHSIter, RHSIter>(0, 0);
 };
 
 template <class RHSIter>
