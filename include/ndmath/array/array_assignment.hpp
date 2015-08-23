@@ -12,7 +12,6 @@
 #define Z9A5D0442_8832_4E17_ADF8_1BA2DC724D52
 
 #include <ndmath/array/array_memory_traits.hpp>
-#include <boost/range/algorithm/copy.hpp>
 
 namespace nd {
 namespace detail {
@@ -87,7 +86,11 @@ struct copy_assign_helper<false, true, FlatViewFeasible>
 		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
-		boost::copy(src.underlying_view(), dst.underlying_view().begin());
+		std::copy(
+			src.underlying_view().begin(),
+			src.underlying_view().end(),
+			dst.underlying_view().begin()
+		);
 	}
 };
 
@@ -103,7 +106,11 @@ struct copy_assign_helper<false, false, true>
 		using helper = resize_helper<src_type::is_destructively_resizable>;
 
 		helper::apply(dst, src);
-		boost::copy(src.flat_view(), dst.flat_view().begin());
+		std::copy(
+			src.flat_view().begin(),
+			src.flat_view().end(),
+			dst.flat_view().begin()
+		);
 	}
 };
 
