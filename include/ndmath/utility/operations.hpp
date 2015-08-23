@@ -13,29 +13,24 @@
 namespace nd {
 namespace detail {
 
-struct unary_plus final
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t)
-	const noexcept { return +t; }
-};
+#define nd_define_unary_op(symbol, name)                            \
+	struct name final                                           \
+	{                                                           \
+		template <class T, nd_enable_if((                   \
+			std::is_same<                               \
+				decltype(symbol std::declval<T>()), \
+				decltype(symbol std::declval<T>())  \
+			>::value                                    \
+		))>                                                 \
+		CC_ALWAYS_INLINE constexpr                          \
+		auto operator()(const T& u)                         \
+		const noexcept { return symbol u; }                 \
+	};
 
-struct unary_minus final
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t)
-	const noexcept { return -t; }
-};
-
-struct bit_not final
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t)
-	const noexcept { return ~t; }
-};
+nd_define_unary_op(+, unary_plus)
+nd_define_unary_op(-, unary_minus)
+nd_define_unary_op(~, bit_not)
+nd_define_unary_op(!, logical_not)
 
 #define nd_define_binary_op(symbol, name)                                             \
 	struct name final                                                             \
@@ -66,6 +61,10 @@ nd_define_binary_op(<, less)
 nd_define_binary_op(>=, greater_equal)
 nd_define_binary_op(<=, less_equal)
 
+// Logical operations.
+nd_define_binary_op(&&, logical_and)
+nd_define_binary_op(||, logical_or)
+
 // Bitwise operations.
 nd_define_binary_op(&, bit_and)
 nd_define_binary_op(|, bit_or)
@@ -74,93 +73,6 @@ nd_define_binary_op(<<, left_shift)
 nd_define_binary_op(>>, right_shift)
 
 #undef nd_define_binary_op
-
-template <bool IsIntegral>
-struct logical_op_helper;
-
-template <>
-struct logical_op_helper<true>
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_not(const T& t)
-	noexcept { return ~t; }
-
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_and(const T& t, const U& u)
-	noexcept { return t & u; }
-
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_or(const T& t, const U& u)
-	noexcept { return t | u; }
-};
-
-template <>
-struct logical_op_helper<false>
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_not(const T& t)
-	noexcept { return !t; }
-
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_and(const T& t, const U& u)
-	noexcept { return t && u; }
-
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	static auto logical_or(const T& t, const U& u)
-	noexcept { return t || u; }
-};
-
-struct logical_not final
-{
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t) const noexcept
-	{
-		using helper = logical_op_helper<
-			!std::is_same<T, bool>::value &&
-			std::is_integral<T>::value
-		>;
-		return helper::logical_not(t);
-	}
-};
-
-struct logical_and final
-{
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t, const U& u) const noexcept
-	{
-		using helper = logical_op_helper<
-			!std::is_same<T, bool>::value &&
-			!std::is_same<U, bool>::value &&
-			std::is_integral<T>::value    &&
-			std::is_integral<U>::value
-		>;
-		return helper::logical_and(t, u);
-	}
-};
-
-struct logical_or final
-{
-	template <class T, class U>
-	CC_ALWAYS_INLINE constexpr
-	auto operator()(const T& t, const U& u) const noexcept
-	{
-		using helper = logical_op_helper<
-			!std::is_same<T, bool>::value &&
-			!std::is_same<U, bool>::value &&
-			std::is_integral<T>::value    &&
-			std::is_integral<U>::value
-		>;
-		return helper::logical_or(t, u);
-	}
-};
 
 }}
 

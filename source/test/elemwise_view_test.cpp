@@ -106,56 +106,78 @@ module("test elemwise relational ops")
 	static_assert(v2::can_use_underlying_view, "");
 }
 
-module("test arithmetic ops")
+module("test unary ops")
 {
-	//using namespace nd::tokens;
+	using namespace nd::tokens;
 
-	//auto x = nd_array([1 2; 3 4]);
-	//auto y = nd_array([0 2; 3 0]);
+	auto x1 = nd_array([1 0; 0 1]);
 
-	//require(x + y == nd_array([1 4; 6 4]));
+	require(+x1 == x1);
+	// TODO cast<> function.
+	require(-x1 == nd_array([-1 0; 0 -1]));
+	require(~~x1 == x1);
 
-	//auto f = [](auto x, auto y) { return x + y; };
-	//auto a = nd_array([1 2; 3 4]);
-	//auto b = nd_array(float, [1 2; 3 4]);
-	//auto e = nd::make_elemwise_view(a, b, f);
+	using t1 = nd::detail::move_assignment_traits<decltype(+x1), decltype(x1)>;
+	using t2 = nd::detail::move_assignment_traits<decltype(-x1), decltype(x1)>;
+	using t3 = nd::detail::move_assignment_traits<decltype(~x1), decltype(x1)>;
 
-	//require(e.dims() == 2);
-	//require(e.extents() == nd::extents(2_c, 2_c));
-	//require(e == nd_array([2 4; 6 8]));
-	//require(nd_array([1 2]) + nd_array([3 4]) == nd_array([4 6]));
+	static_assert(t1::can_use_underlying_view, "");
+	static_assert(t2::can_use_underlying_view, "");
+	static_assert(t3::can_use_underlying_view, "");
 
-	//nd::zip(a, b)(0, 0) = nd::make_tuple(10, -2);
-	//require(a(0, 0) == 10);
-	//require(b(0, 0) == -2);
+	auto x2 = nd_array([t f; f t]);
 
-	//require(!nd_array([t f; f t]) == nd_array([f t; t f]));
-	//auto z = !nd_array([t f; f t]);
-	//cc::println("$ $; $ $", z(0, 0), z(0, 1), z(1, 0), z(1, 1));
-	//for (const auto& x : z.flat_view()) {
-	//	cc::println("${bin}", x);
-	//}
+	require(!x2 == nd_array([f t; t f]));
+	require(nd::fast_not(x2) == nd_array([f t; t f]));
 
-	//auto x = nd_array([t f; f t]);
-	//auto y = nd_array([t f; f t]);
-	//x = x() <nd::fast_eq> y();
-	//x = x() <nd::fast_eq> y();
-	//x() == y();
-	//auto v = x <nd::fast_eq> y;
+	using u1 = nd::detail::move_assignment_traits<decltype(!x2), decltype(x2)>;
+	using u2 = nd::detail::move_assignment_traits<decltype(nd::fast_not(x2)), decltype(x2)>;
 
-	//auto a = nd::make_sarray(x <nd::fast_and> y);
-	//cc::println("$ $; $ $", a(0, 0), a(0, 1), a(1, 0), a(1, 1));
+	static_assert(!u1::can_use_underlying_view, "");
+	static_assert(u2::can_use_underlying_view, "");
+	static_assert(u1::can_use_flat_view, "");
 }
 
-module("test logical ops")
+module("test binary ops")
 {
-	// test normal and "fast" variants
-	// use assertions on the 
-}
+	using namespace nd::tokens;
 
-module("test elementwise comparison")
-{
-	//
+	auto x1 = nd_array([1 0; 0 1]);
+	auto y1 = nd_array(float, [2 0; 0 2]);
+
+	require((x1() + x1()) == nd_array([2 0; 0 2]));
+	require((x1() + y1()) == nd_array([3 0; 0 3]));
+
+	using t1 = nd::detail::move_assignment_traits<decltype(x1 + x1), decltype(x1)>;
+	using t2 = nd::detail::move_assignment_traits<decltype(x1 + y1), decltype(x1)>;
+
+	static_assert(t1::can_use_underlying_view, "");
+	static_assert(t2::can_use_underlying_view, "");
+
+	auto x2 = nd_array([t f; f t]);
+	auto y2 = nd_array([f t; t f]);
+
+	require((x2 && x2) == nd_array([t f; f t]));
+	require((x2 && y2) == nd_array([f f; f f]));
+
+	using u1 = nd::detail::move_assignment_traits<decltype(x2 && x2), decltype(x2)>;
+	using u2 = nd::detail::move_assignment_traits<decltype(x2 && y2), decltype(x2)>;
+
+	static_assert(!u1::can_use_underlying_view, "");
+	static_assert(!u2::can_use_underlying_view, "");
+	static_assert(u1::can_use_flat_view, "");
+	static_assert(u2::can_use_flat_view, "");
+
+	require((x2() <nd::fast_and> x2()) == nd_array([t f; f t]));
+	require((x2() <nd::fast_and> y2()) == nd_array([f f; f f]));
+
+	using v1 = nd::detail::move_assignment_traits<
+		decltype(x2() <nd::fast_eq> x2()), decltype(x2)>;
+	using v2 = nd::detail::move_assignment_traits<
+		decltype(x2() <nd::fast_neq> y2()), decltype(x2)>;
+
+	static_assert(v1::can_use_underlying_view, "");
+	static_assert(v2::can_use_underlying_view, "");
 }
 
 suite("elemwise view test")
