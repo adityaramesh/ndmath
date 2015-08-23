@@ -14,6 +14,10 @@
 #include <ndmath/utility/named_operator.hpp>
 
 namespace nd {
+
+template <class Func, class... Ts>
+struct elemwise_view;
+
 namespace detail {
 
 struct check_extents_helper
@@ -73,6 +77,32 @@ struct remove_rvalue_reference<T&&>
 template <class T>
 using remove_rvalue_reference_t = typename remove_rvalue_reference<T>::type;
 
+struct elemwise_comp {};
+
+template <class T>
+struct is_elemwise_comp_expr_helper
+: std::false_type {};
+
+template <class T>
+struct is_elemwise_comp_expr_helper<array_wrapper<
+	elemwise_view<elemwise_comp, T>
+>> : std::true_type {};
+
+template <class T>
+static constexpr auto is_elemwise_comp_expr =
+is_elemwise_comp_expr_helper<std::decay_t<T>>::value;
+
+template <class T, nd_enable_if((is_elemwise_comp_expr<T>))>
+CC_ALWAYS_INLINE
+constexpr decltype(auto) unwrap_elemwise_comp_expr(T& t) noexcept
+{ return t.wrapped().argument(); }
+
+template <class T, nd_enable_if((!is_elemwise_comp_expr<T>))>
+CC_ALWAYS_INLINE
+constexpr decltype(auto)
+unwrap_elemwise_comp_expr(T& t) noexcept
+{ return t; }
+
 }
 
 template <class Func, class... Ts>
@@ -85,10 +115,10 @@ private:
 	);
 
 	template <class... Us>
-	static constexpr auto supported_by_underlying_type(std::decay_t<Us>*...) ->
+	static constexpr auto supported_by_underlying_type(void*) ->
 	decltype(
 		std::declval<Func>()(
-			*std::declval<std::decay_t<Us>>().underlying_view().begin()...
+			*std::declval<Us>().underlying_view().begin()...
 		),
 		bool{}
 	) { return true; }
@@ -116,11 +146,6 @@ public:
 		std::result_of_t<Func(typename std::decay_t<Ts>::external_type...)>
 	>;
 
-	using value_type = std::decay_t<
-		std::result_of_t<Func(typename std::decay_t<Ts>::reference...)>
-	>;
-
-	using function = Func;
 	using size_type = std::common_type_t<typename std::decay_t<Ts>::size_type...>;
 	static constexpr auto is_lazy = true;
 private:
@@ -187,31 +212,12 @@ public:
 	}
 
 	template <nd_enable_if((
-		// XXX: For now, we assume that if all arrays have the same
-		// external type (e.g. `bool`) and underlying type (e.g.
-		// `unsigned`), then it's safe to evaluate the binary operation
-		// directly over the underlying type.
-		mpl::is_same<std::decay_t<typename std::decay_t<Ts>::external_type>...>::value   &&
-		mpl::is_same<std::decay_t<typename std::decay_t<Ts>::underlying_type>...>::value &&
-		detail::storage_orders_same<Ts...>                                               &&
-		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value
+		detail::storage_orders_same<Ts...> &&
+		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value &&
+		supported_by_underlying_type<Ts...>(0)
 	))>
 	CC_ALWAYS_INLINE
-	decltype(auto) underlying_view()
-	/*
-	** The purpose of the noexcept specification below is to participate in
-	** SFINAE. I tried to use an external function to check whether `m_func`
-	** is defined for the underlying types of `m_refs`, but I couldn't get
-	** it to work correctly with the use of variadic templates. I'm not sure
-	** whether there's a technicality in the standard that prevents SFINAE
-	** from working, or whether this is a defect in clang.
-	*/
-	noexcept(noexcept(
-		expand(m_refs,
-			[&] (auto&... ts) CC_ALWAYS_INLINE noexcept {
-				return zip_with(m_func, ts.underlying_view()...);
-			})
-	))
+	decltype(auto) underlying_view() noexcept
 	{
 		return expand(m_refs,
 			[&] (auto&... ts) CC_ALWAYS_INLINE noexcept {
@@ -220,31 +226,12 @@ public:
 	}
 
 	template <nd_enable_if((
-		// XXX: For now, we assume that if all arrays have the same
-		// external type (e.g. `bool`) and underlying type (e.g.
-		// `unsigned`), then it's safe to evaluate the binary operation
-		// directly over the underlying type.
-		mpl::is_same<std::decay_t<typename std::decay_t<Ts>::external_type>...>::value   &&
-		mpl::is_same<std::decay_t<typename std::decay_t<Ts>::underlying_type>...>::value &&
-		detail::storage_orders_same<Ts...>                                               &&
-		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value
+		detail::storage_orders_same<Ts...> &&
+		mpl::and_c<std::decay_t<Ts>::provides_underlying_view...>::value &&
+		supported_by_underlying_type<Ts...>(0)
 	))>
 	CC_ALWAYS_INLINE constexpr
-	decltype(auto) underlying_view() const
-	/*
-	** The purpose of the noexcept specification below is to participate in
-	** SFINAE. I tried to use an external function to check whether `m_func`
-	** is defined for the underlying types of `m_refs`, but I couldn't get
-	** it to work correctly with the use of variadic templates. I'm not sure
-	** whether there's a technicality in the standard that prevents SFINAE
-	** from working, or whether this is a defect in clang.
-	*/
-	noexcept(noexcept(
-		expand(m_refs,
-			[&] (const auto&... ts) CC_ALWAYS_INLINE noexcept {
-				return zip_with(m_func, ts.underlying_view()...);
-			})
-	))
+	decltype(auto) underlying_view() const noexcept
 	{
 		return expand(m_refs,
 			[&] (const auto&... ts) CC_ALWAYS_INLINE noexcept {
@@ -285,16 +272,75 @@ public:
 	CC_ALWAYS_INLINE
 	decltype(auto) extents() const noexcept
 	{ return get<index::value>(m_refs).extents(); }
+};
 
-	template <size_t N>
-	CC_ALWAYS_INLINE
-	auto& arg() noexcept
-	{ return nd::get<N>(m_refs); }
+template <class T>
+struct elemwise_view<detail::elemwise_comp, T> final
+{
+	static_assert(
+		std::is_lvalue_reference<T>::value,
+		"Expression can only involve reference types."
+	);
 
-	template <size_t N>
+	using external_type = typename std::decay_t<T>::external_type;
+	using size_type     = typename std::decay_t<T>::size_type;
+	static constexpr auto is_lazy = true;
+private:
+	T m_ref;
+public:
 	CC_ALWAYS_INLINE
-	const auto& arg() noexcept
-	{ return nd::get<N>(m_refs); }
+	explicit elemwise_view(T t)
+	noexcept : m_ref{t} {}
+
+	CC_ALWAYS_INLINE constexpr
+	auto memory_size() const noexcept
+	{ return size_type{}; }
+
+	template <class... Us>
+	CC_ALWAYS_INLINE
+	decltype(auto) at(const Us&... us) noexcept
+	{ return m_ref(us...); }
+
+	template <class... Us>
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) at(const Us&... us) const noexcept
+	{ return m_ref(us...); }
+
+	template <nd_enable_if((std::decay_t<T>::provides_underlying_view))>
+	CC_ALWAYS_INLINE
+	decltype(auto) underlying_view() noexcept
+	{ return m_ref.underlying_view(); }
+
+	template <nd_enable_if((std::decay_t<T>::provides_underlying_view))>
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) underlying_view() const noexcept
+	{ return m_ref.underlying_view(); }
+
+	template <nd_enable_if((std::decay_t<T>::provides_fast_flat_view))>
+	CC_ALWAYS_INLINE
+	decltype(auto) flat_view() noexcept
+	{ return m_ref.flat_view(); }
+
+	template <nd_enable_if((std::decay_t<T>::provides_fast_flat_view))>
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) flat_view() const noexcept
+	{ return m_ref.flat_view(); }
+
+	CC_ALWAYS_INLINE constexpr
+	decltype(auto) storage_order() const noexcept
+	{ return m_ref.storage_order(); }
+
+	CC_ALWAYS_INLINE
+	decltype(auto) extents() const noexcept
+	{ return m_ref.extents(); }
+
+	CC_ALWAYS_INLINE
+	decltype(auto) argument() noexcept
+	{ return m_ref; }
+
+	CC_ALWAYS_INLINE
+	decltype(auto) argument() const noexcept
+	{ return m_ref; }
 };
 
 template <class Func, class... Ts, nd_enable_if((
@@ -315,6 +361,16 @@ auto zip_with(const Func& f, Ts&... ts) noexcept
 	using view = elemwise_view<Func, Ts&...>;
 	using array_type = array_wrapper<view>;
 	return array_type{view{f, ts...}};
+}
+
+template <class T>
+CC_ALWAYS_INLINE constexpr
+auto use_elemwise_comp(const array_wrapper<T>& t) noexcept
+{
+	using func       = detail::elemwise_comp;
+	using view       = elemwise_view<func, const array_wrapper<T>&>;
+	using array_type = array_wrapper<view>;
+	return array_type{view{t}};
 }
 
 template <class... Ts, nd_enable_if((
@@ -396,79 +452,73 @@ nd_define_binary_expr(>>, detail::right_shift)
 
 #undef nd_define_binary_expr
 
-namespace detail {
-
-struct elemwise_comp
-{
-	/*
-	** Note carefully the return type below: if `t` is an rvalue, then we
-	** return a value. On the other hand, if `t` is an lvalue reference,
-	** then we return a reference of the same kind.
-	*/
-	template <class T>
-	CC_ALWAYS_INLINE constexpr
-	T operator()(T&& t) const noexcept
-	{ return t; }
-};
-
-template <class T>
-struct is_elemwise_comp_expr_helper_2
-: std::false_type {};
-
-template <class T>
-struct is_elemwise_comp_expr_helper_2<elemwise_view<elemwise_comp, T>>
-: std::true_type {};
-
-template <class T>
-struct is_elemwise_comp_expr_helper
-: std::false_type {};
-
-template <class T>
-struct is_elemwise_comp_expr_helper<array_wrapper<T>> :
-mpl::bool_<is_elemwise_comp_expr_helper_2<std::decay_t<T>>::value> {};
-
-template <class T>
-static constexpr auto is_elemwise_comp_expr =
-detail::is_elemwise_comp_expr_helper<std::decay_t<T>>::value;
-
-}
-
-template <class T>
-CC_ALWAYS_INLINE constexpr
-auto use_elemwise_comp(const array_wrapper<T>& t) noexcept
-{ return zip_with(detail::elemwise_comp{}, t); }
-
-#define nd_define_relational_expr(symbol, name)                                  \
-	template <class T, class U, nd_enable_if((                               \
-		detail::is_elemwise_comp_expr<array_wrapper<T>> ||               \
-		detail::is_elemwise_comp_expr<array_wrapper<U>>                  \
-	))>                                                                      \
-	CC_ALWAYS_INLINE                                                         \
-	constexpr auto                                                           \
-	operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u)   \
-	noexcept { return zip_with(name{}, t, u); }                              \
-	                                                                         \
-	template <class T, class U, nd_enable_if(!(                              \
-		detail::is_elemwise_comp_expr<array_wrapper<T>> ||               \
-		detail::is_elemwise_comp_expr<array_wrapper<U>>                  \
-	))>                                                                      \
-	CC_ALWAYS_INLINE                                                         \
-	constexpr auto                                                           \
-	operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u)   \
-	noexcept                                                                 \
-	{                                                                        \
-		using helper = detail::relational_operation_helper;              \
-		return helper::apply(t, u, name{});                              \
+#define nd_define_relational_expr(symbol, name)                                   \
+	template <class T, class U, nd_enable_if((                                \
+		detail::is_elemwise_comp_expr<array_wrapper<T>> ||                \
+		detail::is_elemwise_comp_expr<array_wrapper<U>>                   \
+	))>                                                                       \
+	CC_ALWAYS_INLINE                                                          \
+	constexpr auto                                                            \
+	operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u)    \
+	noexcept                                                                  \
+	{                                                                         \
+		return zip_with(                                                  \
+			name{},                                                   \
+			detail::unwrap_elemwise_comp_expr(t),                     \
+			detail::unwrap_elemwise_comp_expr(u)                      \
+		);                                                                \
+	}                                                                         \
+	                                                                          \
+	template <class T, class U, nd_enable_if(!(                               \
+		detail::is_elemwise_comp_expr<array_wrapper<T>> ||                \
+		detail::is_elemwise_comp_expr<array_wrapper<U>>                   \
+	))>                                                                       \
+	CC_ALWAYS_INLINE                                                          \
+	constexpr auto                                                            \
+	operator symbol (const array_wrapper<T>& t, const array_wrapper<U>& u)    \
+	noexcept                                                                  \
+	{                                                                         \
+		using helper = detail::relational_operation_helper;               \
+		return helper::apply(t, u, name{});                               \
 	}
 
 nd_define_relational_expr(==, detail::equal_to)
-nd_define_relational_expr(!=, detail::not_equal_to)
 nd_define_relational_expr(>, detail::greater)
 nd_define_relational_expr(<, detail::less)
 nd_define_relational_expr(>=, detail::greater_equal)
 nd_define_relational_expr(<=, detail::less_equal)
 
 #undef nd_define_relational_expr
+
+/*
+** We need to define the functions for "not equal to" separately, because the
+** version that returns a scalar cannot be implemented in quite the same way as
+** the others.
+*/
+
+template <class T, class U, nd_enable_if((
+	detail::is_elemwise_comp_expr<array_wrapper<T>> ||
+	detail::is_elemwise_comp_expr<array_wrapper<U>>
+))>
+CC_ALWAYS_INLINE
+constexpr auto
+operator!=(const array_wrapper<T>& t, const array_wrapper<U>& u) noexcept
+{
+	return zip_with(
+		detail::not_equal_to{},
+		detail::unwrap_elemwise_comp_expr(t),
+		detail::unwrap_elemwise_comp_expr(u)
+	);
+}
+
+template <class T, class U, nd_enable_if(!(
+	detail::is_elemwise_comp_expr<array_wrapper<T>> ||
+	detail::is_elemwise_comp_expr<array_wrapper<U>>
+))>
+CC_ALWAYS_INLINE
+constexpr auto
+operator!=(const array_wrapper<T>& t, const array_wrapper<U>& u) noexcept
+{ return !(t == u); }
 
 namespace detail {
 
@@ -499,7 +549,14 @@ struct fast_eq_helper
 	))>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
-	const noexcept { return zip_with(detail::fast_eq{}, t, u); }
+	const noexcept
+	{
+		return zip_with(
+			detail::fast_eq{},
+			unwrap_elemwise_comp_expr(t),
+			unwrap_elemwise_comp_expr(u)
+		);
+	}
 
 	/*
 	** This overload is used for comparison operations that output a single
@@ -526,7 +583,14 @@ struct fast_neq_helper
 	))>
 	CC_ALWAYS_INLINE constexpr
 	auto operator()(const array_wrapper<T>& t, const array_wrapper<U>& u)
-	const noexcept { return zip_with(detail::fast_neq{}, t, u); }
+	const noexcept
+	{
+		return zip_with(
+			detail::fast_neq{},
+			unwrap_elemwise_comp_expr(t),
+			unwrap_elemwise_comp_expr(u)
+		);
+	}
 
 	template <class T, class U, nd_enable_if((!(
 		detail::is_elemwise_comp_expr<array_wrapper<T>> ||

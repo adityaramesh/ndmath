@@ -43,6 +43,15 @@ struct element_access_traits
 	traits::is_noexcept_accessible;
 };
 
+template <class T, class U>
+struct foo
+{
+	using type = typename U::poop;
+};
+
+template <class T>
+struct foo<T, T> { using type = int; };
+
 template <class T, class Ref, class CRef, bool SupportsFlatView>
 struct flat_view_traits;
 
@@ -55,6 +64,8 @@ struct flat_view_traits<T, Ref, CRef, true>
 	using const_iterator = decltype(std::declval<const_range>().begin());
 	using traits         = std::iterator_traits<iterator>;
 	using const_traits   = std::iterator_traits<const_iterator>;
+
+	using t = typename foo<typename traits::reference, Ref>::type;
 
 	static_assert(
 		std::is_same<typename traits::reference, Ref>::value,

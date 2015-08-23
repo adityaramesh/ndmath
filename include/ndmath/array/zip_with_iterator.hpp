@@ -256,6 +256,12 @@ auto operator-(
 template <class Func, class... Ts, nd_enable_if((
 	!mpl::and_c<
 		mpl::is_specialization_of<array_wrapper, Ts>::value...
+	>::value &&
+	// Ensure that `Func` is defined for the reference types of the ranges
+	// `Ts...`.
+	std::is_same<
+		decltype(std::declval<Func>()(*std::declval<Ts>().begin()...)),
+		decltype(std::declval<Func>()(*std::declval<Ts>().begin()...))
 	>::value
 ))>
 CC_ALWAYS_INLINE constexpr

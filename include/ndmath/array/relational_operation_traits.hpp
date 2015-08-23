@@ -56,10 +56,11 @@ struct relational_operation_traits
 	static constexpr auto storage_orders_same =
 	src_order{} == dst_order{};
 
+	/*
+	** For relational operations, it only makes sense to attempt to use the
+	** underlying view for boolean arrays.
+	*/
 	static constexpr auto can_use_underlying_view =
-	std::is_same<src_etype, bool>::value      &&
-	std::is_same<dst_etype, bool>::value      &&
-	std::is_same<src_utype, dst_utype>::value &&
 	storage_orders_same                       &&
 	A::provides_underlying_view               &&
 	B::provides_underlying_view               &&
