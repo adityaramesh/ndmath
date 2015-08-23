@@ -113,8 +113,7 @@ module("test unary ops")
 	auto x1 = nd_array([1 0; 0 1]);
 
 	require(+x1 == x1);
-	// TODO cast<> function.
-	require(-x1 == nd_array([-1 0; 0 -1]));
+	require(-nd::cast<int>(x1) == nd_array([-1 0; 0 -1]));
 	require(~~x1 == x1);
 
 	using t1 = nd::detail::move_assignment_traits<decltype(+x1), decltype(x1)>;

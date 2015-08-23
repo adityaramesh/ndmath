@@ -373,6 +373,31 @@ auto use_elemwise_comp(const array_wrapper<T>& t) noexcept
 	return array_type{view{t}};
 }
 
+namespace detail {
+
+template <class T>
+struct cast_helper
+{
+	template <class U, nd_enable_if((
+		// Disable this function if the static cast isn't valid.
+		std::is_same<
+			decltype(static_cast<T>(std::declval<U>())),
+			decltype(static_cast<T>(std::declval<U>()))
+		>::value
+	))>
+	CC_ALWAYS_INLINE
+	constexpr decltype(auto)
+	operator()(const U& u) const noexcept
+	{ return static_cast<T>(u); }
+};
+
+}
+
+template <class T, class U>
+CC_ALWAYS_INLINE constexpr
+auto cast(const array_wrapper<U>& t) noexcept
+{ return zip_with(detail::cast_helper<T>{}, t); }
+
 template <class... Ts, nd_enable_if((
 	mpl::and_c<
 		mpl::is_specialization_of<array_wrapper, std::decay_t<Ts>>::value...
