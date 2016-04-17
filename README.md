@@ -11,6 +11,14 @@ High-performance, multidimensional arrays in modern C++.
 
 # Immediate TODO
 
+- Read the codebase again and write an overview of the major concepts to make it easier to understand later.
+- Revise the codebase:
+  - Simplify the code using C++14 support for automatic return type deduction.
+  - Change the line width to 100; remove headers from files.
+  - Think about any simplifications to the overall design (coord, index, array, etc.).
+    - Do we really distinctions among all the different types of "constant"?
+  - Examine the assembly dump for `range_iterator` again to see if there really is a degradation.
+
 - Update range module.
   - Update `range_iterator.hpp` so that the direction attribute is taken into
   account.
@@ -21,9 +29,17 @@ High-performance, multidimensional arrays in modern C++.
 ccbase.
   - Replace `parse_natural, parse_ratio, parse_wsv`, etc.
   - Update `ratio_literal.hpp`.
-  - Deleted the unused headers.
+  - Delete the unused headers.
   - Update `range_literal.hpp`?
 - Finish array module.
+
+- GPU support.
+  - Test compilation with Cuda 7.5.
+  - Support for GPU allocation and transfer.
+  - Support for GPU execution using heterogenerous lambdas.
+
+- Simplifications in the future:
+  - Constexpr lambdas (C++17) could be used to greatly simplify the code in many places (e.g. elementwise views).
 
 ## Array Module
 
