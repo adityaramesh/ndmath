@@ -13,7 +13,6 @@ High-performance, multidimensional arrays in modern C++.
 
 - Read the codebase again and write an overview of the major concepts to make it easier to understand later.
 - Revise the codebase:
-  - Simplify the code using C++14 support for automatic return type deduction.
   - Change the line width to 100; remove headers from files.
   - Think about any simplifications to the overall design (coord, index, array, etc.).
     - Do we really distinctions among all the different types of "constant"?
